@@ -15,6 +15,7 @@ The standard Turtle does not have a mouse input, so keyboard instructions are gi
 For example to select a checkbox, type it's index number displayed next to it and hit Enter. Repeat to change the state:
 
 <img width="746" height="385" alt="image" src="https://github.com/user-attachments/assets/36747da7-69ab-4b0b-b45b-8c700d3fb296" />
+Use the 'b' key to emulate the 'Back' button, 'q' for 'Quit', 'n' for 'Next', 'c' to clear the keyboard input buffer
 
 
 
