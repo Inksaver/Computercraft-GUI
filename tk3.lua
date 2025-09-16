@@ -1,4 +1,4 @@
-local version = 20250914.1800
+local version = 20250916.2000
 
 local tkVersion = version -- otherwise over-written by clsTurtle when loaded
 --[[
@@ -66,25 +66,57 @@ local ccMajorVersion = _HOST:sub(15, _HOST:find("Minecraft") - 2) --eg ComputerC
 local ccMinorVersion = 0
 
 local function checkFileSystem()
-	-- sm = SM("scenes", {"MainMenu", "Craft", "TaskOptions", "Quit", "Help"})
+	local oldurl = "https://raw.githubusercontent.com/Inksaver/Minecraft-Toolkit/main/"
+	local url = "https://raw.githubusercontent.com/Inksaver/Computercraft-GUI/main/"
+	
 	local lib = {}
 	
 	function lib.checkLabel()
+		-- check if computer has been labelled, ask user for a name if not
 		if os.getComputerLabel() == nil then
-			os.setComputerLabel("toolkit")
-			print("Computer label set to "..os.getComputerLabel())
+			local noname = true
+			while noname do
+				clear()
+				log("Give this turtle a name (no spaces)_")
+				name = read()
+				if name == '' then
+					print("Just pressing Enter does not work")
+				elseif string.find(name, ' ') ~= nil then
+					print("NO SPACES!")
+				else
+					noname = false
+				end
+				if noname then
+					sleep(2)
+				end
+			end
+			
+			os.setComputerLabel(name)
+			log("Computer label set to "..os.getComputerLabel())
 		end
 	end
-	
-	function lib.checkFiles(fileList, pastebinList, failedList)
+
+	function lib.checkFiles(url, fileList, failedList)
 		for i = 1, #fileList do
 			if not fs.exists(fileList[i]) then
-				print("Missing file "..fileList[i]..", trying pastebin")
-				if shell.run("pastebin", "get", pastebinList[i] , fileList[i]) then
-					print(fileList[i].." installed from Pastebin")
+				print("Missing file "..fileList[i]..", trying Github")
+				local fileURL = url..fileList[i]
+				-- eg "https://raw.githubusercontent.com/Inksaver/Computercraft-GUI/main/lib/ui/Multibutton.lua"
+				local response, message = http.get(fileURL)
+				if response == nil then
+					print("failed to install "..fileList[i].." from Github")
+					table.insert(failedList, fileList[i]..": "..message)
 				else
-					print("failed to install "..fileList[i].." from Pastebin")
-					table.insert(failedList, fileList[i].." url = https://pastebin.com/"..pastebinList[i])
+					local data = response.readAll()
+					response.close()
+					local h = fs.open(fileList[i], "w")
+					if h == nil then
+						table.insert(failedList, fileList[i]..": Could not open file for saving")
+					end
+					-- Save new file
+					h.write(data)
+					h.close()
+					print(fileList[i].." installed from Github")
 				end
 			end
 		end
@@ -105,54 +137,41 @@ local function checkFileSystem()
 	if not fs.exists("scenes") then
 		fs.makeDir("scenes")
 	end
-	-- lib files + 1 lib/data
+	
+	local oldFileList =
+	{	
+		"b.lua", "d.lua", "data.lua", "f.lua", "flint.lua", "go.lua", "l.lua", "lavaRefuel.lua", "p.lua", "r.lua", "u.lua", "x.lua"
+	}
+	
 	local fileList = 
 	{
 		"lib/Class.lua", "lib/clsTurtle.lua", "lib/EntityMgr.lua", "lib/Events.lua", "lib/help.lua",  "lib/Log.lua", 
 		"lib/menu.lua", "lib/Project.lua", "lib/Scene.lua", "lib/SceneMgr.lua", "lib/TurtleUtils.lua", "lib/Vector2.lua",
-		"lib/data/taskInventory.lua", "lib/data/items.lua"
-	}
-	local pastebinList =
-	{
-		"9LETv15f", "tvfj90gK", "Hg0S0Gac", "Y0vZ9Zgj",  "mSrbecJK", "8BUDQj24", 
-		"BhjbYsw4", "8Ai9Rjwy", "cTUeYqhF", "9u6ex4YP", "ceeV3ugb", "b6EfL0CH",
-		"tB0h772H", "RzfRt0c4"
-	}
-	local failedList = {}
-	failedList = lib.checkFiles(fileList, pastebinList, failedList)
-
-	-- lib/ui
-	fileList =
-	{	
+		"lib/data/taskInventory.lua", "lib/data/items.lua",
 		"lib/ui/Button.lua", "lib/ui/Checkbox.lua", "lib/ui/ContentBar.lua", "lib/ui/Label.lua", 
-		"lib/ui/ListBox.lua", "lib/ui/Multibutton.lua", "lib/ui/Multilabel.lua", "lib/ui/ScrollBar.lua", "lib/ui/Textbox.lua"
-	}
-	pastebinList =
-	{
-		"f8SFrLpL", "Rpwsce4Z", "iHKFfeZU", "CrXuTpcT",
-		"FRGfpRgM", "ZzmwzayE", "i9dprCbT", "9bhPj9Kj", "awnymvaT"
-	}
-	failedList = lib.checkFiles(fileList, pastebinList, failedList)	 -- add to failed list
-	-- scenes
-	fileList =
-	{
-		--sm = SM("scenes", {"MainMenu", "Craft", "TaskOptions", "Quit", "Help"}) "scenes/Craft.lua","PKnMwYzA",
+		"lib/ui/ListBox.lua", "lib/ui/Multibutton.lua", "lib/ui/Multilabel.lua", "lib/ui/ScrollBar.lua", "lib/ui/Textbox.lua",
 		"scenes/GetItems.lua", "scenes/Help.lua", "scenes/MainMenu.lua",
 		"scenes/Quit.lua", "scenes/TaskOptions.lua",
 	}
-	pastebinList =
-	{
-		"GQuQP13b", "QGttxRZt", "FfbkQrbi",
-		"zGcD6Wzs", "wkCrC4rJ",
-	}
-	failedList = lib.checkFiles(fileList, pastebinList, failedList) -- add to failed list
+	
+	local failedList = {}
+
+	failedList = lib.checkFiles(oldurl, oldFileList, failedList)	-- add files from Minecraft-Toolkit
+	failedList = lib.checkFiles(url, fileList, failedList)			-- add files from Computercraft-GUI
+	
+	term.clear()
+	term.setCursorPos(1,1)
 	if next(failedList) ~= nil then
-		print("\nTry to obtain these files manually")
+		
+		print("Try to obtain these files manually")
 		for _,v in ipairs(failedList) do
 			print(v)
 		end
 		return
+	else
+		print("All files present. Starting in 2 seconds")
 	end
+	sleep(2)	
 end
 checkFileSystem()
 
@@ -9387,6 +9406,35 @@ function manageFarm()
 		-- planted crops are plural, harvested singular: carrots / carrot, pototoes/ potato
 		return "", crop -- no seed for carrot / potato
 	end
+
+	function lib.getEquipment(name)
+		if R.networkFarm then
+			slot = U.getItemFromNetwork("barrel", name, 1)			
+		end
+		local slot = T:getItemSlot(name)	-- if item in inventory
+		if slot == 0 then
+			T:checkInventoryForItem({name}, {1}, true, name.." required to continue")
+			slot = T:getItemSlot(name)		-- if item in inventory
+			if slot == 0 then
+				error(name.." is required. Add to turtle and restart")
+			end
+		end
+		return slot
+	end
+
+	function lib.getEquipped()
+		local left, right = "",""
+		local data = turtle.getEquippedLeft()
+		if data ~= nil then
+			left = data.name
+		end
+		data = turtle.getEquippedRight()
+		if data ~= nil then
+			right = data.name
+		end
+		
+		return left, right
+	end
 	
 	function lib.getSeedsOrCrops(seed, crop)
 		-- turn to right to face modem or chest/barrel
@@ -9972,55 +10020,22 @@ Log:saveToLog("return isReady = "..tostring(isReady)..", crop = "..crop..", seed
 		-- earlier versions used crafting table buried in the ground
 		-- newer versions have a barrel or chest embedded in the ground, containing the crafting table
 		-- networked version uses remote storage, turtle faces crops and has modem at back
-		local slot, count = 0, 0
---Log:saveToLog("Sorting Inventory")	-- make sure all items collected together
-		T:sortInventory(true)
---Log:saveToLog("Logs present: collecting crafting table")
-		if R.networkFarm then
-			slot, count = U.getItemFromNetwork("barrel", "minecraft:crafting_table", 1)
-		else
-			while T:suck("down") do end					-- empty out barrel/chest to find crafting table
-		end
-		if T:getItemSlot("crafting") == 0 then
-			-- crafting table not found so ask player
-			T:checkInventoryForItem({"crafting"}, {1}, true, "Crafting table required for logs->planks")
-		end
-		if T:equip("right", "minecraft:crafting_table") then -- swap equipment on right side
-			if R.networkFarm then
-				U.sendItemToNetworkStorage("barrel", "minecraft:diamond_hoe", 1)
-			end
-			for i = 1, 16 do						-- drop anything except logs down into barrel/chest/pit
-				if T:getSlotContains(i):find("log") == nil then
-					T:drop("down", i)	-- into water if networked, buried chest otherwise
-				else
-					logSlot = i
-				end
-			end
-			turtle.select(logSlot)
-			turtle.transferTo(1)
-			turtle.craft()							-- craft logs to planks
-			logSlot = T:getItemSlot("planks")
-			while logSlot > 0 and turtle.getFuelLevel() < turtle.getFuelLimit() do
-				turtle.select(logSlot)
-				turtle.refuel()						-- refuel using planks
-				logSlot = T:getItemSlot("planks")				
-			end
-			while T:suck("down") do end			-- recover items from storage below ?seeds/crops ?crafting/pickaxe
-			if R.networkFarm then
-				slot = U.getItemFromNetwork("barrel", "minecraft:diamond_hoe", 1)
-			end
-			-- currently crafting table is equipped on right
-			if not T:equip("right", "minecraft:diamond_hoe") then		-- re-equip hoe/remove crafting table
-				T:equip("right", "minecraft:diamond_pickaxe")			
-			end
-			if R.networkFarm then
-				U.sendItemToNetworkStorage("barrel", "minecraft:crafting_table", 1)
+		-- equipment already configured
+		for i = 1, 16 do						-- drop anything except logs down into barrel/chest/pit
+			if T:getSlotContains(i):find("log") == nil then
+				T:drop("down", i)	-- into water if networked, buried chest otherwise
 			else
-				T:dropItem("minecraft:crafting_table", "down")
+				logSlot = i
 			end
-		else
-			print("Unable to equip crafting table.\n\nCheck turtle inventory and chest or barrel below")
-			error()
+		end
+		turtle.select(logSlot)
+		turtle.transferTo(1)
+		turtle.craft()							-- craft logs to planks
+		logSlot = T:getItemSlot("planks")
+		while logSlot > 0 and turtle.getFuelLevel() < turtle.getFuelLimit() do
+			turtle.select(logSlot)
+			turtle.refuel()						-- refuel using planks
+			logSlot = T:getItemSlot("planks")				
 		end
 	end
 				
@@ -10139,84 +10154,102 @@ Log:saveToLog("manageFarm() calling checkFarmPosition()")
 			}
 		end
 	end
+	if not T:isEmpty() then										-- items still in turtle inventory
+		T:sortInventory(false)
+	end
+	local equippedLeft, equippedRight = lib.getEquipped()		-- "" or "minecraft:..." for each side
 	local overStorage = false
-	local hoeSlot = T:getItemSlot("minecraft:diamond_hoe")
-	local axeSlot = T:getItemSlot("minecraft:diamond_pickaxe")
-	local craftSlot = T:getItemSlot("minecraft:crafting_table")
-	local logSlot = T:getItemSlot("log")
-	if not T:isEmpty() then		-- items in turtle inventory
-		if hoeSlot > 0 then
-			-- already has hoe, but needs equipping
-			T:equip("right", "minecraft:diamond_hoe") 		-- equip hoe and put crafting into inventory
-		end
-		if T:getItemSlot("minecraft:diamond_pickaxe") > 0 then
-			-- already has pickaxe, but needs equipping
-			T:equip("left", "minecraft:diamond_pickaxe") 	-- equip pickaxe
-		end
-		craftSlot = T:getItemSlot("minecraft:crafting_table")
+	local logSlot = T:getItemSlot("log")						-- if logs in inventory
+	local emptySlots = T:getEmptySlotCount()
+	if emptySlots < 3 then
+		T:clear()
+		error("Too many items in inventory. 3 free slots required")
 	end
-	
-	if not T:isEmpty() then		-- items still in turtle inventory
-		if logSlot > 0 then
-			if R.networkFarm then
-				lib.refuelWithLogs(logSlot) 	-- use any logs for fuel
-			else
-				T:go("L1F1") 					-- move to buried storage chest/barrel
-				lib.refuelWithLogs(logSlot) 	-- use any logs for fuel
-				--T:go("R2F1")					-- facing seed chest/barrel
-				overStorage = true				-- if NOT networked, still above storage
-			end
-		end
-		if not T:isEmpty() then					-- still items in turtle inventory
-			lib.storeCrops(overStorage)
-		end
+	T:unequip("right")											-- remove from right
+	T:unequip("left")											-- remove from left
+	if not R.networkFarm then
+		T:go("L1F1") 											-- move to buried storage chest/barrel
+		while T:suck("down") do end								-- empty storage for crafter
+		overStorage = true
 	end
-Log:saveToLog("manageFarm() unloading turtle equipment")
-	-- in correct position. Check equipment first, harvest tree, re-equip then harvest crops
-	-- remove turtle equipment and store in inventory
-	local equipmentSlots = lib.checkEquipment({"minecraft:diamond_hoe", "minecraft:diamond_pickaxe"})	-- returns {0, 0} or {1, 0} or {1, 2} etc
-	-- following slots will be 0 or slot containing these items
+	local hoeSlot = T:getItemSlot("minecraft:diamond_hoe")		-- if hoe is in inventory
+	local axeSlot = T:getItemSlot("minecraft:diamond_pickaxe")	-- if pickaxe in inventory
+	local craftSlot = T:getItemSlot("minecraft:crafting_table")	-- if crafting table in inventory
+	if axeSlot == 0 then										-- pickaxe is always present hoe and crafter are swapped
+		axeSlot = lib.getEquipment("minecraft:diamond_pickaxe") -- gets item or errors
+	end
+	T:equip("left", "minecraft:diamond_pickaxe") 				-- equip pickaxe
+	if logSlot > 0 then											-- if logs present, equip crafting table with axe
+		if craftSlot == 0 then									-- no crafter present
+			craftSlot = lib.getEquipment("minecraft:crafting_table") -- gets item or errors
+		end
+		T:equip("right", "minecraft:crafting_table")			-- equip with crafting table
+		lib.refuelWithLogs(logSlot)
+	end
+	-- no logs or logs have been crafted to max fuel level so equip hoe
+	while T:suck("down") do end									-- recover items from storage below ?seeds/crops ?crafting/pickaxe
+	equippedLeft, equippedRight = lib.getEquipped()
+	if equippedRight ~= "minecraft:diamond_hoe" then
+		T:unequip("right")						-- currently crafting table is equipped on right
+	end
 	hoeSlot = T:getItemSlot("minecraft:diamond_hoe")
-	axeSlot = T:getItemSlot("minecraft:diamond_pickaxe")
-	craftSlot = T:getItemSlot("minecraft:crafting_table")
-Log:saveToLog("Turtle unequipped: hoeSlot = "..hoeSlot..", axeSlot = "..axeSlot..", craftSlot = "..craftSlot)
+	if hoeSlot == 0 then
+		hoeSlot = lib.getEquipment("minecraft:diamond_hoe") -- gets item or errors
+	end
+	T:equip("right", "minecraft:diamond_hoe")
+	
+	if R.networkFarm then
+		U.sendItemToNetworkStorage("barrel", "minecraft:crafting_table", 1)
+	else
+		T:dropItem("minecraft:crafting_table", "down")
+	end
 
-	if hoeSlot == 0 then							-- hoe not in inventory
-Log:saveToLog("Hoe not in inventory. Calling lib.getTool('minecraft:diamond_hoe', overStorage = "..tostring(overStorage)..")")
-		hoeSlot, message = lib.getTool("minecraft:diamond_hoe", overStorage)	-- get hoe. ends over barrel if NOT networked
-		if message ~= "" then
-			return {message}
-		else
-			overStorage = true						-- if NOT networked, still above storage
-		end
+	if not T:isEmpty() then										-- items still in turtle inventory
+		lib.storeCrops(overStorage)
 	end
-	-- hoe present or user cancelled request for hoe. Turtle is ready to exchange items
-	if hoeSlot > 0 then
-		while T:suck("down") do end								-- empty storage again in case logs were processed
-		T:equip("right", "minecraft:diamond_hoe") 				-- equip hoe and put crafting chest into barrel
-		if axeSlot > 0 then
-			T:equip("left", "minecraft:diamond_pickaxe") 	-- equip pickaxe
-		else --only hoe was equipped. Need pickaxe
-			axeSlot, message = lib.getTool("minecraft:diamond_pickaxe", overStorage)	-- get axe. ends over barrel if NOT networked
-		end
-		if craftSlot > 0 then
-			if R.networkFarm then		-- send crafting table into storage
-				U.sendItemToNetworkStorage("barrel", "minecraft:crafting_table", 1)
-			else						-- put crafting table into barrel/chest in floor
-				if not overStorage then
-					T:go("L1F1")
-					overStorage = true
-				end
-				T:dropItem("crafting", "down")
-			end
-		end
-	end
+-- Log:saveToLog("manageFarm() unloading turtle equipment")
+	-- -- in correct position. Check equipment first, harvest tree, re-equip then harvest crops
+	-- -- remove turtle equipment and store in inventory
+	-- local equipmentSlots = lib.checkEquipment({"minecraft:diamond_hoe", "minecraft:diamond_pickaxe"})	-- returns {0, 0} or {1, 0} or {1, 2} etc
+	-- -- following slots will be 0 or slot containing these items
+	-- hoeSlot = T:getItemSlot("minecraft:diamond_hoe")
+	-- axeSlot = T:getItemSlot("minecraft:diamond_pickaxe")
+	-- craftSlot = T:getItemSlot("minecraft:crafting_table")
+-- Log:saveToLog("Turtle unequipped: hoeSlot = "..hoeSlot..", axeSlot = "..axeSlot..", craftSlot = "..craftSlot)
+
+	-- if hoeSlot == 0 then							-- hoe not in inventory
+-- Log:saveToLog("Hoe not in inventory. Calling lib.getTool('minecraft:diamond_hoe', overStorage = "..tostring(overStorage)..")")
+		-- hoeSlot, message = lib.getTool("minecraft:diamond_hoe", overStorage)	-- get hoe. ends over barrel if NOT networked
+		-- if message ~= "" then
+			-- return {message}
+		-- else
+			-- overStorage = true						-- if NOT networked, still above storage
+		-- end
+	-- end
+	-- -- hoe present or user cancelled request for hoe. Turtle is ready to exchange items
+	-- if hoeSlot > 0 then
+		-- while T:suck("down") do end								-- empty storage again in case logs were processed
+		-- T:equip("right", "minecraft:diamond_hoe") 				-- equip hoe and put crafting chest into barrel
+		-- if axeSlot > 0 then
+			-- T:equip("left", "minecraft:diamond_pickaxe") 	-- equip pickaxe
+		-- else --only hoe was equipped. Need pickaxe
+			-- axeSlot, message = lib.getTool("minecraft:diamond_pickaxe", overStorage)	-- get axe. ends over barrel if NOT networked
+		-- end
+		-- if craftSlot > 0 then
+			-- if R.networkFarm then		-- send crafting table into storage
+				-- U.sendItemToNetworkStorage("barrel", "minecraft:crafting_table", 1)
+			-- else						-- put crafting table into barrel/chest in floor
+				-- if not overStorage then
+					-- T:go("L1F1")
+					-- overStorage = true
+				-- end
+				-- T:dropItem("crafting", "down")
+			-- end
+		-- end
+	-- end
 	if overStorage then
 		T:go("B1R1")
 		overStorage = false
-	end
-	if hoeSlot == 0 then -- hoe not present: return to start and exit
-		return {"Unable to equip hoe."}
 	end
 	-- check if crops already planted
 	
