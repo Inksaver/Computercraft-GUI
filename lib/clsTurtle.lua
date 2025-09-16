@@ -1,7 +1,5 @@
-version = 20250914.1600
+version = 20250916.1700
 --[[
-	pastebin(1): tvfj90gK
-	pastebin(2): yq7A02up
 	Last edited: see version YYYYMMDD.HHMM
 	save as T.lua, preferably in /lib folder
 	as is not meant to be run directly from CraftOS command line
@@ -1605,16 +1603,18 @@ end
 function T:unequip(side)
 	local success = false
 	local slot = self:getFirstEmptySlot()
-	turtle.select(slot)
-	if side == "right" then
-		if turtle.equipRight() then
-			success = true
-			self.equippedRight = ""
-		end
-	else
-		if turtle.equipLeft() then
-			success = true
-			self.equippedLeft = ""
+	if slot > 0 then
+		turtle.select(slot)
+		if side == "right" then
+			if turtle.equipRight() then
+				success = true
+				self.equippedRight = ""
+			end
+		else
+			if turtle.equipLeft() then
+				success = true
+				self.equippedLeft = ""
+			end
 		end
 	end
 	
