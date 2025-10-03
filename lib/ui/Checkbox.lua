@@ -1,8 +1,6 @@
-local version = 20250913.0900
--- https://pastebin.com/Rpwsce4Z lib.ui.Checkbox.lua
+local version = 20251003.1700
 local Class = require("lib.Class")
 local Vector2 = require("lib.Vector2")
---local U = require("lib.TurtleUtils") -- using _G.U loaded in tk
 local C = Class:derive("Checkbox")
 
 function C:new(index, name, x, y, w, h, text, outlineColour, checkColour, textColour)
@@ -42,6 +40,10 @@ function C:enable(isEnabled)
 		self.colour = self.disabled
 		self.textColour = self.textDisabled
 	end
+end
+
+function C:flip()
+	self.checked = not self.checked
 end
 
 function C:getName()
