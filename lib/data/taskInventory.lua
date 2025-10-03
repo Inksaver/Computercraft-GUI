@@ -1,6 +1,4 @@
-local version = 20250915.1200
--- pastebin(1): tB0h772H lib.data.taskInventory.lua
--- pastebin(2): HyxEBT2j
+local version = 20251003.1700
 -- ["lbl4"] = {text = "Text here", bg = colors.black, fg = colors.lime, alignH = "centre"},
 -- ["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
 -- ...state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, event = {"changeRValue", "inventoryKey", "1"}},
@@ -599,7 +597,7 @@ return
 		data =
 		{
 			["lbl1"] = {text = "Levels to go up:"},
-			["txt1"] = {text = "1", limits = {{1} , {"U.ceiling - 2"}}, r = "height"}
+			["txt1"] = {text = "", limits = {{1} , {"U.ceiling - 2"}}, r = "height"}
 		},
 		items =
 [[~red~2 buckets or water buckets
@@ -677,14 +675,16 @@ height * 2 + 2 soul sand
 	["createDirectedPath"] =
 	{
 		call = createDirectedPath,
-		title = "10-Direct control of movement",
+		title = "10-Direct movement control",
 		fuel = 200,
 		data =
 		{
 			["chk1"] = {text = {"Simple", "path with", "no roof"}, state = true,  group = {"chk1", "chk2"}, r = {"subChoice", 1, 2}},
-			["chk2"] = {text = {"Covered", "tunnel 2", "block high"}, 	state = false, group = {"chk1", "chk2"}, r = {"subChoice", 2, 1}},
-			["chk4"] = {text = "Cmd: F2L1", 	state = false, group = {"chk3", "chk4"}, r = {"data", "cmd", "menu"}},
-			["chk5"] = {text = "Menu: GUI", 	state = false, group = {"chk3", "chk4"}, r = {"data", "menu", "cmd"}},
+			["chk2"] = {text = {"Covered", "path 2 ", "block high"}, 	state = false, group = {"chk1", "chk2"}, r = {"subChoice", 2, 1}},
+			["chk4"] = {text = {"Type Cmd: ",
+								"eg F2L1   ",
+								"          "},  state = true, group = {"chk4", "chk5"}, r = {"data", "cmd", "menu"}},
+			["chk5"] = {text = "Menu: GUI", 	state = false, group = {"chk4", "chk5"}, r = {"data", "menu", "cmd"}},
 		}
 	},
 	
@@ -818,8 +818,8 @@ height * 2 + 2 soul sand
 	{
 		-- only used to extend existing networked fam to right, or behind
 		call = createFarmExtension,
-		title = "Extend modular crop farm",
-		description = "02-Extending modular crop farm",
+		title = "02-Extend modular crop farm",
+		description = "Extending modular crop farm",
 		fuel = 300,
 		items =
 [[~red~64    ~yellow~stone
@@ -1034,8 +1034,8 @@ height * 2 + 2 soul sand
 		fuel = 600,
 		data = 
 		{			
-			["chk1"] = {text = {"`lime¬gray` chests ? ",
-								"`lime¬gray`          ",
+			["chk1"] = {text = {"`lime¬gray`  chests  ",
+								"`lime¬gray` present? ",
 								"`lime¬gray` `white¬brown`C`lime¬gray`  `black¬magenta`S`lime¬gray`   `white¬brown`C`lime¬gray` "},
 								state = false, r = {"data", "chest", "spawner"}},
 
@@ -1118,7 +1118,7 @@ height * 2 + 2 soul sand
 	["createPath"] =
 	{
 		call = createPath,
-		title = "01-Path on air, water or lava",
+		title = "01-Path on air, water, lava",
 		description = "Building continuous path",
 		data =
 		{
@@ -1174,7 +1174,7 @@ height * 2 + 2 soul sand
 			["chk3"] = {text = {"Turtle is", "at side of", "portal"}, state = false, group = {"chk2", "chk3"}, r = {"side", "E", "F"}},
 			["lbl1"] = {text = "Portal width (Usually 4)"},
 			["lbl2"] = {text = "Portal height (Usually 5)"},
-			["lbl3"] = {text = "Thickness (Usually 1)"},
+			["lbl3"] = {text = "Portal Depth (Usually 1)"},
 			["txt1"] = {text = "4", limits = {{1}, {64}}, r = "length"},
 			["txt2"] = {text = "5", limits = {{2} , {64}}, r = "height"},
 			["txt3"] = {text = "1", limits = {{1} , {64}}, r = "width"}
@@ -1194,7 +1194,7 @@ height * 2 + 2 soul sand
 	["createPortalPlatform"] =
 	{
 		call = createPortalPlatform,
-		title = "10-Build portal ladder & platform",
+		title = "10-Build end portal platform",
 		description = "Building portal ladder & platform",
 		fuel = 200,
 		items =
@@ -1207,11 +1207,12 @@ height * 2 + 2 soul sand
 		{
 			["chk1"] = {text = {"Click here","to assess", "height"}, state = false, event = {"executeCall", "findPortal", "inventory"}}
 		},
+		-- default inventory, this is altered in code after height is found 
 		inventory = 
 		{
 			{"minecraft:ladder", 30, true, ""},
 			{"stone", "R.height * 4 + 18", true, ""},
-			{"trapdoor", 1}
+			{"trapdoor", 1, true, ""}
 		}
 	},
 	
@@ -1380,14 +1381,14 @@ length * width slabs
 		},
 		data = 
 		{
-			["chk1"] = {text = "In Nether?", state = false},
-			["chk2"] = {text = "In Air?", state = false, u = {"bedrock", 0, -64}},
+			["chk1"] = {text = "In Nether?", state = false, u = {"bedrock", 0, -64}},
+			["chk2"] = {text = "In Air?", state = false},
 			["chk3"] = {text = "Build Base?", state = false, r = {"data", "chamber", ""}},	-- use R.data and give value "chamber" if selected
-			["chk4"] = {text = "Go UP?", state = true, group = {"chk4", "chk5"}, r = "goUp", event = {"calculateHeight", "lbl2"}},
-			["chk5"] = {text = "Go DOWN?", state = false, group = {"chk4", "chk5"}, r = "goDown", event = {"calculateHeight", "lbl2"}},
+			["chk4"] = {text = "Go UP?", state = false, group = {"chk4", "chk5"}, required = true, r = "goUp"},
+			["chk5"] = {text = "Go DOWN?", state = true, group = {"chk4", "chk5"}, required = true, r = "goDown"},
 			["chk6"] = {text = {"Stop at","Stronghold","or Trial?"}, state = true, required = true, r = "auto"},
-			["lbl1"] = {text = "Current level (F3):"},
-			["lbl2"] = {text = "Go to level:"},
+			["lbl1"] = {text = "Current level (F3):", limits = {{"U.bedrock + 5"}, {"U.ceiling"}}},
+			["lbl2"] = {text = "Go to level:", limits = {{"U.bedrock + 5"} , {"startLevel", 2}}},
 			["txt1"] = {text = "0", limits = {{"U.bedrock + 5"}, {"U.ceiling"}}, r = "startLevel", event = {"calculateHeight", "lbl2"}},
 			["txt2"] = {text = "0", limits = {nil, nil}, r = "destinationLevel", event = {"calculateHeight", "lbl2"}}
 		}
@@ -1906,8 +1907,12 @@ length * width slabs
 		},
 		data =
 		{
-			["chk1"] = {text = "Bare bedrock?", state = true, group = {"chk1", "chk2"}, r = {"data", "leaveExposed", "cover"}},
-			["chk2"] = {text = "Mask bedrock?", state = false, group = {"chk1", "chk2"}, r = {"data", "cover", "leaveExposed"}},
+			["chk1"] = {text = {"Leave all",
+								"Bedrock", "exposed?"},
+								state = true, group = {"chk1", "chk2"}, r = {"data", "leaveExposed", "cover"}},
+			["chk2"] = {text = {"Cover all",
+								"Bedrock", "after mine"},
+								state = false, group = {"chk1", "chk2"}, r = {"data", "cover", "leaveExposed"}},
 			["lbl1"] = {text = "Width (2-64, default 17):"},
 			["lbl2"] = {text = "Length (2-64, default 17):"},
 			["txt1"] = {text = "17", limits = {{2}, {64}}, r = "width"},
@@ -1996,15 +2001,15 @@ length * width slabs
 		},
 		data =
 		{
-			["chk1"] = {text = {"`lg¬gray`***`lg¬white` `lg¬orange`******",
-								"`lg¬gray`***`lg¬white` `lg¬orange`******",
-								"`lg¬white`   `white¬red`^`lg¬white`      "}, state = true, group = {"chk1", "chk2", "chk3"}, r = {"direction", "R1F1L1F1", ""}},
-			["chk2"] = {text = {"`lg¬gray`***`lg¬white` `lg¬orange`******",
-								"`lg¬gray`***`lg¬white` `lg¬orange`******",
-								"`lg¬white`    `white¬red`^`lg¬white`     "}, state = false, group = {"chk1", "chk2", "chk3"}, r = {"direction", "F1", ""}},
-			["chk3"] = {text = {"`lg¬gray`***`lg¬white` `lg¬orange`******",
-								"`lg¬gray`***`lg¬white` `white¬red`^`lg¬orange`*****",
-								"`lg¬white`          "}, state = false, group = {"chk1", "chk2", "chk3"}, r = {"direction", "", ""}},
+			["chk1"] = {text = {"`lg¬gray` `lg¬white` `lg¬brown`**mine**",
+								"`lg¬gray` `lg¬white` `lg¬brown`**here**",
+								"`lg¬white` `white¬red`^`lg¬white` -start "}, state = true, group = {"chk1", "chk2", "chk3"}, r = {"direction", "R1F1L1F1", ""}},
+			["chk2"] = {text = {"`lg¬gray` `lg¬white` `lg¬brown`**mine**",
+								"`lg¬gray` `lg¬white` `lg¬brown`**here**",
+								"`lg¬white`  `white¬red`^`lg¬white` -start"}, state = false, group = {"chk1", "chk2", "chk3"}, r = {"direction", "F1", ""}},
+			["chk3"] = {text = {"`lg¬gray` `lg¬white` `lg¬brown`**mine**",
+								"`lg¬gray` `lg¬white` `white¬red`^`lg¬brown`*here**",
+								"`lg¬white`   -start "}, state = false, group = {"chk1", "chk2", "chk3"}, r = {"direction", "", ""}},
 			["lbl1"] = {text = "Width (2-64, default 15):"},
 			["lbl2"] = {text = "Length (2-64, default 15):"},
 			["txt1"] = {text = "15", limits = {{2}, {64}}, r = "width"},
