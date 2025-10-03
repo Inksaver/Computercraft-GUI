@@ -1,11 +1,9 @@
-local version = 20250916.2000
+local version = 20251003.1700
 
 local tkVersion = version -- otherwise over-written by clsTurtle when loaded
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
-	pastebin(1): t5QHKGNC tk3.lua
-	pastebin(2): 7cXJnjtu tk3.lua
 	if NOT online:
 
 Folder PATH listing from Windows cmd: tree /f /a |clip
@@ -169,9 +167,9 @@ local function checkFileSystem()
 		end
 		return
 	else
-		print("All files present. Starting in 2 seconds")
+		print("All files present. Starting...")
 	end
-	sleep(2)	
+	sleep(1)	
 end
 checkFileSystem()
 
@@ -4411,6 +4409,100 @@ start centre of obsidian platform:
 	
 	return {}
 end
+
+function createEnclosure()
+	local lib = {}
+	
+	function lib.placeBarrel()
+		if R.inventoryKey == "barrel" then
+			utils.goBack(1)
+			T:go("L1F1")
+			T:place("barrel", "down", false)
+			utils.goBack(1)
+			T:go("R1")
+			T:forward(1)
+		end
+	end
+	
+	function lib.placeTorch()
+		T:up(1)
+		local up = 1
+		local blockType = T:getBlockType("forward")
+		while blockType:find(R.useBlockType) ~= nil and blockType ~= "" do -- prevent continuous upward travel
+			T:up(1)
+			up = up + 1
+			blockType = T:getBlockType("forward")
+		end
+		T:place("torch", "forward", true)
+		T:down(up)
+	end
+	
+	function lib.buildWall(length)
+		-- T:place(blockType, direction, leaveExisting, signText)
+		local blockType = ""
+		local blocks = 0
+		lib.placeBarrel()
+		while blocks < length do
+			if turtle.back() then
+				T:place(R.useBlockType, "forward", true)
+				if R.torchInterval > 0 then
+					if blocks == 0 or blocks % R.torchInterval == 0 then
+						lib.placeTorch()
+					end
+				end
+				blocks = blocks + 1 -- still facing start position
+				while turtle.down() do
+					T:place(R.useBlockType, "up", true)
+				end
+			else -- obstruction
+				T:turnRight(2) -- facing away from start
+				blockType = T:getBlockType("forward")
+				if blockType:find("torch") ~= nil then
+					T:go("F1R2")
+					T:place(R.useBlockType, "forward")
+					blocks = blocks + 1 -- facing start
+				elseif blockType:find("log") ~= nil then
+					T:harvestTree()
+					T:turnRight(2)
+					T:place(R.useBlockType, "forward")
+					blocks = blocks + 1 -- facing start
+				elseif T:isVegetation(blockType) then
+					T:go("F1R2")
+					T:place(R.useBlockType, "forward")
+					blocks = blocks + 1 -- facing start
+				else -- cant go forward, go up instead
+					while turtle.detect() and blockType:find("torch") == nil and blockType:find("log") == nil and not T:isVegetation(blockType) do -- block ahead, but not torch or tree
+						while turtle.detectUp() do -- will only run if block above
+							utils.goBack(1)
+							blocks = blocks - 1
+						end
+						turtle.up()
+						T:place(R.useBlockType, "down", true)
+						blockType = T:getBlockType("forward")
+					end
+					T:turnRight(2) -- facing start
+				end
+			end
+		end
+	end
+	R.useBlockType = T:getMostItem("", false)
+	T:turnRight(2) --facing start position
+	if R.width == 0 then -- single fence
+		lib.buildWall(R.length)
+	else	
+		lib.buildWall(R.length - 1)
+		T:go("R1") -- facing start so left turn = turnRight
+		lib.buildWall(R.width - 1)
+		T:go("R1")
+		lib.buildWall(R.length - 1)
+		T:go("R1")
+		lib.buildWall(R.width - 2)
+		T:go("U1")
+		T:place(R.useBlockType, "down", true)
+	end
+	
+	return {"Wall or fence completed"}
+end
 	
 function createFarmNetworkStorage(withStorage, removeLegacy)
 	if removeLegacy == nil then removeLegacy = false end
@@ -7458,100 +7550,6 @@ function createTrialCover()
 	return {}
 end
 
-function createEnclosure()
-	local lib = {}
-	
-	function lib.placeBarrel()
-		if R.inventoryKey == "barrel" then
-			utils.goBack(1)
-			T:go("L1F1")
-			T:place("barrel", "down", false)
-			utils.goBack(1)
-			T:go("R1")
-			T:forward(1)
-		end
-	end
-	
-	function lib.placeTorch()
-		T:up(1)
-		local up = 1
-		local blockType = T:getBlockType("forward")
-		while blockType:find(R.useBlockType) ~= nil and blockType ~= "" do -- prevent continuous upward travel
-			T:up(1)
-			up = up + 1
-			blockType = T:getBlockType("forward")
-		end
-		T:place("torch", "forward", true)
-		T:down(up)
-	end
-	
-	function lib.buildWall(length)
-		-- T:place(blockType, direction, leaveExisting, signText)
-		local blockType = ""
-		local blocks = 0
-		lib.placeBarrel()
-		while blocks < length do
-			if turtle.back() then
-				T:place(R.useBlockType, "forward", true)
-				if R.torchInterval > 0 then
-					if blocks == 0 or blocks % R.torchInterval == 0 then
-						lib.placeTorch()
-					end
-				end
-				blocks = blocks + 1 -- still facing start position
-				while turtle.down() do
-					T:place(R.useBlockType, "up", true)
-				end
-			else -- obstruction
-				T:turnRight(2) -- facing away from start
-				blockType = T:getBlockType("forward")
-				if blockType:find("torch") ~= nil then
-					T:go("F1R2")
-					T:place(R.useBlockType, "forward")
-					blocks = blocks + 1 -- facing start
-				elseif blockType:find("log") ~= nil then
-					T:harvestTree()
-					T:turnRight(2)
-					T:place(R.useBlockType, "forward")
-					blocks = blocks + 1 -- facing start
-				elseif T:isVegetation(blockType) then
-					T:go("F1R2")
-					T:place(R.useBlockType, "forward")
-					blocks = blocks + 1 -- facing start
-				else -- cant go forward, go up instead
-					while turtle.detect() and blockType:find("torch") == nil and blockType:find("log") == nil and not T:isVegetation(blockType) do -- block ahead, but not torch or tree
-						while turtle.detectUp() do -- will only run if block above
-							utils.goBack(1)
-							blocks = blocks - 1
-						end
-						turtle.up()
-						T:place(R.useBlockType, "down", true)
-						blockType = T:getBlockType("forward")
-					end
-					T:turnRight(2) -- facing start
-				end
-			end
-		end
-	end
-	R.useBlockType = T:getMostItem("", false)
-	T:turnRight(2) --facing start position
-	if R.width == 0 then -- single fence
-		lib.buildWall(R.length)
-	else	
-		lib.buildWall(R.length - 1)
-		T:go("R1") -- facing start so left turn = turnRight
-		lib.buildWall(R.width - 1)
-		T:go("R1")
-		lib.buildWall(R.length - 1)
-		T:go("R1")
-		lib.buildWall(R.width - 2)
-		T:go("U1")
-		T:place(R.useBlockType, "down", true)
-	end
-	
-	return {"Wall or fence completed"}
-end
-
 function createFence()
 	R.width = 0
 	return createEnclosure()
@@ -7810,6 +7808,10 @@ function deactivateDragonTower()
 	while message == nil do
 		numBlocks, message = T:doMoves(1, "up")
 		height = height + 1
+		if height > 100 then	 -- climbed too high
+			T:down(height)
+			return{"Tower top not found"}
+		end
 	end
 	-- go round bedrock and destroy crystal
 	--T:go("F1R2U2x1U1x1")
@@ -8224,7 +8226,8 @@ end
 function findPortal()
 	local found = false
 	local onSide = false
-	print("checking height")
+	--print("checking height")
+	sm:getSceneByName("TaskOptions"):setInfo("Checking height. Please wait...")
 	for i = 1, 64 do
 		if not turtle.up() then -- hit block above
 			found = true
@@ -8258,10 +8261,11 @@ function findPortal()
 		{
 			{"minecraft:ladder", R.height, true, ""},
 			{"stone", R.height * 4 + 18, true, ""},
-			{"trapdoor", 1}
+			{"trapdoor", 1, true, ""}
 		}
 	end
-	
+	F["createPortalPlatform"].inventory = inventory
+	sm:getSceneByName("TaskOptions"):setInfo("Height = "..R.height..", Click 'Next' or type 'n'")
 	return inventory
 end
 
@@ -11645,7 +11649,7 @@ local function sceneLoader()
 	_G.events 		= Event(false)					-- global variable: self.handlers = {}
 --Log:saveToLog("Loading all scenes")
 	--sm = SM("scenes", {"MainMenu", "Menu", "SetupStorage", "SelectItems", "Craft", "ManageTurtle", "TaskOptions", "GetItems", "Quit", "Help"})
-	sm = SM("scenes", {"MainMenu", "TaskOptions", "GetItems", "Quit", "Help"}) -- SM:new(sceneDir, scenes)
+	_G.sm = SM("scenes", {"MainMenu", "TaskOptions", "GetItems", "Quit", "Help"}) -- SM:new(sceneDir, scenes)
 	sm:getSceneByName("Quit"):setText("tk3 Toolkit Closing...")
 	U.populateAllItems()							-- create a table of displayNames of all items for use in search functions
 --Log:saveToLog("Switching to MainMenu")
