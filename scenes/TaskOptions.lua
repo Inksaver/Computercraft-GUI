@@ -1,6 +1,4 @@
-local version = 20250914.1600
--- pastebin(1): wkCrC4rJ scenes.TaskOptions.lua
--- pastebin(2): CikPEy2P
+local version = 20251003.1700
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
 local Multilabel = require("lib.ui.MultiLabel")
@@ -127,6 +125,7 @@ function S:new(sceneMgr)
 	end
 	
 	self.setupData = nil
+	self.infoText = ""
 end
 
 function S:setup()
@@ -154,10 +153,10 @@ Log:saveToLog("TaskOptions:setup:self.task = '"..self.task.."'")
 	end
 	for _, textbox in pairs(self.textboxes) do		-- disabling textboxes so do not respond to mouse/keyboard
 		textbox:enable(false)
-		textbox:setBackgroundColour(false)
+		textbox:setFocus(focus)						-- also sets background colour
 	end
-	--Log:saveToLog("TaskOptions:setup: data received =  "..textutils.serialise(data, {compact = true}))
-	--Log:saveToLog("TaskOptions:setup: self.associations =  "..textutils.serialise(self.associations, {compact = true}))
+--Log:saveToLog("TaskOptions:setup: data received =  "..textutils.serialise(data, {compact = true}).."\n")
+--Log:saveToLog("TaskOptions:setup: self.associations =  "..textutils.serialise(self.associations, {compact = true}).."\n")
 	for _, name in ipairs(self.ctrls) do			-- iterate all controls (labels, checkboxes, buttons) eg lblTitle, chk1
 		self.associations[name] = {}				-- reset
 		--self.associations[name]["r"] = ""			-- reset
@@ -222,7 +221,7 @@ Log:saveToLog("TaskOptions:setup:self.task = '"..self.task.."'")
 			end
 		end
 	end
-	--Log:saveToLog("\nRevised self.associations =  "..textutils.serialise(self.associations))
+--Log:saveToLog("\nRevised self.associations =  "..textutils.serialise(self.associations, {compact = true}))
 	--Log:saveToLog("R = "..textutils.serialise(R, {compact = true}).."\n")
 	--Log:saveToLog("R.inNether = "..tostring(R.inNether)..", R.up = "..tostring(R.up)..", R.down = "..tostring(R.down)..", R.inventoryKey = "..R.inventoryKey..
 				  --", R.height = "..tostring(R.height)..", R.depth = "..tostring(R.depth)..", R.currentLevel = "..tostring(R.currentLevel).."\n")
@@ -231,16 +230,19 @@ Log:saveToLog("TaskOptions:setup:self.task = '"..self.task.."'")
 	self.lblTitle:setText(F[U.currentTask].title)
 	self.btnNext:setText("Next")
 	self.lblInfo:setText("number + Enter: set checkbox / textbox")
+--Log:saveToLog("TaskOptions:setup() configuring checkboxes")
 	for _, chk in ipairs(self.checkboxes) do	-- if checked
 		if chk.checked then
 			self:changeData(chk)
 		end
 	end
+--Log:saveToLog("TaskOptions:setup() configuring labels")
 	for _, label in ipairs(self.labels) do	-- if no text in a label set to full width
 		if label:getText() == "" then
 			label:setSize(WIDTH, 1)
 		end
 	end
+--Log:saveToLog("TaskOptions:setup() configuring textboxes")
 	for _, txt in ipairs(self.textboxes) do	-- if text > 0 then calculate
 		if txt:getText() ~= "" then
 			self:onTxtChanged(txt)
@@ -249,6 +251,7 @@ Log:saveToLog("TaskOptions:setup:self.task = '"..self.task.."'")
 end
 
 function S:enter()
+Log:saveToLog("TaskOptions:enter() start")
 	S.super.enter(self)
 
 	events:hook("onBtnClick", 		self.btnClick)    
@@ -261,6 +264,7 @@ function S:enter()
 	events:hook("executeCall", 		self.execute)
 	
 	U.keyboardInput = ""
+Log:saveToLog("TaskOptions:enter() end")
 end
 
 function S:exit()
@@ -528,8 +532,21 @@ function S:resetTextboxFocus(textbox)
 	U.keyboardInput = ""
 end
 
+function S:setInfo(text)
+	-- allows changing of the text from tk3.lua or another scene
+	-- remains set until next update event
+	self.infoText = text
+	self.lblInfo:setText(text)
+	self:draw()
+end
+
 function S:changeData(checkbox)
 	local data = self.associations[checkbox.name]["r"]	-- eg "up"
+	if type(data) == "string" then
+		Log:saveToLog("self:changeData("..checkbox.name..") self.associations[r] = "..tostring(data))
+	else
+		Log:saveToLog("self:changeData("..checkbox.name..") self.associations[r] = "..textutils.serialise(data, {compact = true}))
+	end
 	if data ~= nil then	-- assign value eg R.up = true
 		if type(data) == "table" then
 			if #data == 3 then 				-- eg r = {"inventoryKey", "new", ""}, {"direction", "F", ""}, {"subChoice", 1, 0}
@@ -556,6 +573,7 @@ function S:changeData(checkbox)
 		end
 	end 
 	data = self.associations[checkbox.name]["u"]
+Log:saveToLog("self:changeData("..checkbox.name..") self.associations[u] = "..tostring(data))
 	if data ~= nil then	-- eg u = {"bedrock", 0, -64}
 		if checkbox.checked then
 			U[data[1]] = data[2]
@@ -578,26 +596,34 @@ function S:clearText(textbox)
 end
 
 function S:onChkChanged(checkbox)
-	if self.group ~= nil then	-- eg group = {"chk4", "chk5"}
-		local proceed = false
-		local state = checkbox.checked
+Log:saveToLog("TaskOptions: onChkChanged("..checkbox.name..") self.group = "..textutils.serialise(self.group, {compact = true}))
+	if self.group ~= nil then							-- eg group = {"chk4", "chk5"}
+		local inGroup = false
+		local state = checkbox:getChecked()				-- eg chk4 is checked
+		local name = checkbox:getName()
 		for _, checkboxName in ipairs(self.group) do	-- only proceed if this checkbox is a group member
-			if checkboxName == checkbox.name then
-				proceed = true
+			if checkboxName == name then
+				inGroup = true
 			end
 		end
-		if proceed then
-			Log:saveToLog("Checkbox group = "..textutils.serialise(self.group, {compact = true}))
+		
+		if inGroup then									-- only 1 checkbox in a group can be set
+			if state then return end					-- if clicking on a set checkbox ignore it
+--Log:saveToLog("Checkbox group = "..textutils.serialise(self.group, {compact = true}))
 			for _, checkboxName in ipairs(self.group) do
-				Log:saveToLog("checkboxName "..checkboxName.. ", = false")
-				self.checkboxes[checkboxName]:setChecked(false)	-- set all checkbox in group to false
-				self:changeData(self.checkboxes[checkboxName])
+				if checkboxName ~= name then
+--Log:saveToLog("\ncheckboxName "..checkboxName.. ", = false")
+					self.checkboxes[checkboxName]:setChecked(false)	-- set all checkbox in group to false
+					self:changeData(self.checkboxes[checkboxName])
+				end
 			end
 		end
-		checkbox.checked = not state
+		--checkbox.checked = not state
+		checkbox:setChecked(not state)	-- set 
 		self:changeData(checkbox)
 	else
 		checkbox.checked = not checkbox.checked
+Log:saveToLog("TaskOptions: onChkChanged() calling self:changeData()")
 		self:changeData(checkbox)
 	end
 	local association = self.associations[checkbox.name]
@@ -659,57 +685,48 @@ function S:onTxtClick(textbox)
 end
 
 function S:onTxtEnter(textbox)
+	-- this function invoked by textbox control
 	local lib = {}
 	
-	function lib.getEnabled(self)
-		local enabled = {}
-		for key, txt in pairs(self.textboxes) do
-			if txt:isEnabled() then
-				enabled[key] = true
-			end
-		end
-		return enabled
-	end
-	
-	--[[function lib.getNext(self, textbox)
-		local txtNum = tonumber((textbox.name):sub(4, 4))
-		local txtKey = "txt"..txtNum + 1
-		local txt = self.textboxes[txtKey]
-		if txt == nil then
-			txt = self.textboxes["txt1"]
-		end
-		return txt
-	end]]
-	
+	-- function lib.getEnabled(self)
+		-- -- returns a table of enabled textboxes
+		-- local enabled = {}
+		-- for key, txt in pairs(self.textboxes) do
+			-- if txt:isEnabled() then
+				-- enabled[key] = true
+			-- else
+				-- enabled[key] = false
+			-- end
+		-- end
+		-- return enabled	-- eg {["txt1"] = true, ["txt2"] = true, ["txt3"] = false, ...}
+	-- end
+
 	function lib.getNextEnabled(self, textbox)
-		local enabled = lib.getEnabled(self)
+		-- local enabled = lib.getEnabled(self)
 		local keys = {"txt1", "txt2", "txt3", "txt4", "txt5"}
-		local txtNum = tonumber((textbox.name):sub(4, 4))
-		for i = txtNum, 5 do
-			if keys[i + 1] == nil then	-- reached end of texboxes
-				return nil
-			end
-			if self.textboxes[keys[i + 1]]:isEnabled() then
-				return self.textboxes[keys[i + 1]]
-			end
-		end
-		for i = 1, 5 do
-			if self.textboxes[keys[i]]:isEnabled() then
-				return self.textboxes[keys[i]]
+		local txtNum = tonumber((textbox.name):sub(4, 4)) + 1	-- eg "txt3" -> 4
+		local key = "txt"..txtNum								-- eg "txt4"
+		if self.textboxes[key] == nil then return nil end		-- reached end of textboxes eg "txt6"
+		for i = txtNum, 5 do									-- eg 4 to 5
+			if self.textboxes["txt"..i]:isEnabled() then		-- next one is enabled
+				return self.textboxes["txt"..i]
 			end
 		end
+		-- no more are enabled
+		return nil
 	end
 	U.keyboardInput = ""
 	self.lblInfo:setText("Type into text box. Enter to move out")
-	if self.changeFocus then
---Log:saveToLog("S:onTxtEnter("..textbox.name..")")
-		local txt = lib.getNextEnabled(self, textbox)
-		if txt == nil then
+--self:resetTextboxFocus()
+	if self.changeFocus then	-- set in update from click on textbox or keyboard equivalent
+Log:saveToLog("S:onTxtEnter("..textbox.name..")")
+		local nextTxt = lib.getNextEnabled(self, textbox)
+		if nextTxt == nil then
 			self:resetTextboxFocus()
 		else
 			self.changeFocus = false
-			self:onTxtClick(txt)
-		end
+			self:onTxtClick(nextTxt)
+		end	
 	end
 end
 
@@ -799,22 +816,34 @@ Log:saveToLog("TaskOptions:update data = "..textutils.serialise(data, {compact =
 					local ctrlType, index = control:getControlData()
 					if ctrlType == "checkbox" and ctrlIndex == index then	-- if control is checkbox invert it's state
 						U.keyboardInput = ""
+Log:saveToLog("TaskOptions:update calling self:onChkChanged("..control.name..")")
 						self:onChkChanged(control)
-						self.lblInfo:setText("number+Enter set checkbox / textbox")
+						if self.infoText == "" then
+							self.lblInfo:setText("number+Enter set checkbox / textbox")
+						else
+							self.infoText = ""
+						end
 						break
 					elseif ctrlType == "textbox" and ctrlIndex == index then	-- if textbox set focus
 						U.keyboardInput = ""
-						self:onTxtClick(control)
-						self.lblInfo:setText("Enter value in textbox "..index)
+						if control:isEnabled() then
+							self:onTxtClick(control)
+							self.lblInfo:setText("Enter value in textbox "..index)
+						else
+							self.lblInfo:setText("number+Enter set checkbox / textbox")
+						end
 					end
 				end
 			end		
 		end	
 	end
+Log:saveToLog("TaskOptions:update completed")
 end
 
 function S:draw()
+Log:saveToLog("TaskOptions:draw() starting")
 	self.super.draw(self)
+Log:saveToLog("TaskOptions:draw() completed")
 end
 
 return S
