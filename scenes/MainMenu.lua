@@ -1,6 +1,4 @@
-local version = 20250914.1600
--- pastebin(1): FfbkQrbi scenes.MainMenu.lua
--- pastebin(2): sjuHmqTY
+local version = 20251003.1700
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.MultiButton")
@@ -526,8 +524,9 @@ function S:onMbClick(mb)
 	-- mb is the whole multibutton object
 	-- mb.name is the name of entire multibutton. 
 	-- each individual button has its own name / caption
---Log:saveToLog("MainMenu:onMbClick:START: mb.name = "..mb.name..", U.subMenuName = "..U.subMenuName)
+Log:saveToLog("MainMenu:onMbClick:START: mb.name = "..mb.name..", U.subMenuName = "..U.subMenuName)
 	--U.fc = U.fc + 1
+	R.inventoryKey = ""	-- rarely used but can cause problems if set to anything else
 	if U.subMenuName == "" then		-- not a menu
 		if mb.name == "mbHelp" then		-- help menu clicked on show help.main 
 			-- button name eg "1" = index of menu item eg "Mining (...)"
@@ -551,7 +550,7 @@ function S:onMbClick(mb)
 			self:hideMultiButtonsExcept(mb.selectedButtonCaption, U.trim(U.subMenuName))	-- title, except multibutton.name
 		end
 	else	-- now viewing a subMenu eg "mbMining"
-Log:saveToLog("U.subMenuName = "..U.subMenuName)
+--Log:saveToLog("U.subMenuName = "..U.subMenuName)
 		local data = nil
 		if mb.name == "mbHelp" or mb.name == "mbItems" then		-- help menu clicked on, so must be active sub-menu
 			-- find which sub-menu is active: U.subMenuName
@@ -819,6 +818,7 @@ Log:saveToLog("U.subMenuName = "..U.subMenuName)
 				-- {"createMobFarmCube", "floodMobFarm", "createMobBubbleLift", "createMobFarmCubeBlaze", "createBlazeGrinder", "createTrialCover"}
 				if mb.selectedButtonName == self.m6[1] then 	-- "Cube around spawner (NOT blaze)"
 					R.subChoice = 2	-- default starting position lower left
+--Log:saveToLog("Starting createMobFarmCube")
 					U.currentTask = "createMobFarmCube"
 				elseif mb.selectedButtonName == self.m6[2] then -- "Flood mob farm floor"
 					R.inventoryKey = "turtle"
@@ -949,13 +949,17 @@ Log:saveToLog("U.subMenuName = "..U.subMenuName)
 					U.currentTask = "updateLists"
 				end 
 			end
-Log:saveToLog("U.currentTask = "..U.currentTask)
+--Log:saveToLog("U.currentTask = "..U.currentTask)
 			if U.currentTask ~= "" then
-				if F[U.currentTask].data ~= nil then				-- options need to be set
+				self.lblInfo:setText(self.infoText[1])
+				if F[U.currentTask].data ~= nil then					-- options need to be set
+--Log:saveToLog("self:onMbClick(mb) setting up 'TaskOptions' scene")
 					self.sceneMgr:getSceneByName("TaskOptions"):setup()
+Log:saveToLog("self:onMbClick(mb) switching to 'TaskOptions' scene")
 					self.sceneMgr:switch("TaskOptions")
 					return
 				else
+					U.keyboardInput = ""
 					if F[U.currentTask].inventory ~= nil then			-- items required
 						self.sceneMgr:getSceneByName("GetItems"):setup()
 						self.sceneMgr:switch("GetItems")
@@ -1052,6 +1056,7 @@ Log:saveToLog("MainMenu:update ready to execute. U.currentMB = "..U.currentMB)
 					entity:setSelectedButton("", btnIndex)
 					U.subMenuIndex = btnIndex					
 					U.subMenuName = U.currentMB
+Log:saveToLog("MainMenu:update calling self:onMbClick("..entity.name..")")
 					--U.subMenuName = button.name --?
 					self:onMbClick(entity)
 				end
