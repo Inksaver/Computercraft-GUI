@@ -1,6 +1,5 @@
-local version = 20250914.1600
--- pastebin(1): GQuQP13b scenes.GetItems.lua
--- pastebin(2): DPAgZBtU
+local version = 20251003.1700
+
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
 local MultiLabel= require("lib.ui.MultiLabel")
@@ -33,7 +32,7 @@ function S:new(sceneMgr)
 	-- use inventory events to update labels
 	
 	S.super.new(self, sceneMgr)
-	self.lblTitle = Label("lblTitle", 7,  1, WIDTH - 11, 1, "`black¬white` Items:`red¬white` required `green¬white` optional ", colors.black, colors.white, "centre", "centre")
+	self.lblTitle = Label("lblTitle", 7,  1, WIDTH - 11, 1, "`black¬white` Items:`red¬white` required `white¬green` optional ", colors.black, colors.white, "centre", "centre")
 	self.lblInfo = Label("lblInfo", 1,  HEIGHT, WIDTH, 1, "Add required Items", colors.black, colors.white, "centre", "centre")
 	--Button:new(name, x, y, w, h, text, fg, bg, alignH, alignV, index, keyBind, scene)
 	self.btnBack  = Button("btnBack", 1, 1, 6, 1, "Back", colors.lime, colors.gray, "centre", "centre", 0, "b", "GetItems" )
@@ -92,7 +91,7 @@ function S:setup()
 	-- eg data = {{"0", "64", "stone", true}, {"0", "1", "Torch", false}}
 	]]
 	--self.task = U.currentTask						-- eg  "Ladder up or down"
-	--Log:saveToLog("GetItems S:setup()"..U.currentTask..", R.inventoryKey  = "..R.inventoryKey)	
+Log:saveToLog("GetItems:setup() R.inventoryKey  = "..R.inventoryKey)	
 	local inv = nil		-- initialise table
 	if R.inventoryKey == "" then
 		inv = F[U.currentTask].inventory
@@ -356,6 +355,7 @@ function S:onBtnClick(button)
 	Log:saveToLog("S:onBtnClick("..button.name..")")
 	if button.name == "btnBack" then
 		-- back button goes to "TaskOptions" if taskInventory.data ~= nil
+		U.keyboardInput = ""
 		if F[U.currentTask].data == nil then				
 			self.sceneMgr:switch("MainMenu")
 		else		-- options need to be set
