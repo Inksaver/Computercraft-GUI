@@ -1,4 +1,4 @@
-version = 20250916.1700
+version = 20251003.1700
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as T.lua, preferably in /lib folder
