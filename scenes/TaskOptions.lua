@@ -1,4 +1,4 @@
-local version = 20251003.1700
+local version = 20251005.1800
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
 local Multilabel = require("lib.ui.MultiLabel")
@@ -251,7 +251,7 @@ Log:saveToLog("TaskOptions:setup:self.task = '"..self.task.."'")
 end
 
 function S:enter()
-Log:saveToLog("TaskOptions:enter() start")
+--Log:saveToLog("TaskOptions:enter() start")
 	S.super.enter(self)
 
 	events:hook("onBtnClick", 		self.btnClick)    
@@ -264,10 +264,11 @@ Log:saveToLog("TaskOptions:enter() start")
 	events:hook("executeCall", 		self.execute)
 	
 	U.keyboardInput = ""
-Log:saveToLog("TaskOptions:enter() end")
+--Log:saveToLog("TaskOptions:enter() end")
 end
 
 function S:exit()
+--Log:saveToLog("TaskOptions:exit() start")
 	S.super.exit(self)
 	
 	events:unhook("onBtnClick", 	self.btnClick)    
@@ -278,6 +279,7 @@ function S:exit()
 	events:unhook("calculateHeight",self.changeLabel)
 	events:unhook("changeRValue", 	self.changeR)
 	events:unhook("executeCall", 	self.execute)
+--Log:saveToLog("TaskOptions:exit() end")
 end
 
 function S:calculateHeight(key)
@@ -736,7 +738,7 @@ function S:onBtnClick(button)
 	elseif button.name == "btnNext" then
 		-- check all information has been collected
 		-- go to inventory scene
-Log:saveToLog("TaskOptions:onBtnClick, U.currentTask = "..U.currentTask..", R.inventoryKey = '"..R.inventoryKey.."'")
+--Log:saveToLog("TaskOptions:onBtnClick, U.currentTask = "..U.currentTask..", R.inventoryKey = '"..R.inventoryKey.."'")
 		if F[U.currentTask].inventory ~= nil then	-- items required		
 			Log:saveToLog("TaskOptions:onBtnClick, F[U.currentTask].inventory = "..textutils.serialise(F[U.currentTask].inventory, {compact = true}))
 			if F[U.currentTask].inventory.default ~= nil then
@@ -749,12 +751,14 @@ Log:saveToLog("TaskOptions:onBtnClick, U.currentTask = "..U.currentTask..", R.in
 					U.executeTask = true
 				end
 			else
+--Log:saveToLog("TaskOptions:onBtnClick calling self.sceneMgr:getSceneByName('GetItems'):setup()")
 				self.sceneMgr:getSceneByName("GetItems"):setup()
+--Log:saveToLog("TaskOptions:onBtnClick calling self.sceneMgr:switch('GetItems')")
 				self.sceneMgr:switch("GetItems")
 			end
 		else
 			--U.currentTask = "test"	-- debugging only. comment out when completed
-Log:saveToLog("TaskOptions:onBtnClick U.executeTask = true")
+--Log:saveToLog("TaskOptions:onBtnClick U.executeTask = true")
 			U.executeTask = true
 		end
 	end
@@ -763,7 +767,7 @@ end
 function S:update(data)
 	self.super.update(self, data)
 	self.changeFocus = true
-Log:saveToLog("TaskOptions:update data = "..textutils.serialise(data, {compact = true}))
+--Log:saveToLog("TaskOptions:update data = "..textutils.serialise(data, {compact = true}))
 	local lib = {}
 	
 	function lib.checkInput(char)
@@ -816,7 +820,7 @@ Log:saveToLog("TaskOptions:update data = "..textutils.serialise(data, {compact =
 					local ctrlType, index = control:getControlData()
 					if ctrlType == "checkbox" and ctrlIndex == index then	-- if control is checkbox invert it's state
 						U.keyboardInput = ""
-Log:saveToLog("TaskOptions:update calling self:onChkChanged("..control.name..")")
+--Log:saveToLog("TaskOptions:update calling self:onChkChanged("..control.name..")")
 						self:onChkChanged(control)
 						if self.infoText == "" then
 							self.lblInfo:setText("number+Enter set checkbox / textbox")
@@ -837,13 +841,13 @@ Log:saveToLog("TaskOptions:update calling self:onChkChanged("..control.name..")"
 			end		
 		end	
 	end
-Log:saveToLog("TaskOptions:update completed")
+--Log:saveToLog("TaskOptions:update completed")
 end
 
 function S:draw()
-Log:saveToLog("TaskOptions:draw() starting")
+--Log:saveToLog("TaskOptions:draw() starting")
 	self.super.draw(self)
-Log:saveToLog("TaskOptions:draw() completed")
+--Log:saveToLog("TaskOptions:draw() completed")
 end
 
 return S
