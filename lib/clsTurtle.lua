@@ -1,4 +1,4 @@
-version = 20251003.1700
+local version = 20251005.1800
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as T.lua, preferably in /lib folder
@@ -1232,11 +1232,12 @@ function T:detect(direction)
 	return Detect()
 end
 
-function T:dig(direction, bypass, slot)
+function T:dig(direction, bypass, slot, side)
 	--[[ To dig a chest use T:dig(direction, false)  ]]
 	direction = direction or "forward"
 	if bypass == nil then bypass = true end-- allows digging any block including chests and spawners
 	slot = slot or 1
+	side = side or nil		-- if 2 different tools equipped, can select which tool
 	local success = false
 	local blockType = ""
 	local Dig = turtle.dig
@@ -1255,21 +1256,11 @@ function T:dig(direction, bypass, slot)
 	end
 	if not bypass then --bypass true if chest, turtle or minecart
 		while Detect() do
-			success, digError = Dig()
+			success, digError = Dig(side)
 			if digError ~= "" then
 				return false, digError
 			end
-			-- if digOK then
-				-- success = true
-			-- else
-				-- break
-			-- end
 		end
-	
-		-- while Dig() do
-			-- sleep(g)
-			-- success = true
-		-- end
 	end
 	turtle.select(1)
 	return success
@@ -2026,53 +2017,21 @@ function T:getEmptySlotCount()
 	return emptySlots
 end 
 
-function T:getEquipped(side, keepInInventory)
-	-- side = "right", "left", "minecraft:diamond_pickaxe"
-	-- keepInInventory = true/false if false, return to original position
-	if keepInInventory == nil then keepInInventory = true end
-	local item = ""
-	local slot = self:getFirstEmptySlot()
-	turtle.select(slot)
-	if side == "right" then
-		if turtle.equipRight() then				-- take out whatever is on right side
-			item = self:getSlotContains(slot)
-			if item == "" then
-				slot = 0
-			else
-				if not keepInInventory then
-					turtle.equipRight()			-- put it back
-				end
-			end
-		end
-	elseif side == "left" then
-		if turtle.equipLeft() then
-			item = self:getSlotContains(slot)
-			if item == "" then
-				slot = 0
-			else
-				if not keepInInventory then
-					turtle.equipLeft()			-- put it back
-				end
-			end
-		end
-	else	-- side will be item required eg axe
-		if turtle.equipRight() then				-- take out whatever is on right side
-			item = self:getSlotContains(slot)
-			if item ~= side then				-- not the required item
-				turtle.equipRight()				-- put it back
-				if turtle.equipLeft() then
-					item = self:getSlotContains(slot)
-					if item ~= side then				-- not the required item
-						turtle.equipLeft()
-						item = ""
-						slot = 0
-					end
-				end
-			end
-		end
-	end
+function T:getEquipped()
+	-- returns tool equipped on chosen side "left" or "right"
+	local dataLeft = turtle.getEquippedLeft()
+	local dataRight = turtle.getEquippedRight()
+	local itemLeft = ""
+	local itemRight = ""
 	
-	return item, slot	-- 0, "" if nothing equipped; 1, "minecraft:crafting_table"
+	if dataLeft ~= nil then
+		itemLeft = dataLeft.name
+	end
+	if dataRight ~= nil then
+		itemRight = dataRight.name
+	end
+
+	return itemLeft, itemRight	-- "", "" if nothing equipped; "minecraft:diamond_pickaxe", "minecraft:crafting_table"
 end
 
 function T:getFirstEmptySlot()
@@ -3881,6 +3840,30 @@ function T:refuel(minLevel, toLimitOnly)
 		
 		return refuelOK
 	end
+end
+
+function T:removeEquipped(side)
+	local slot = self:getFirstEmptySlot()			-- find empty slot
+	if slot > 0 then								-- empty slot found							
+		turtle.select(slot)							-- remove equipment to this slot
+		if side == "left" then						-- attempt to remove left side
+			if turtle.equipLeft() then				-- success removed tool
+				item = self:getSlotContains(slot)	-- get tool name
+				if item == "" then					-- nothing equipped
+					slot = 0						-- set slot to 0
+				end
+			end
+		elseif side == "right" then					-- as above but on right side
+			if turtle.equipRight() then				
+				item = self:getSlotContains(slot)
+				if item == "" then
+					slot = 0
+				end
+			end
+		end
+		return item, slot							-- 0, "" if nothing equipped; 1, "minecraft:crafting_table"
+	end
+	return "", 0									-- no empty slots so return 
 end
 
 function T:selectPlaceItem(item)
