@@ -1,4 +1,4 @@
-local version = 20251003.1700
+local version = 20251005.1800
 -- ["lbl4"] = {text = "Text here", bg = colors.black, fg = colors.lime, alignH = "centre"},
 -- ["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
 -- ...state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, event = {"changeRValue", "inventoryKey", "1"}},
@@ -251,7 +251,7 @@ return
 		inventory = 
 		{
 			{"minecraft:torch" , "R.torchInterval", false, ""},
-			{"minecraft:diamond_sword", 1, false, "For spider webs"}
+			{"minecraft:diamond_sword", 1, false, "For cobwebs"}
 		},
 	},
 
