@@ -1,6 +1,4 @@
-local version = 20251003.1700
-
-local tkVersion = version -- otherwise over-written by clsTurtle when loaded
+local version = 20251005.1800
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -1986,159 +1984,190 @@ end
 function clearMineshaft()
 	local length = 0
 	local torch = 0
-	local alert = false
-	local moves = {}
 	local lib = {}
-	local equippedRight, equippedLeft, inInventory = T:setEquipment() -- check for crafting table, sword, pickaxe, Put sword in spare slot
 		
-	function lib.clearCentre(inInventory)
-		local blockType = T:getBlockType("up")				
-		local side = "left"
-		local goUp = false
-		local goDown = false
-		if blockType == "" then
-			alert = false
-		else
-			if blockType:find("cobweb") ~= nil then					-- cobweb found
-				alert = false										-- disable alert that stone previously found above
-				if inInventory == "minecraft:diamond_sword" then 	-- using a sword
-					if equippedRight == "minecraft:diamond_pickaxe" then
-						side = "right"
+	function lib.clearCentre(axeSide, swordSide)
+		local moves = {}
+		local torchCount = 0
+		local blockTypeU = ""
+		local blockTypeF = ""
+		local blockTypeD = ""
+		turtle.digUp()										-- in case block already above
+		repeat
+			blockTypeU = T:getBlockType("up")		
+			local goUp = false
+			local goDown = false
+			if blockTypeU ~= "" then						-- block above
+				if T:isStone(blockTypeU) then				-- stone detected up
+					blockTypeD = T:getBlockType("down")
+					if blockTypeD:find("torch") ~= nil or blockTypeD:find("rail") ~= nil then	-- torch or rail below
+						turtle.digUp(axeSide)				-- remove it
+					else
+						T:down(1)
+						blockTypeD = T:getBlockType("down")
+						if blockTypeD ~= "" then			-- block below
+							T:go("U1x0")
+						else	-- no block below
+							table.insert(moves, "D") 		-- add D to moves
+						end
 					end
-					T:equip(side, "minecraft:diamond_sword")
-					turtle.digUp(side)
-					T:equip(side, "minecraft:diamond_pickaxe")
+				else										-- known block above, not stone, eg planks
+					turtle.digUp(axeSide)					-- remove it
 				end
-			elseif T:isStone(blockType) then						-- stone detected up / down
-				if alert  then										-- stone previously found, so assume levels have changed
-					goDown = true
-				else
-					alert = true									-- set alert: stone has been found above
-				end
-			elseif blockType ~= "" then								-- eg planks
-				alert = false									-- disable alert: not stone
 			end
-			turtle.digUp()
-		end
-		
-		blockType = T:getBlockType("down")
-		if blockType:find("cobweb") ~= nil then					-- cobweb found
-			if inInventory == "minecraft:diamond_sword" then 	-- using a sword
-				if equippedRight == "minecraft:diamond_pickaxe" then
-					side = "right"
+									
+			blockTypeD = T:getBlockType("down")
+			if blockTypeD ~= "" then						-- block below
+				if T:isStone(blockTypeD) then				-- stone detected down in centre of mineshaft = level change
+					T:up(1)
+					table.insert(moves, "U")
+				elseif blockTypeD:find("torch") == nil then	-- no torch below
+					turtle.digDown(axeSide)
 				end
-				T:equip(side, "minecraft:diamond_sword")
-				turtle.digDown(side)
-				T:equip(side, "minecraft:diamond_pickaxe")
 			end
-		elseif T:isStone(blockType) then						-- stone detected up / down
-			goUp = true
-		end
-		turtle.digDown()
---print("goUp="..tostring(goUp)..", goDown="..tostring(goDown)..", alert="..tostring(alert))
---read()
-		if goUp then
-			T:up(1)
-			table.insert(moves, "U")					-- D instead of F inserted
-			alert = false
-		elseif goDown then
-			T:down(1)
-			table.insert(moves, "D")					-- D instead of F inserted
-			alert = false
-		else
-			table.insert(moves, "F")							-- Normal move so insert F
-		end
+			blockTypeF = T:getBlockType("forward")
+			if not T:isStone(blockTypeF) then
+				T:forward(1)
+				table.insert(moves, "F")					-- Normal move so insert F
+				torchCount = torchCount + 1
+				if torchCount == R.torchInterval then
+					torchCount = 0
+					T:place("torch", "down")
+				end
+			end
+		until T:isStone(blockTypeF)
+		return moves
 	end
 	
-	function lib.clearSide(directions, inInventory)
+	function lib.clearSide(directions, axeSide, swordSide)
 		if type(directions) ~= "table" then
 			directions = {directions}
 		end
 		for _, direction in ipairs(directions) do
 			local blockType = T:getBlockType(direction)
-			local side = "left"
 			if blockType:find("cobweb") ~= nil then
-				if inInventory == "minecraft:diamond_sword" then -- using a sword
-					if equippedRight == "minecraft:diamond_pickaxe" then
-						side = "right"
-					end
-					T:equip(side, "minecraft:diamond_sword")
-					T:dig(direction)
-					T:equip(side, "minecraft:diamond_pickaxe")
-				else
-					T:dig(direction)
-				end
+				-- T:dig(direction, bypass=true, slot=1, side="")
+				T:dig(direction, true, 1, swordSide)
 			elseif blockType ~= "" then
-				T:dig(direction)
+				T:dig(direction, true, 1, axeSide)
+			end
+		end
+	end
+	
+	function lib.clearSideToEnd(moves, axeSide, swordSide)
+		for i = 1, #moves, 1 do	-- reverse the Up/ down markers
+			if moves[i] == "U" then
+				T:up(1)
+			elseif moves[i] == "D" then
+				T:down(1)
+			elseif moves[i] == "F" then
+				lib.clearSide({"up", "down", "forward"}, axeSide, swordSide) -- dig cobweb or any other block up/down/forward
+				T:forward(1)
 			end
 		end
 	end
 
-	menu.colourPrint("Clearing Mineshaft", colors.yellow)
-	-- check position by rotating until facing away from wall
-	local turns = 0
-	while not turtle.detect() do
-		T:turnRight(1)
-		turns = turns + 1
-		if turns > 4 then
-			return {"I am not facing a wall. Unable to continue"}
+	function lib.clearSideToStart(moves, axeSide, swordSide)
+		-- index needs to be manipulted so moves up or down are preceeded by a forward
+		local index = #moves								-- start same as loop counter
+		for i = #moves, 1, -1 do							-- iterate moves backwards
+			if moves[index] == "U" then
+				T:go("F1D1")
+				index = index - 1
+			elseif moves[index] == "D" then
+				T:go("F1U1")
+				index = index - 1
+			elseif moves[index] == "F" then
+				lib.clearSide({"up", "down", "forward"}, axeSide, swordSide) -- dig cobweb or any other block up/down/forward
+				T:forward(1)
+			end
+			index = index - 1
+			if index == 0 then break end
 		end
 	end
-	T:turnRight(2)	-- face coridoor
+
+	function lib.checkEquipment()
+		menu.colourPrint("Checking Equipment", colors.red)
+		local axeSide, swordSide = "", ""
+		local itemLeft, itemRight = T:getEquipped()
+		if itemLeft == "minecraft:diamond_pickaxe" then 
+			axeSide = "left"
+		elseif itemRight == "minecraft:diamond_pickaxe" then 
+			axeSide = "right"
+		end
+		if itemLeft == "minecraft:diamond_sword" then 
+			swordSide = "left"
+		elseif itemRight == "minecraft:diamond_sword" then 
+			swordSide = "right"
+		end
+		--place sword on right, pickaxe on left
+		if swordSide == "" then
+			-- sword not equipped
+			if T:getItemSlot("minecraft:diamond_sword") > 0 then	-- sword in inventory
+				if axeSide == "left" then
+					T:equip("right", "minecraft:diamond_sword")
+					swordSide = "right"
+				else
+					T:equip("left", "minecraft:diamond_sword")
+					swordSide = "left"
+				end
+			end
+		end
+		if swordSide == "" then		-- no sword
+			swordSide = axeSide		-- use axe instead
+		end
+		return axeSide, swordSide
+	end
 	
-	-- move forward until obstructed, digging up/down. place torches
-	--while not turtle.detect() do
-	repeat
-		lib.clearCentre(inInventory) -- dig cobweb or any other block up/down
-		length = length + 1
-		torch = torch + 1
-		if torch == R.torchInterval then
-			torch = 0
-			T:place("minecraft:torch", "down", false)
+	function lib.checkPosition()
+		menu.colourPrint("Checking position", colors.orange)
+		-- check position by rotating until facing away from wall
+		local turns = 0
+		while not turtle.detect() do
+			T:turnRight(1)
+			turns = turns + 1
+			if turns > 4 then
+				return {"I am not facing a wall. Unable to continue"}
+			end
 		end
-		--lib.clearSide({"forward"}, inInventory)
-		T:forward(1)
-		local blockType = T:getBlockType("forward")	
-	--end
-	until T:isStone(blockType)
-	-- turn right, forward, right, return to start with up/down dig
-	T:go("R1")
-	lib.clearSide({"up","down"}, inInventory) 		-- dig cobweb or any other block up/down
-	T:go("F1R1")									-- ready for return journey
-
-	for i = length, 1, -1 do						-- iterate moves backwards
-		if moves[i] == "U" then
-			turtle.digUp()
-			T:down(1)
-		elseif moves[i] == "D" then
-			turtle.digDown()
-			T:up(1)
-		end
-		lib.clearSide({"up", "down", "forward"}, inInventory) -- dig cobweb or any other block up/down/forward
-		T:forward(1)
+		T:turnRight(2)	-- face coridoor
+		return nil
 	end
-	-- move to other wall and repeat.
-	T:go("R1")
-	lib.clearSide({"up","down"}, inInventory) -- dig cobweb or any other block up/down
-	T:go("F1")
-	lib.clearSide({"up","down"}, inInventory) -- dig cobweb or any other block up/down
-	T:go("F1R1")
-	--lib.clearSide({"up","down"}, inInventory) -- dig cobweb or any other block up/down
-
-	for i = 1, length, 1 do	-- reverse the Up/ down markers
-		if moves[i] == "U" then
-			turtle.digDown()
-			T:up(1)
-		elseif moves[i] == "D" then
-			turtle.digUp()
-			T:down(1)
-		end
-		lib.clearSide({"up", "down", "forward"}, inInventory) -- dig cobweb or any other block up/down/forward
-		T:forward(1)
-		--turtle.digUp()
-		--turtle.digDown()
+	
+	function lib.turnAtEnd(axeSide, swordSide)
+		-- turn right, forward, right, return to start with up/down dig
+		T:go("R1")
+		lib.clearSide({"up","down"}, axeSide, swordSide) 	-- dig cobweb or any other block up/down
+		T:go("F1R1")										-- ready for return journey
 	end
-	lib.clearSide({"up", "down"}, inInventory) -- dig cobweb or any other block up/down/forward
+	
+	function lib.turnAtStart(axeSide, swordSide)
+		-- move to other wall and repeat.
+		T:go("R1")
+		lib.clearSide({"up","down"}, axeSide, swordSide) -- dig cobweb or any other block up/down
+		T:go("F1")
+		lib.clearSide({"up","down"}, axeSide, swordSide) -- dig cobweb or any other block up/down
+		T:go("F1R1")
+		--lib.clearSide({"up","down"}, swordSide) -- dig cobweb or any other block up/down
+	end
+	
+	local axeSide, swordSide = lib.checkEquipment()
+	local position = lib.checkPosition()
+	if position ~= nil then
+		return position
+	end
+	menu.colourPrint("Clearing Mineshaft", colors.yellow)
+	local moves = lib.clearCentre(axeSide, swordSide)
+	
+	lib.turnAtEnd(axeSide, swordSide)
+	
+	lib.clearSideToStart(moves, axeSide, swordSide)
+	
+	lib.turnAtStart(axeSide, swordSide)
+	
+	lib.clearSideToEnd(moves, axeSide, swordSide)
+	
+	lib.clearSide({"up", "down"}, axeSide, swordSide) -- dig cobweb or any other block up/down/forward
 	
 	return {"Mineshaft cleared"}
 end
@@ -9271,8 +9300,8 @@ function manageFarm()
 		T:clear()
 		print("Checking equipment. Please wait...")
 		-- remove all equipment and store in inventory
-		equipped[1], slots[1] = T:getEquipped("right", true)	-- get what is equipped on the right
-		equipped[2], slots[2] = T:getEquipped("left", true)		-- get what is equipped on the left
+		equipped[1], slots[1] = T:removeEquipped("right")	-- get what is equipped on the right
+		equipped[2], slots[2] = T:removeEquipped("left")	-- get what is equipped on the left
 
 		return slots
 	end
@@ -11703,15 +11732,15 @@ local function sceneLoader()
 			end
 			T:clear()
 			return {"GUI toolkit completed"}
-		-- elseif sceneName == "GetItems" then
-			-- -- U.getInput(withTimer, interval, withInventory)
-			-- inputData = U.getInput(false, 3, true) -- get either key or inventory data
-			-- -- inputData = {"turtle_inventory"}
-			-- -- inputData = {"key", keyCode, is_held} 
-			-- -- inputData = "mouse_click", button = 1, x = 4, y = 4
-			-- --Log:saveToLog("sceneLoader() inputData = "..textutils.serialise(inputData, {compact = true}))
-			-- sm:update(inputData)
-			-- sm:draw()
+		elseif sceneName == "GetItems" then
+			-- U.getInput(withTimer, interval, withInventory)
+			inputData = U.getInput(false, 3, true) -- get inventory data
+			-- inputData = {"turtle_inventory"}
+			-- inputData = {"key", keyCode, is_held} 
+			-- inputData = "mouse_click", button = 1, x = 4, y = 4
+			--Log:saveToLog("sceneLoader() inputData = "..textutils.serialise(inputData, {compact = true}))
+			sm:update(inputData)
+			sm:draw()
 		else
 			inputData = U.getInput(false)	-- U.getInput(withTimer, interval, withInventory)
 			sm:update(inputData)
@@ -11793,8 +11822,7 @@ Enter to exit]]
 			print("Minecraft minor version: "..mcMinorVersion)
 			print("ccTweaked major version: "..ccMajorVersion)
 			print("ccTweaked minor version: "..ccMinorVersion)
-			print("tk version:              "..tkVersion)
-			print("clsTurtle version:       "..version)
+			print("tk3 version:             "..version)
 			print("\nEnter to exit")
 			read()
 		end
