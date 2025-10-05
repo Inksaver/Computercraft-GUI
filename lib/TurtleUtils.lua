@@ -1,7 +1,5 @@
-local version = 20250914.1600
+local version = 20251005.1800
 --[[
-	-- pastebin(1): ceeV3ugb lib.TurtleUtils.lua
-	-- pastebin(2): wDQBs7Kd
 	Last edited: see version YYYYMMDD.HHMM
 	save as lib/TurtleUtils.lua
 	usage:This is part of the libraries required for tk2.lua (Toolkit 2)
@@ -10,8 +8,6 @@ local version = 20250914.1600
 	Items 
 	Vector2
 ]]
---local Turtle 		= require("lib.clsTurtle"): now using global T defined in tk2
---local T 			= Turtle(false)
 local Items 		= require("lib.data.items")
 local Vector2 		= require("lib.Vector2")
 local metals 		= {"iron", "gold", "copper", "netherite", "red_alloy"}
@@ -379,6 +375,20 @@ function U.copyTable(tbl)
 		table.insert(temp, v)
 	end
 	return temp
+end
+
+function U.deepCopyTable(obj)
+	-- recursive function
+	function copy(obj, seen)
+		if type(obj) ~= 'table' then return obj end
+		if seen and seen[obj] then return seen[obj] end
+		local s = seen or {}
+		local res = setmetatable({}, getmetatable(obj))
+		s[obj] = res
+		for k, v in pairs(obj) do res[copy(k, s)] = copy(v, s) end
+		return res
+	end
+	return copy(obj)
 end
 
 function U.copyR()
@@ -2465,40 +2475,42 @@ end
 
 function U.getInput(withTimer, interval, withInventory)
 	-- will return on both mouse and key events unless mouseOnly 
-	withTimer = withTimer or false
+	if withTimer == nil then withTimer = false end
 	interval = interval or 3
-	withInventory = withInventory or false
+	if withInventory == nil then withInventory = false end
 	
 	local timer_id
 	while true do
-		if withTimer then
-			timer_id = os.startTimer(interval)
-			--_G.Log:saveToLog("U.getInput() timer_id "..timer_id)
-		end
 		U.data = {os.pullEvent()}
 --Log:saveToLog("U.getInput() data = "..textutils.serialize(U.data, {compact = true}))
-		if U.data[1]:find("mouse") ~= nil or U.data[1] == "monitor_touch" and not withInventory then
+		if U.data[1] == "turtle_inventory" and withInventory then 
+			return {"turtle_inventory"}
+		else
 			if withTimer then
-				os.cancelTimer(timer_id)
+				timer_id = os.startTimer(interval)
+				--_G.Log:saveToLog("U.getInput() timer_id "..timer_id)
 			end
-			return U.data	-- eg {event = "mouse_click", button = 1, x = 4, y = 4)
-		elseif U.data[1] == "key" then
-			local key = keys.getName(U.data[2])
-			if key == "enter" or key == "backspace" then
+			if U.data[1]:find("mouse") ~= nil or U.data[1] == "monitor_touch" and not withInventory then
 				if withTimer then
 					os.cancelTimer(timer_id)
 				end
-				return U.data -- eg {event = "key", key = 8 (backspace) or 13 (return), nil, nil
+				return U.data	-- eg {event = "mouse_click", button = 1, x = 4, y = 4)
+			elseif U.data[1] == "key" then
+				local key = keys.getName(U.data[2])
+				if key == "enter" or key == "backspace" then
+					if withTimer then
+						os.cancelTimer(timer_id)
+					end
+					return U.data -- eg {event = "key", key = 8 (backspace) or 13 (return), nil, nil
+				end
+			elseif U.data[1] == "char" then -- returns all characters including symbols and shift
+				if withTimer then
+					os.cancelTimer(timer_id)
+				end
+				return U.data
+			elseif U.data[1] == "timer" and withTimer then
+				return nil
 			end
-		elseif U.data[1] == "char" then -- returns all characters including symbols and shift
-			if withTimer then
-				os.cancelTimer(timer_id)
-			end
-			return U.data
-		elseif U.data[1] == "timer" and withTimer then
-			return nil
-		elseif U.data[1] == "turtle_inventory" and withInventory then 
-			return {"turtle_inventory"}
 		end
 	end
 end
