@@ -1,4 +1,4 @@
-local version = 20251003.1700
+local version = 20251005.1800
 
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
@@ -49,9 +49,6 @@ function S:new(sceneMgr)
 	--ML:new(name, x, y, w, h, text, fg, bg, alignH, alignV, labels, sizes, colours, alignments)
 	self.mlDisplay = MultiLabel("mlDisplay", 1,  2, WIDTH, HEIGHT - 1, "", colors.white, colors.black, "centre", "centre",
 								labels, sizes, colours, alignments)
-	--self.inventory = {}
-	--self.inventoryCheck = {}
-	--self.itemsRequired = {}
 	
 	self.em:add(self.lblTitle, 		"lblTitle")
 	self.em:add(self.btnBack, 		"btnBack")
@@ -91,14 +88,14 @@ function S:setup()
 	-- eg data = {{"0", "64", "stone", true}, {"0", "1", "Torch", false}}
 	]]
 	--self.task = U.currentTask						-- eg  "Ladder up or down"
-Log:saveToLog("GetItems:setup() R.inventoryKey  = "..R.inventoryKey)	
-	local inv = nil		-- initialise table
+--Log:saveToLog("GetItems:setup() R.inventoryKey = "..R.inventoryKey)	
+	self.taskInventory = nil	-- initialise table
 	if R.inventoryKey == "" then
-		inv = F[U.currentTask].inventory
+		self.taskInventory = F[U.currentTask].inventory
 	else
-		inv = F[U.currentTask].inventory[R.inventoryKey]
+		self.taskInventory = F[U.currentTask].inventory[R.inventoryKey]
 	end
-Log:saveToLog("\nInventory = "..textutils.serialise(inv, {compact = true}))
+
 	--[[ inventory as recorded in taskInventory.lua
 	eg this inventory has only 1 inventoryItem, with a choice of 3 materials: inventory = 
 	{
@@ -120,34 +117,45 @@ Log:saveToLog("\nInventory = "..textutils.serialise(inv, {compact = true}))
 		[3] = {"stone","R.height * 2",false,""},
 		[4] = {"minecraft:bucket","T:getEmptySlotCount",false,"buckets = speed"},
 	}
+	or
+	{	
+		{"minecraft:torch", "R.torchInterval", false, ""},
+		{"minecraft:diamond_sword", 1, false,"For spider webs"}
+	}
 	]]
 
-	self.inventory = {}			-- initialise tables
-	self.inventoryCheck = {}
-	self.itemsRequired = {}		-- contains items only
-	-- create a sanitised version of the inventory from taskInventory.lua to store in self.inventory
+	self.displayInventory = {}			-- table to hold {items with added comments, quantities, aquired, required}
+	self.inventory = {}					-- inventory of full item names without comments, quantities, aquired, required
+	-- create a sanitised version of the inventory from taskInventory.lua to store in self.displayInventory
 	-- eg {{"minecraft:bucket","minecraft:water_bucket"}, {R.height, R.height}, {true, true}, {"", ""}},
 	-- -> {{"bucket","water_bucket"}, {2, 2}, {0, 0}, {true, true}}, item(s), quantity(s), aquired, required
-	-- This is passed to the MultiLabel for display (self.mlDisplay:setup(self.inventory))
-	
-	-- At the same time create a table of items for self.itemsRequired
-	for k, v in ipairs(inv) do	-- eg {{"minecraft:bucket","minecraft:water_bucket"}, {2, 2}, {true, true}, {"", ""}},
-		-- v[1] = items, v[2] = quantities numeric/ expressions, v[3] = required true/false, v[4] = string comments
-		local tempInventory = {}	-- temporary table to hold {items, quantities, aquired, required} for self.inventory
-		local tempItems = {}		-- temporary table to hold {items, quantities,          required} for self.itemsRequired
+	-- This is passed to the MultiLabel for display (self.mlDisplay:setup(self.displayInventory))
+	-- At the same time create a table of items for self.inventory
+--Log:saveToLog("GetItems:setup() self.taskInventory = "..textutils.serialise(self.taskInventory, {compact = true}))
+	for k, v in ipairs(self.taskInventory) do	-- eg {{"minecraft:bucket","minecraft:water_bucket"}, {2, 2}, {true, true}, {"", ""}},
+		-- v[1] = item(s),
+		-- v[2] = quantities numeric/ expressions,
+		-- v[3] = required true/false,
+		-- v[4] = string comments eg "for cobwebs"
+		local tempDisplay = {}		-- temporary table to hold {items, quantities, aquired, required} for self.displayInventory
+		local tempInventory = {}	-- temporary table to hold {items, quantities,          required} for self.inventory
 		local useTable = false		-- flag
 		-- if first value of inventoryItem is a table, all following values are also tables of the same size
-		if type(v[1]) == "table" then				-- eg {"minecraft:soul_sand","minecraft:dirt",}
+		if type(v[1]) == "table" then					-- eg {"minecraft:soul_sand","minecraft:dirt",}
 			useTable = true
-			for i = 1, #v[1] do						-- change names to shorter versions
-				v[1][i] = lib.processName(v[1][i])	-- {"minecraft:soul_sand","minecraft:dirt"} -> {"soul_sand","dirt"}
+			local items = {}
+			local fullItems = {}
+			for i = 1, #v[1] do							-- change names to shorter versions
+				items[i] = lib.processName(v[1][i])		-- {"minecraft:soul_sand","minecraft:dirt"} -> {"soul_sand","dirt"}
+				fullItems[i] = v[1][i]
 			end
+			table.insert(tempDisplay, items)	-- [1] either "stone" or {"slab","stone"}
+			table.insert(tempInventory, fullItems)	
 		else
-			v[1] = lib.processName(v[1])			-- eg {"minecraft:water_bucket"} -> {"water_bucket"}
-			-- ? v[1] = {lib.processName(v[1])} ??
+			local item = lib.processName(v[1])			-- eg {"minecraft:water_bucket"} -> {"water_bucket"}
+			table.insert(tempDisplay, item)	-- [1] either "stone" or {"slab","stone"}
+			table.insert(tempInventory, v[1])	
 		end
-		table.insert(tempItems, v[1])				-- add items table to tempItems
-		table.insert(tempInventory, v[1])			-- [1] either "stone" or {"slab","stone"}
 		-- read quantities later v[2]
 		--[[if v[3] == nil then						-- v[3] = required true/false
 			if useTable then
@@ -163,57 +171,59 @@ Log:saveToLog("\nInventory = "..textutils.serialise(inv, {compact = true}))
 				v[4] = ""
 			end
 		end]]
+--Log:saveToLog("S:setup() tempInventory after items added = "..textutils.serialise(tempInventory, {compact = true}))
 		-- get quantities
 		if useTable then										-- {"math.ceil(R.length / 2)", "math.ceil(R.length / 2)"}
 			local quantities = {}
-Log:saveToLog("S:setup() ipairs(v[2]) = "..textutils.serialise(v[2], {compact = true}))
+--Log:saveToLog("S:setup() ipairs(v[2]) = "..textutils.serialise(v[2], {compact = true}))
 			for _, exp in ipairs(v[2]) do
 				local amount = U.parseExpression(exp)
 				Log:saveToLog("S:setup() for _, item in ipairs(v[2]) exp = "..exp..", amount = "..amount)
 				table.insert(quantities, amount)
 			end
-			table.insert(tempInventory, quantities)				-- [2]
-			table.insert(tempItems, quantities)
-			
-			-- aquired field is used when passed to MultiLabel, should consist of {0, ...}
+			table.insert(tempDisplay, quantities)				-- [2]
+			table.insert(tempInventory, quantities)
+--Log:saveToLog("S:setup() useTable = true, self.displayInventory after quantities added = "..textutils.serialise(self.displayInventory, {compact = true}))
+--Log:saveToLog("S:setup() useTable = true, self.inventory after quantities added = "..textutils.serialise(self.inventory, {compact = true}))
+			-- aquired field is used when passed to MultiLabel, should initialise with {0, ...}
 			local aquired = {}
 			for i = 1, #v[1] do
 				table.insert(aquired, 0)
 			end
-			table.insert(tempInventory, aquired)				-- aquired always starts as {0, 0,..}
-			
-			table.insert(tempInventory, v[3])					-- [3] required true/false already in table form
-			table.insert(tempItems, v[3])
+			table.insert(tempDisplay, aquired)				-- aquired always starts as {0, 0,..}
+			table.insert(tempInventory, aquired)			-- aquired always starts as {0, 0,..}
+			-- add required true / false to table
+			table.insert(tempDisplay, v[3])					-- [3] required true/false already in table form
+			table.insert(tempInventory, v[3])
+--Log:saveToLog("S:setup() useTable = true, self.inventory = "..textutils.serialise(self.inventory, {compact = true}))
 			if v[4][1] ~= "" then
-				tempInventory[1][1] = tempInventory[1][1].." (".. v[4][1]..")"		-- add comment onto item
+				tempDisplay[1][1] = tempDisplay[1][1].." (".. v[4][1]..")"		-- add comment onto item
 			end
 			if v[4][2] ~= "" then
-				tempInventory[1][2] = tempInventory[1][2].." (".. v[4][2]..")"
+				tempDisplay[1][2] = tempDisplay[1][2].." (".. v[4][2]..")"
 			end
 		else	-- single quantity
---Log:saveToLog("Expression  = "..v[2])
 			local amount = U.parseExpression(v[2])	-- eg 1 or "math.abs(R.height - R.currentLevel)"
-			table.insert(tempInventory, math.abs(amount))	-- [2] quantities
-			table.insert(tempItems, math.abs(amount))
-			table.insert(tempInventory, 0)					-- aquired always 0 or {0,..}
-			--table.insert(tempItems, 0)
-			table.insert(tempInventory, v[3])				-- [4] required true/false
-			table.insert(tempItems, v[3])
+--Log:saveToLog("S:setup() useTable = false, expression = "..v[2]..", amount = "..amount)
+			table.insert(tempDisplay, math.abs(amount))		-- [2] quantities
+			table.insert(tempInventory, math.abs(amount))
+			table.insert(tempDisplay, 0)					-- aquired always 0 or {0,..}
+			table.insert(tempInventory, 0)
+			table.insert(tempDisplay, v[3])					-- [4] required true/false
+			table.insert(tempInventory, v[3])
+			
+--Log:saveToLog("S:setup() useTable = false, self.inventory = "..textutils.serialise(self.inventory, {compact = true}))
 			if v[4] ~= "" then
-				tempInventory[1] = tempInventory[1].." (".. v[4]..")"	-- add comment onto item
+				tempDisplay[1] = tempDisplay[1].." (".. v[4]..")"	-- add comment onto item
 			end
 		end
-		if type(tempInventory[2]) == "table" then
-			table.insert(self.inventoryCheck, math.max(tempInventory[2][1], tempInventory[2][2]))
-		else
-			table.insert(self.inventoryCheck, tempInventory[2])
-		end
+		
+		table.insert(self.displayInventory, tempDisplay)
 		table.insert(self.inventory, tempInventory)
-		table.insert(self.itemsRequired, tempItems)
 	end
-Log:saveToLog("self.itemsRequired = "..textutils.serialise(self.itemsRequired, {compact = true}))
-	--Log:saveToLog("\ndata = "..textutils.serialise(self.inventory, {compact = true}))
-	--[[ self.inventory = 
+--Log:saveToLog("S:setup() self.inventory = "..textutils.serialise(self.inventory, {compact = true}))
+--Log:saveToLog("S:setup() self.displayInventory = "..textutils.serialise(self.displayInventory, {compact = true}).."\n")
+	--[[ self.displayInventory = 
 	{
 		{"water_bucket",3,0,false},
 		{{"soul_sand (if available)","dirt (as placeholder)"},{1,1},{0,0},{true,true}},
@@ -232,7 +242,7 @@ Log:saveToLog("self.itemsRequired = "..textutils.serialise(self.itemsRequired, {
 		{"bucket",16,0}
 	}
 	]]
-	self.mlDisplay:setup(self.inventory)
+	self.mlDisplay:setup(self.displayInventory)
 	self:checkInventory()
 end
 
@@ -241,15 +251,11 @@ function S:checkInventory()
 	
 	function lib.checkInventory(items, quantities, quantitiesFound, tInventory)
 		-- items and quantities are always tables
-Log:saveToLog("lib.checkInventory(items = "..textutils.serialise(items, {compact = true}))
-Log:saveToLog("lib.checkInventory(quantities = "..textutils.serialise(quantitiesFound, {compact = true}))
-Log:saveToLog("lib.checkInventory(quantitiesFound = "..textutils.serialise(quantitiesFound, {compact = true}))
-Log:saveToLog("lib.checkInventory(tInventory = "..textutils.serialise(tInventory, {compact = true}))		
+--Log:saveToLog("GetItems:lib.checkInventory(items = "..textutils.serialise(items, {compact = true}))
+--Log:saveToLog("GetItems:lib.checkInventory(quantities = "..textutils.serialise(quantitiesFound, {compact = true}))
+--Log:saveToLog("GetItems:lib.checkInventory(quantitiesFound = "..textutils.serialise(quantitiesFound, {compact = true}))
+--Log:saveToLog("GetItems:lib.checkInventory(tInventory = "..textutils.serialise(tInventory, {compact = true}))		
 		local incomplete = true 							-- return value. set to false if not enough put in the inventory for this item / group of items
-		--local quantitiesFound = {} 						-- table of quantities found, based on no of items needed
-		--for i = 1, #quantities do							-- Initialise table eg {0, 0, 0}	
-			--table.insert(quantitiesFound, 0)
-		--end 
 		for i = 1, #quantitiesFound do
 			quantitiesFound[i] = 0
 		end
@@ -274,9 +280,9 @@ Log:saveToLog("lib.checkInventory(tInventory = "..textutils.serialise(tInventory
 				end
 			end
 		end
-		Log:saveToLog("lib.checkInventory({"..items[1]..", "..tostring(items[2])..
-					  "}, required = {"..quantities[1]..", "..tostring(quantities[2])..
-					  "}, found = {".. quantitiesFound[1]..", ".. tostring(quantitiesFound[2]).."}")
+-- Log:saveToLog("GetItems:lib.checkInventory({"..items[1]..", "..tostring(items[2])..
+			-- "}, required = {"..quantities[1]..", "..tostring(quantities[2])..
+			-- "}, found = {".. quantitiesFound[1]..", ".. tostring(quantitiesFound[2]).."}")
 		local totalFound = 0
 		for i = 1, #quantities do
 			totalFound = totalFound + quantitiesFound[i]
@@ -289,25 +295,43 @@ Log:saveToLog("lib.checkInventory(tInventory = "..textutils.serialise(tInventory
 				quantitiesFound[i] = totalFound -- when player asked to supply alternatives, this gives quantities
 			end
 		end
-		Log:saveToLog("lib.checkInventory() return: incomplete = "..tostring(incomplete)..", totalFound = "..totalFound)
+--Log:saveToLog("GetItems:lib.checkInventory() return: incomplete = "..tostring(incomplete)..", totalFound = "..totalFound)
 		return incomplete, totalFound --, quantitiesFound
 	end
 	
 	local tInventory = T:getInventoryItems() 	-- create table of blocktypes and quantities
-Log:saveToLog("T:getInventoryItems() = "..textutils.serialise(tInventory, {compact = true}))
+	local itemLeft, itemRight = T:getEquipped()	-- add diamond tools to the inventory
+	if itemLeft:find("diamond") ~= nil then
+		if tInventory[itemLeft] == nil then
+			tInventory[itemLeft] = 1
+		else
+			tInventory[itemLeft] = tInventory[itemLeft] + 1
+		end
+	end
+	if itemRight:find("diamond") ~= nil then
+		if tInventory[itemRight] == nil then
+			tInventory[itemRight] = 1
+		else
+			tInventory[itemRight] = tInventory[itemRight] + 1
+		end
+	end
+--Log:saveToLog("GetItems:S:checkInventory():T:getInventoryItems() = "..textutils.serialise(tInventory, {compact = true}))
 	-- table eg: {"minecraft:cobblestone" = 256, "minecraft:cobbled_deepslate = 256"}
 	-- iterate items list and look for match
 	local ready = true
-	--for row, v in ipairs(self.inventory) do	-- {{"minecraft:bucket",1,0,false}, {"minecraft:ladder",10,0,true}, {{"slab","stone"}, {1, 3}, {0, 0}, {false, false}}}
+	--for row, v in ipairs(self.displayInventory) do	-- {{"minecraft:bucket",1,0,false}, {"minecraft:ladder",10,0,true}, {{"slab","stone"}, {1, 3}, {0, 0}, {false, false}}}
 	for row, v in ipairs(self.inventory) do
 	--for row, v in ipairs(self.itemsRequired) do	-- {"water_bucket",3,0}, {{"minecraft:soul_sand","minecraft:dirt"},{1,1},{0,0}},
 		-- check if each item or group of items is completed
 		local incomplete, totalFound, quantitiesFound = false, 0, {}
 		local isTable = false
 		if type(v[1]) == "table" then		-- {"minecraft:soul_sand","minecraft:dirt"}
+--Log:saveToLog("GetItems:calling lib.checkInventory() ipairs(tInventory) row = "..row..", v(table) = "..textutils.serialise(v, {compact = true}))
 			isTable = true
 			incomplete, totalFound, quantitiesFound = lib.checkInventory(v[1], v[2], v[3], tInventory)		-- {"minecraft:soul_sand","minecraft:dirt"}, {1, 1}, {0,0}
-		else								-- "minecraft:bucket"
+		else
+--Log:saveToLog("GetItems:calling lib.checkInventory() ipairs(tInventory) row = "..row..", v = "..textutils.serialise(v, {compact = true}))
+		-- "minecraft:bucket"
 			incomplete, totalFound, quantitiesFound = lib.checkInventory({v[1]}, {v[2]}, {v[3]}, tInventory)	-- {"minecraft:bucket", 1, 0}
 		end
 		-- change the button text in self.mlDisplay
@@ -317,14 +341,14 @@ Log:saveToLog("T:getInventoryItems() = "..textutils.serialise(tInventory, {compa
 			self.mlDisplay:setButtonData({row, 3}, {{"text", tostring(totalFound)}, {"fg", colors.lime}})
 		end
 		if isTable then
-			--Log:saveToLog("required[] = "..tostring(v[4][1]))
+--Log:saveToLog("required[] = "..tostring(v[4][1]))
 			if v[4][1] or v[4][2] then	-- required
 				if totalFound < v[2][1] and totalFound < v[2][2] then	-- if less than BOTH quantities
 					ready = false
 				end
 			end
 		else
-			Log:saveToLog("required = "..tostring(v[4]))
+--Log:saveToLog("\nrequired = "..tostring(v[4]))
 			if totalFound < v[2] and v[4] then
 				ready = false
 			end
@@ -369,11 +393,12 @@ function S:onBtnClick(button)
 end
 
 function S:update(data)
+Log:saveToLog("GetItems:update data = "..textutils.serialise(data, {compact = true}))
 	self.super.update(self, data)
 	if data ~= nil then
 		-- b and n are actioned in Button:update
 		if data[1] == "turtle_inventory" then
-			Log:saveToLog("GetItems:update calling self:checkInventory")
+Log:saveToLog("GetItems:update calling self:checkInventory")
 			self:checkInventory()	
 		end
 	end
