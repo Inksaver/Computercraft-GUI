@@ -1,4 +1,4 @@
-local version = 20251005.1800
+local version = 20251218.1530
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -1042,7 +1042,7 @@ function assessFarm()
 	end
 	sleep(1.5)
 	
-	return
+	--return
 end
 
 function assessTreeFarm()
@@ -1511,7 +1511,7 @@ function checkFarmPosition()
 	R.networkFarm = false
 --Log:saveToLog("Checking position "..blockType.. " down")
 	if blockType:find("water") ~= nil then -- over water, ? facing E (crops)
-		-- network: E = __modem_, N = _modem__, W = modem___, S = ___modem
+		-- network: E = _modemmodem__, N = _modemmodem_, W = modemmodem__, S = modem__modem
 		-- legacy/earlyGame: E = _chestchest_, N = chestchest__, W = chest__chest, S = __chestchest
 		-- Legacy/earlyGame: E = _barrelbarrel_, N = barrelbarrel__, W = barrel__barrel, S = __barrelbarrel
 --Log:saveToLog("? over water = true")
@@ -1560,72 +1560,60 @@ end
 function clearAndReplantTrees()
 	--[[ clear all trees in a rectangle area defined by walls, fences or non-dirt blocks
 	replant with same type of sapling. If original tree 2 blocks wide, replant 4 if possible. ]]
-	
+	local width = 0
+	local length = 0
 	local lib = {}
-	
-	function lib.getSaplingFromLogType(log)
-		--[[ get type of sapling to plant from log type ]]
-		if log:find("oak") ~= nil then
-			return "minecraft:oak_sapling"
-		elseif log:find("spruce") ~= nil then
-			return "minecraft:spruce_sapling"
-		elseif log:find("birch") ~= nil then
-			return "minecraft:birch_sapling"
-		elseif log:find("jungle") ~= nil then
-			return "minecraft:jungle_sapling"
-		elseif log:find("acacia") ~= nil then
-			return "minecraft:acacia_sapling"
-		elseif log:find("dark_oak") ~= nil then
-			return "minecraft:dark_oak_sapling"
+
+	function lib.harvestTree(blockTypeF)
+		--[[ Fell tree, returns true if double size ]]
+		-- clsTurtle.harvestTree(extend, craftChest, direction)
+		local saplingType = T:getSaplingFromLogType(blockTypeF)
+		local double = T:harvestTree("forward")	-- assume single tree, will auto-discover
+		T:suckAll()
+		if R.auto then
+			lib.plantSapling(saplingType, double)
 		end
-		return "sapling"
 	end
 	
 	function lib.plantSapling(sapling, double)
 		--[[ plant sapling(s) ]]
-		if sapling == "" or sapling == nil then sapling = "sapling" end
-		T:up(1)
-		lib.suck()
-		if double then	-- check if enough saplings
-			--slotData.lastSlot, total, slotData = T:getItemSlot(sapling, -1)
-			local a, b, total, _ = T:getItemSlot(sapling, -1)
-			if total >= 4 then
-				for i = 1, 4 do
-					T:place(sapling, "down")
-					T:go("F1R1")
+		if R.auto then
+			if sapling == "" or sapling == nil then sapling = "sapling" end
+			T:up(1)
+			T:suckAll()
+			if double then	-- check if enough saplings
+				-- return slotData.lastSlot, total, slotData -- integer, integer, table
+				local slot, total, _ = T:getItemSlot(sapling)
+				if total >= 4 then
+					for i = 1, 4 do
+						T:place(sapling, "down")
+						T:go("F1R1")
+					end
+					T:forward(1)		-- above pre-planted sapling
+				else
+					if not T:place(sapling, "down") then
+						T:place("sapling", "down")
+					end
 				end
-				T:forward(1)		-- above pre-planted sapling
 			else
 				if not T:place(sapling, "down") then
 					T:place("sapling", "down")
 				end
 			end
-		else
-			if not T:place(sapling, "down") then
-				T:place("sapling", "down")
-			end
 		end
 		turtle.select(1)
 	end
 		
-	function lib.suck()
-		--[[ Collect saplings, sticks and apples ]]
-		turtle.select(1)
-		turtle.suck()
-		turtle.suckUp()
-		turtle.suckDown()
-	end
-	
-	function lib.turn(direction)
-		--[[ change direction and return new value for direction ]]
-		if direction == "r" then
+	function lib.turn(turn)
+		--[[ change direction and return new value for turn direction ]]
+		if turn == "r" then
 			T:turnRight(1)
-			direction = "l"
+			turn = "l"
 		else
 			T:turnLeft(1)
-			direction = "r"
+			turn = "r"
 		end
-		return direction	-- will only change direction variable if return value is used
+		return turn	-- will only change turn direction variable if return value is used
 	end
 	
 	function lib.emptyInventory(blockTypeD)
@@ -1649,59 +1637,69 @@ function clearAndReplantTrees()
 		end
 		while blockTypeD == "" or blockTypeD:find("leaves") ~= nil do	-- move down, breaking leavse
 			T:down(1)
-			lib.suck()
+			T:suckAll()
 			blockTypeD = T:getBlockType("down")
 		end
 		return blockTypeD
 	end
 	
 	function lib.moveForward()
-		--[[ Move forward 1 block only, go down to ground while air or leaves below ]]
-		local blockTypeF = T:getBlockType("forward")
-		local blockTypeD = T:getBlockType("down")
+		--[[
+			Move forward 1 block only, go down to ground while air or leaves below.
+			Use turtle.detect to save time
+		]]
+		local blockTypeU = ""
+		local blockTypeF = ""
+		local blockTypeD = ""
+		
+		if turtle.detectUp() then
+			blockTypeU = T:getBlockType("up")
+		end
+		if turtle.detect() then
+			blockTypeF = T:getBlockType("forward")
+		end
+		if turtle.detectDown() then
+			blockTypeD = T:getBlockType("down")
+		end
+
+		if blockTypeU ~= "" and blockTypeU:find("leaves") == nil then	-- block above, not leaves
+			if blockTypeU:find("log") ~= nil then
+				T:harvestTree("up")
+				return false, "", ""
+			end
+			return false, blockTypeU, "up"								-- report block above, no movement
+		end
+		
+		if blockTypeD == "" then										-- air below
+			return false, blockTypeD, "down"
+		end
+
 		if blockTypeF == "" or blockTypeF:find("leaves") ~= nil then	-- air or leaves ahead
 			T:forward(1)												-- move forward, breaking leaves
-			T:dig("up")													-- remove leaves / low branches above to allow space for player
-			lib.suck()
-			blockTypeD = lib.moveDown()
-			if not lib.emptyInventory(blockTypeD) then					-- check if above a corner chest / barrel
-				if lib.isBorder(blockTypeD) then						-- not above chest so check if above border
-					return false, blockTypeD							-- above a border block so stop
-				end
-			end
 			blockTypeF = T:getBlockType("forward")
-			return true, blockTypeF										-- moved ok, could be air or block in front
+			return true, blockTypeF, "forward"							-- moved ok, could be air or block in front
 		end
-		return false, blockTypeF 										-- did not move, obstacle in front NOT leaves or air
+		return false, blockTypeF, ""									-- did not move, obstacle in front NOT leaves or air
 	end
 	
 	function lib.moveUp(blockTypeF)
-		--[[ Move up until air in front (dig leaves / harvest tree) ]]
+		--[[ Move up, dig leaves or harvest tree) ]]
 		if blockTypeF == nil then
 			blockTypeF = T:getBlockType("forward")
 		end
-		while blockTypeF:find("dirt") ~= nil or
-			  blockTypeF:find("grass_block") ~= nil or
-			  T:isVegetation(blockTypeF) do	-- go up while dirt, grass-block or any vegetation in front
-			T:up(1)
-			blockTypeF = T:getBlockType("forward")
+		while turtle.detect() do
 			if blockTypeF:find("log") ~= nil then
 				lib.harvestTree(blockTypeF)
-				return T:getBlockType("forward")
+				return true, ""
 			elseif blockTypeF:find("leaves") ~= nil then
-				T:dig("forward")
-				return ""
+				T:go("x0x1")
+				return false, ""
 			end
+			T:up(1)
+			blockTypeF = T:getBlockType("forward")
 		end
-		return blockTypeF	-- should be "" (air) or any border block
-	end
-	
-	function lib.harvestTree(blockTypeF)
-		--[[ Fell tree, returns true if double size ]]
-		-- clsTurtle.harvestTree(extend, craftChest, direction)
-		local saplingType = lib.getSaplingFromLogType(blockTypeF)
-		local double = T:harvestTree("forward")	-- assume single tree, will auto-discover
-		lib.plantSapling(saplingType, double)
+		--return  treeCut, "" / "dirt" etc
+		return    false,   blockTypeF	-- should be false, "" (air) or any border block, true = tree cut
 	end
 	
 	function lib.safeMove()
@@ -1728,25 +1726,34 @@ function clearAndReplantTrees()
 					end
 				end
 			end													-- else success = true, 1 block moved so continue
+			length = length + 1
 		end
 	end
 	
 	function lib.isBorder(blockType)
 		--[[ Is the block log, dirt, grass_block, vegetation: non-border, or other:border]]
-		if blockType == nil then 					-- not passed as parameter
-			blockType = T:getBlockType("forward")
-		end
-		if blockType == "" then 					-- air ahead: not border
-			return false, ""
-		else										-- could be border or other
-			if blockType:find("dirt") ~= nil or blockType:find("grass_block") ~= nil or blockType:find("log") ~= nil then -- either dirt, grass block or log
-				return false, blockType				-- dirt, grass, log: not border
+		if R.auto then
+			if blockType == nil then 					-- not passed as parameter
+				blockType = T:getBlockType("forward")
 			end
-			if T:isVegetation(blockType) then 		-- vegetation found: not border
-				return false, blockType
+			if blockType == "" then 					-- air ahead: not border
+				return false, ""
+			else										-- could be border or other
+				if blockType:find("dirt") ~= nil or blockType:find("grass_block") ~= nil or blockType:find("log") ~= nil then -- either dirt, grass block or log
+					return false, blockType				-- dirt, grass, log: not border
+				end
+				if T:isVegetation(blockType) then 		-- vegetation found: not border
+					return false, blockType
+				end
 			end
+				return true, blockType					-- dirt, grass_block, log and vegetation eliminated:must be border
+		else
+Log:saveToLog("length = "..length)
+			if length >= R.length then
+				return true
+			end
+			return false
 		end
-		return true, blockType						-- dirt, grass_block, log and vegetation eliminated:must be border
 	end
 	
 	function lib.inPosition()
@@ -1773,11 +1780,11 @@ function clearAndReplantTrees()
 	function lib.findBorder()
 		--[[ assume started after reset. if log above harvest tree else return to ground. Find starting corner]]
 		local blockType = T:getBlockType("up")					-- dig any logs above, return to ground
-		local log = "sapling"
+		local sapling = "sapling"
 		if blockType:find("log") ~= nil then					-- originally felling a tree so complete it
-			log = lib.getSaplingFromLogType(blockType)
+			sapling = T:getSaplingFromLogType(blockType)
 			local double = T:harvestTree("up")	-- assume single tree, will auto-discover
-			lib.plantSapling(log, double)
+			lib.plantSapling(sapling, double)
 		else													-- no log above so go downm
 			blockType = lib.moveDown()							-- return to ground (or vegetation)
 		end
@@ -1790,38 +1797,88 @@ function clearAndReplantTrees()
 	
 	menu.clear()
 	menu.colourPrint("Clearing and replanting trees", colors.lime)
-	local direction = "r"
+	if R.auto then
+		menu.colourPrint("Re-planting saplings enabled...", colors.lime)
+	end
+	menu.colourPrint("Width: "..R.width..", length: "..R.length, colors.lime)
+	Log:saveToLog("clearAndReplantTrees() width: "..R.width..", length: ".. R.length..", re-plant saplings = "..tostring(R.auto))
+	local turn = "r"
 	local blockTypeF = ""
 	local success = false
-	if not lib.inPosition() then 
-		lib.findBorder()
-	end
-	local secondBorderFound = false
-	while not secondBorderFound do
-		lib.safeMove()														-- moves forward until reaches border forward or below
-		lib.turn(direction)													-- turn r or l. direction is not changed
-		success, blockTypeF = lib.isBorder()								-- no blockType passed as parameter so will return current block in new forward direction
-		if success then
-			secondBorderFound = true										-- game over
-		elseif blockTypeF:find("log") ~= nil then							-- tree in front
-			lib.harvestTree(blockTypeF)
-		elseif blockTypeF == "" or blockTypeF:find("leaves") ~= nil then	-- air or leaves in front
-			T:forward(1)													-- move forward 1 block
-			lib.moveDown()													-- go down if required
-		elseif	blockTypeF:find("dirt") ~= nil or
-				blockTypeF:find("grass_block") ~= nil or
-				T:isVegetation(blockTypeF) then								-- dirt, grass_block or vegetation in front
-			blockTypeF = lib.moveUp(blockTypeF)								-- move up until air or border ahead.
-			if lib.isBorder(blockTypeF) then								-- border ahead
-				secondBorderFound = true
-			else															-- air ahead									
-				T:forward(1)												-- move forward 1 block
+	for w = 1, R.width do
+		local success, blockType, direction, blocksMoved = false, "", "", 0	-- initialise variables
+		while blocksMoved < R.length do	
+			--Log:saveToLog("calling lib.moveForward()")
+			success, blockType, direction = lib.moveForward()				-- try to move forward 1 block, return block type ahead
+			if success then													-- moved forward
+				blocksMoved = blocksMoved + 1								-- increment counter
+			else															-- failed to move forwards
+				if direction == "up" then									-- block above, no moves
+					while turtle.detectUp() do
+						blockTypeU = T:getBlockType("up")
+						if blockTypeU:find("leaves") == nil and blockTypeU:find("moss") == nil then			-- not leaves or hanging moss above
+							T:back(1)
+							blocksMoved = blocksMoved - 1					-- decrement counter
+						else
+							T:up(1)
+							break
+						end
+					end
+				else
+					if direction == "down" then								-- air below, no moves
+						T:down(1)											-- go down 1 as no block below
+						success, blockType, direction = lib.moveForward()	-- try again, 1 block lower
+						if success then
+							blocksMoved = blocksMoved + 1
+						end
+					end
+					if direction == "" then									-- block in front, not air or leaves
+						Log:saveToLog("calling lib.moveUp("..blockType..")")
+						success, blockType = lib.moveUp(blockType)			-- true if tree felled
+						if not success then									-- moved up, tree not cut
+							T:forward(1)									-- move forward
+						end
+						blocksMoved = blocksMoved + 1
+					end
+				end
 			end
 		end
-		direction = lib.turn(direction)										-- turn r or l. direction is changed to opposite
+		-- length finished, turn and repeat
+		lib.turn(turn)														-- turn r or l. turn direction is not changed
+		success, blockType, direction = lib.moveForward()					-- try to move forward 1 block, return block type ahead
+		Log:saveToLog("turn: success = "..tostring(success)..", blockType = '"..blockType.."', direction = "..direction)
+		if not success then													-- did not move forward
+			if direction == "up" then										-- did not go forward as block above				
+				while turtle.detectUp() do									-- break blocks above
+					T:up(1)
+				end
+				while turtle.down() do end									-- return to ground
+				success, blockType, direction = lib.moveForward()			-- try to move forward 1 block, return block type ahead
+			elseif direction == "down" then
+				while turtle.down() do end
+				success, blockType, direction = lib.moveForward()			-- try to move forward 1 block, return block type ahead
+			end
+			if not success then													-- following "up" direction
+				if direction == "" then										-- block in front, not air or leaves
+					while turtle.detect() do								-- while block in front
+						blockType = T:getBlockType("forward")				-- what is in front?
+						if blockType:find("leaves") ~= nil then				-- leaves found
+							T:forward(1)
+							break
+						elseif blockType:find("log") ~= nil then			-- tree found
+							lib.harvestTree(blockType)
+							T:back(1)
+							break
+						else
+							T:up(1)											-- move up 1
+						end
+					end
+					T:forward(1)
+				end
+			end
+		end
+		turn = lib.turn(turn)												-- turn r or l. turn direction is changed to opposite
 	end
-	lib.moveDown()															-- return to ground level
-	lib.emptyInventory()
 	return {}
 end
 
@@ -3371,6 +3428,7 @@ function convertEssence()
 		if utils.isStorage("up") then
 			T:dropItem("crystal", "up")
 		end
+Log:saveToLog("==> lib.storeOutput() call --> U.sendItemToNetworkStorage('chest', 'all', 0")
 		U.sendItemToNetworkStorage("chest", "all", 0)	-- empty turtle to storage chests
 	end
 	
@@ -4603,10 +4661,15 @@ function createFarmNetworkStorage(withStorage, removeLegacy)
 		if c == 1 then
 			lib.placeNetwork(12, "F1x0x2")
 		else
-			lib.placeNetwork(11, "F1x0x2")
+			--lib.placeNetwork(11, "F1x0x2")
+			lib.placeNetwork(10, "F1x0x2")
+			T:go("L2 C1L2")
 		end
 		if c < 4 then
-			T:go("L1F1 x0x2 L1C1R1")
+			--T:go("L1F1 x0x2 L1C1R1")
+			T:go("L1F1 x0x2 L1C1 R1")	-- seal corner to stop water flowing down 
+			T:place("computercraft:cable", "up", true)
+			T:go("F1L2 C1L2")
 		end
 	end
 	-- now in bottom left facing S
@@ -4708,25 +4771,24 @@ function createFarm()
 	local numPlots = 0
 	local storage, storageBackup = utils.setStorageOptions()	-- storage type(s) onboard eg "barrel", "barrel"
 	R.useBlockType = T:getMostItem("minecraft:dirt", true)
-	if R.data == "right" then
+	if R.data == "right" then				-- extendFarm called. Position should be facing crops
 		T:up(1)
 		utils.goBack(1)
 		repeat
 			T:forward(11)
 			numPlots = numPlots + 1
-		until not utils.isStorage("down") -- on top of chest, barrel or modem
-		T:go("R1F1R2")	-- move to front right corner of last plot on right side
-		--T:go("R1U1 F1L1 F10L1") -- move to front right corner
-	elseif R.data == "back" then
+		until not utils.isStorage("down") 	-- on top of chest, barrel or modem
+		T:go("R1F1R2")						-- move to front right corner of last plot on right side
+	elseif R.data == "back" then			-- extendFarm called. Position should be facing crops
 		T:go("L1U1")
 		utils.goBack(1)
 		repeat
 			T:forward(11)
 			numPlots = numPlots + 1
-		until not utils.isStorage("down") -- on top of chest, barrel or modem
-		T:go("L1F1 R1x2")	-- could dig tree or sapling + block below
-	else -- new farm.
-		T:up(1) -- assume on the ground, go up 1
+		until not utils.isStorage("down") 	-- on top of chest, barrel or modem
+		T:go("L1F1 R1x2")					-- could dig tree or sapling + block below
+	else 									-- new farm.
+		T:up(1) 							-- assume on the ground, go up 1
 	end
 	
 	-- design change: sapling placed 2 blocks above corner for ease of walking round
@@ -4821,17 +4883,8 @@ function createFarm()
 end
 
 function createFarmExtension()
-	-- assume inventory contains 4 chests, 64 cobble, 128 dirt, 4 water, 1 sapling
-	-- check position by rotating to face tree/sapling
-	
-	--T:setUseLog(true, "farmCreateLog.txt", true)
-	--dbug = true	-- set dbug flag
-	--utils.waitForInput("Logging and debugging enabled")	--utils.waitForInput(message)
-	
-	local extend = "right" -- default
-	if R.subChoice == 1 then
-		extend = "forward"
-	end
+	-- R.data = "right" or "back"
+	-- R.networkFarm = true or false
 	
 	checkFarmPosition()
 	
@@ -4839,7 +4892,7 @@ function createFarmExtension()
 		return {"Unable to determine starting position"}
 	end
 	
-	createFarm(extend)
+	createFarm()
 	return {"Modular crop farm extended"}
 end
 
@@ -4958,6 +5011,28 @@ function createFloorCeiling()
 	
 	local waterPresent = false
 	
+	R.inventory = T:getInventory()
+	--[[
+		{
+		inventory["minecraft:cobblestone"] = 128
+		inventory["minecraft:stone"] = 64
+		inventory.names = {minecraft:cobblestone, minecraft:stone}
+		inventory.quantities = {128, 64}
+		inventory.blockTypeCount = 2,
+		inventory.blockCount = 196,
+		inventory.useBlock = "minecraft:cobblestone"
+		inventory.mostBlock = "minecraft:cobblestone"
+		inventory.mostCount = 128
+		}
+	]]
+	--R.useBlockType = T:getMostItem("", false)
+	--Log:saveToLog("R.useBlockType = "..R.useBlockType)
+	--R.inventory.useBlock = R.useBlockType
+	--local inventory = T:getInventory()
+	Log:saveToLog("T:R.inventory = "..textutils.serialise(inventory, {compact = true}))
+	--R.inventory.blockCount = T:getInventory()["blockCount"]
+	--Log:saveToLog("T:getInventory()['blockCount'] = "..	R.inventory.blockCount)
+	
 	if R.data == "random" then
 		math.randomseed(R.inventory.blockCount)
 		print("Using random blocks")
@@ -4977,8 +5052,7 @@ function createFloorCeiling()
 			return {message}
 		end
 	end
-	R.useBlockType = T:getMostItem("", false)
-	R.inventory.useBlock = R.useBlockType
+	
 	lib.checkPosition()
 	-- based on clearRectangle code
 	if R.width == 1 then 					-- single block ahead only
@@ -5338,7 +5412,9 @@ function createMine()
 	T:clear()	
 	T:go("m32U1R2M16", true, 8, true) 		-- mine ground level, go up, reverse and mine ceiling to mid-point
 	T:go("U2D2") 							-- create space for chest
-	T:place("minecraft:chest", "up", false)
+	if not T:place("minecraft:chest", "up", false) then
+		T:place("minecraft:barrel", "up", false)
+	end
 	T:emptyTrash("up")
 	T:go("D1R1m16U1R2M16", true, 8, true) 	-- mine floor/ceiling of right side branch
 	T:emptyTrash("up")
@@ -6921,6 +6997,8 @@ function createStaircase()
 	print("Creating staircase "..R.height.." blocks")
 
 	local success, numBlocks, errorMsg, blockType = true, 0, "", ""
+print("R.goDown = "..tostring(R.goDown))
+read()
 	if R.goDown then -- go down towards bedrock
 		local atBedrock = false
 		for i = 1, R.height do
@@ -8242,6 +8320,11 @@ function fellTree()
 		T:harvestTree("forward")
 		while turtle.down() do end
 		retValue = {"Tree Harvested"}
+	elseif T:isLog("up") then
+		os.sleep(2)    -- pause for 2 secs to allow time to press esc
+		T:harvestTree("up")
+		while turtle.down() do end
+		retValue = {"Tree Harvested"}
 	else
 		retValue =
 		{
@@ -9393,7 +9476,7 @@ function manageFarm()
 	
 	function lib.farmToRight()
 		--[[ facing crops on first farm. move to next farm on right side ]]
-		T:go("U1F11 D1")								-- on next farm, facing crops
+		T:go("U1F11 D1")													-- on next farm, facing crops
 		local isFarmToRight = false
 		local isReady, crop, seed, status = lib.isCropReady("forward")		-- eg true, "minecraft:carrots", "7 / 7" or false, "", ""
 		
@@ -9402,7 +9485,7 @@ function manageFarm()
 		else
 			lib.manageTree() -- refuel if required, else do nothing
 			lib.getSeedsOrCrops(seed, crop)
-			isFarmToRight, isFarmToFront = lib.harvest(seed, crop)		-- harvest field, store crops
+			isFarmToRight, isFarmToFront = lib.harvest(seed, crop)			-- harvest field, store crops
 			-- now at starting position of current plot
 		end
 		
@@ -9441,13 +9524,17 @@ function manageFarm()
 	end
 
 	function lib.getEquipment(name)
+		local slot = 0
 		if R.networkFarm then
-			slot = U.getItemFromNetwork("barrel", name, 1)			
+			slot = U.getItemFromNetwork("barrel", name, 1)
+			if slot > 0 then
+				return slot
+			end
 		end
-		local slot = T:getItemSlot(name)	-- if item in inventory
-		if slot == 0 then
+		slot = T:getItemSlot(name)				-- if item in inventory
+		if slot == 0 then						-- item not present
 			T:checkInventoryForItem({name}, {1}, true, name.." required to continue")
-			slot = T:getItemSlot(name)		-- if item in inventory
+			slot = T:getItemSlot(name)			-- if item in inventory
 			if slot == 0 then
 				error(name.." is required. Add to turtle and restart")
 			end
@@ -9853,7 +9940,7 @@ Log:saveToLog("Dropping saplings into storage")
 			needsFuel = true
 		end
 		if needsFuel then
-Log:saveToLog("Fuel required: Running lib.gotoTree()")
+Log:saveToLog("==> lib.manageTree() Fuel required: Running lib.gotoTree()")
 			lib.gotoTree() 					-- check for sapling or harvest tree, retuns to facing crops
 		end
 		
@@ -9909,7 +9996,7 @@ Log:saveToLog("No seeds available.")
 		else
 			success, data = turtle.inspect()
 		end
-Log:saveToLog("lib.isCropReady(".. direction..")")
+--Log:saveToLog("lib.isCropReady(".. direction..")")
 		if success then			-- inspect() success
 			crop = data.name	-- name of growing plant
 			if crop:find("flower") ~= nil then
@@ -10063,6 +10150,7 @@ Log:saveToLog("return isReady = "..tostring(isReady)..", crop = "..crop..", seed
 		end
 		turtle.select(logSlot)
 		turtle.transferTo(1)
+Log:saveToLog("==> lib.refuelWithLogs(logSlot = "..logSlot..")")
 		turtle.craft()							-- craft logs to planks
 		logSlot = T:getItemSlot("planks")
 		while logSlot > 0 and turtle.getFuelLevel() < turtle.getFuelLimit() do
@@ -10232,6 +10320,7 @@ Log:saveToLog("manageFarm() calling checkFarmPosition()")
 	T:equip("right", "minecraft:diamond_hoe")
 	
 	if R.networkFarm then
+Log:saveToLog("==> manageFarm() call --> U.sendItemToNetworkStorage('barrel', 'minecraft:crafting_table, 1")
 		U.sendItemToNetworkStorage("barrel", "minecraft:crafting_table", 1)
 	else
 		T:dropItem("minecraft:crafting_table", "down")
@@ -10296,9 +10385,10 @@ Log:saveToLog("manageFarm() calling checkFarmPosition()")
 		if crop ~= "" or seed  ~= "" then	-- something has been chosen
 Log:saveToLog("Initial planting of "..crop, true)
 			isFarmToRight, isFarmToFront = lib.harvest(seed, crop)	-- harvest plot a1 plots to right / front recorded	
-			planted = false
-		else
-			watch = false	-- not watching, continue with planting
+			--planted = false
+		--else
+			--watch = false	-- not watching, continue with planting
+			return {"Initial crops planted. Re-start to manage this farm"}
 		end
 	end
 	while true do -- start infinite loop of watching crops, farming all modules
@@ -10460,19 +10550,17 @@ end
 function measure()
 	-- measure height/ depth / length
 	-- R.dimension = "height", "depth", "length", "deepest"
+	local doContinue = true
+	local message = ""
+	local blocks = 1
+	local method = ""
+	local measure = ""
+	
 	local lib = {}
 	
 	function lib.checkBlocks(blocks)
-		-- local dimension = "height"
-		-- local message = ""
-		-- local measure = ""
-		-- local doContinue = true
-		-- if R.choice == 102 then
-			-- dimension = "depth"
-		-- elseif R.choice == 103 then
-			-- dimension = "length"
-		-- end
 		blocks = blocks + 1
+		doContinue = true
 		if blocks > R.size then
 			message = "Max "..R.dimension.." of "..R.size.." stopped measurement"
 			measure = ""
@@ -10483,20 +10571,16 @@ function measure()
 		return doContinue, blocks, measure, message
 	end
 	
-	local blocks = 1
-	local method = ""
-	local measure = ""
-	local message = ""
-	local doContinue = true
 	if R.dimension == "height" then				-- height
-		if R.subChoice == 1 then		-- obstruction above
+		R.size = 64								-- catch-all to prevent going to the top of the world
+		if R.subChoice == 1 then				-- obstruction above
 			method = "Method: Until obstruction above"
 			while turtle.up() and doContinue do
 				doContinue, blocks, measure, message = lib.checkBlocks(blocks)
 			end
-		elseif R.subChoice == 2 then	-- end of blocks in front of turtle eg cliff, wall
+		elseif R.subChoice == 2 then			-- end of blocks in front of turtle eg cliff, wall
 			method = "Method: Until no block detected in front"
-			while turtle.detect() and doContinue do
+			while turtle.detect() do
 				if turtle.up() then
 					doContinue, blocks, measure, message = lib.checkBlocks(blocks)
 				else
@@ -10884,6 +10968,7 @@ function plantTreefarm()
 	function lib.emptyInventory()
 		if not T:isEmpty() then
 			U.useSticksAsFuel()
+Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('barrel', 'sapling, 64")
 			U.sendItemToNetworkStorage("barrel", "sapling", 64)
 			U.sendItemToNetworkStorage("barrel", "propagule", 64)
 			U.sendItemToNetworkStorage("barrel", "apple", 64)
@@ -11850,7 +11935,10 @@ Enter to exit]]
 		--if fList[result[1]] ~= nil then
 		if F[result[1]] ~= nil then
 			local task = result[1]		-- eg {"createMine"}
-			Log:saveToLog("main() task = "..task.."()")
+			Log:saveToLog("tk3.main() task = "..task.."()")
+--U.LogR()
+local rValues = U.compareR()
+Log:saveToLog("tk3.main() R values set: "..textutils.serialise(rValues, {compact = true}))
 			result = F[task].call()		-- eg createMine()
 		end
 	end
