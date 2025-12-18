@@ -1,4 +1,4 @@
-local version = 20251005.1800
+local version = 20251218.1400
 
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
@@ -376,7 +376,7 @@ function S:exit()
 end
 
 function S:onBtnClick(button)
-	Log:saveToLog("S:onBtnClick("..button.name..")")
+	Log:saveToLog("GetItems:onBtnClick("..button.name..")")
 	if button.name == "btnBack" then
 		-- back button goes to "TaskOptions" if taskInventory.data ~= nil
 		U.keyboardInput = ""
@@ -386,19 +386,19 @@ function S:onBtnClick(button)
 			self.sceneMgr:switch("TaskOptions")
 		end
 	elseif button.name == "btnNext" then
-		-- start the process 
-		--U.currentTask = "test"	-- debugging only. comment out when completed
+		-- start the process. 
+		-- Loop running in tk3.sceneLoader() checks if U.executeTask is true
 		U.executeTask = true
 	end
 end
 
 function S:update(data)
-Log:saveToLog("GetItems:update data = "..textutils.serialise(data, {compact = true}))
+--Log:saveToLog("GetItems:update data = "..textutils.serialise(data, {compact = true}))
 	self.super.update(self, data)
 	if data ~= nil then
 		-- b and n are actioned in Button:update
 		if data[1] == "turtle_inventory" then
-Log:saveToLog("GetItems:update calling self:checkInventory")
+--Log:saveToLog("GetItems:update calling self:checkInventory")
 			self:checkInventory()	
 		end
 	end
