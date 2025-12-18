@@ -1,4 +1,4 @@
-local version = 20251005.1800
+local version = 20251218.1400
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
 local Multilabel = require("lib.ui.MultiLabel")
@@ -568,6 +568,9 @@ function S:changeData(checkbox)
 					R[data[2]] = true		-- eg r = {"floor", "ceiling"} -> R.ceiling = false
 				end
 				--Log:saveToLog("Checkbox "..checkbox.name.." sets R."..data[1].." = "..tostring(R[data[1]]).." and R."..data[2].." = "..tostring(R[data[2]]))
+			elseif #data == 1 then 			-- eg r = {"networkFarm"},
+				R[data[1]] = checkbox.checked
+				Log:saveToLog("Checkbox "..checkbox.name.." sets R."..data[1].." = "..tostring(checkbox.checked))
 			end
 		else
 			R[data] = checkbox.checked
