@@ -1,6 +1,4 @@
-local version = 20250914.1600
--- pastebin(1): QGttxRZt scenes.Help.lua
--- pastebin(1): smVxZbUe
+local version = 20251218.1400
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
 local Button 	= require("lib.ui.Button")
@@ -29,7 +27,7 @@ function S:setup(title, key, items)
 	if items == nil then items = false end
 	self.lblTitle:setText(title)
 	if items then
-		--Log:saveToLog("f["..key.."] = "..F[key].items)
+Log:saveToLog("f["..key.."] = "..F[key].items)
 		self.lblDisplay:setText(F[key].items)
 	else
 		-- eg help["1+4"]
