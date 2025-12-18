@@ -1,4 +1,4 @@
-local version = 20251005.1800
+local version = 20251218.1400
 -- ["lbl4"] = {text = "Text here", bg = colors.black, fg = colors.lime, alignH = "centre"},
 -- ["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
 -- ...state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, event = {"changeRValue", "inventoryKey", "1"}},
@@ -22,6 +22,8 @@ local version = 20251005.1800
 		{"Select block type", " for desired style", ""}
 	},
 quantity can be numerical or expression to be parsed
+	IMPORTANT! 													"math.ceil( R.length / R.torchInterval )"  = CORRECT
+	any R.xxx variable MUST be surrounded by space characters 	"math.ceil(R.length / R.torchInterval)"    = WRONG
 ]]
 
 return
@@ -48,7 +50,7 @@ return
 		call = buildGableRoof,
 		title = "03-Build a gable end roof",
 		description = "Building gable end roof",
-		fuel = "R.height * R.length * 2) + (R.height * R.width * 2",
+		fuel = "R.height * R.length * 2) + ( R.height * R.width * 2)",
 		items =
 [[~red~width * length * height stone, stairs or planks
 ~orange~length + 2 slabs for ridge
@@ -58,9 +60,9 @@ return
 			{
 				{"planks", "stairs", "stone"},
 				{
-					"(R.height * R.length * 2) + (R.height * R.width * 2)",
-					"(R.height * R.length * 2) + (R.height * R.width * 2)",
-					"(R.height * R.length * 2) + (R.height * R.width * 2)"
+					"( R.height * R.length * 2) + ( R.height * R.width * 2)",
+					"( R.height * R.length * 2) + ( R.height * R.width * 2)",
+					"( R.height * R.length * 2) + ( R.height * R.width * 2)"
 				},
 				{true, true, true},
 				{"Select block type", " for desired style", ""}
@@ -90,9 +92,9 @@ return
 			{
 				{"planks", "stairs", "stone"},
 				{
-					"(R.height * R.length * 2) + (R.height * R.width * 2)",
-					"(R.height * R.length * 2) + (R.height * R.width * 2)",
-					"(R.height * R.length * 2) + (R.height * R.width * 2)"
+					"( R.height * R.length * 2) + ( R.height * R.width * 2)",
+					"( R.height * R.length * 2) + ( R.height * R.width * 2)",
+					"( R.height * R.length * 2) + ( R.height * R.width * 2)"
 				},  {true, true, true} , {"Select block type", " for desired style", ""}
 			},
 			{"slab", "R.length", false, "Match slabs & roof blocks"}
@@ -111,7 +113,7 @@ return
 		call = buildStructure,
 		title = "02-Build a walled area / house",
 		description = "Building walled area / house",
-		fuel = "(R.height * R.length * 2) + (R.height * R.width * 2)",
+		fuel = "( R.height * R.length * 2) + ( R.height * R.width * 2)",
 		data = 
 		{
 			["chk1"] = {text = {"Outside ?","forward 1", "first"}, group = {"chk1", "chk2"}, state = false, r = "forward"},
@@ -131,9 +133,9 @@ return
 			{
 				{"stone", "planks", "bricks"},
 				{
-					"(R.height * R.length * 2) + (R.height * R.width * 2)",
-					"(R.height * R.length * 2) + (R.height * R.width * 2)",
-					"(R.height * R.length * 2) + (R.height * R.width * 2)"
+					"( R.height * R.length * 2) + ( R.height * R.width * 2)",
+					"( R.height * R.length * 2) + ( R.height * R.width * 2)",
+					"( R.height * R.length * 2) + ( R.height * R.width * 2)"
 				},
 				{true, true, true},
 				{"", "", ""}
@@ -146,13 +148,13 @@ return
 		call = buildWall,
 		title = "01-Build a wall",
 		description = "Building wall",
-		fuel = "R.width * R.length * 2",
+		fuel = " R.width * R.length * 2",
 		items =
 [[~red~length ~yellow~stone or fence
 ]],
 		inventory = 
 		{
-			{{"wall", "fence"}, {"math.ceil((R.width + R.length) * 2.3)", "math.ceil((R.width + R.length) * 2.3)"}, true, ""},
+			{{"wall", "fence"}, {"math.ceil(( R.width + R.length ) * 2.3)", "math.ceil(( R.width + R.length ) * 2.3)"}, true, ""},
 		},
 		data = 
 		{
@@ -175,15 +177,23 @@ return
 	{
 		call = clearAndReplantTrees,
 		title = "06-Harvest and replant forest",
-		description = "Harvesting and replanting forest",
+		description = "Harvesting / replanting forest",
 		fuel = 2000,
+		data =
+		{
+			["chk1"] = {text = {"re-plant", "saplings ?", "", ""}, state = false, r = "auto"},
+			["lbl1"] = {text = "Width of the area (1-64)"},
+			["lbl2"] = {text = "Length of the area (1-64)"},
+			["txt1"] = {text = "0", limits = {{0}, {64}}, r = "width"},
+			["txt2"] = {text = "0", limits = {{0}, {64}}, r = "length"}
+		},
 		items = 
 [[~green~1 chest for crafting fuel
 64 saplings mixed types
 ]],
 		inventory =
 		{
-			{"minecraft:chest", 1, true, ""},
+			{"minecraft:chest", 1, false, ""},
 			{"sapling", 64, false, ""}
 		}
 	},
@@ -215,7 +225,7 @@ return
 		call = clearBuilding,
 		title = "05-Clear hollow structure",
 		description = "Clearing building",
-		fuel = "(R.width * R.length) + ((R.width + R.length) * R.height)",
+		fuel = "( R.width * R.length ) + (( R.width + R.length ) * R.height )",
 		data = 
 		{
 			["chk1"] = {text = {"Bottom","to top",""}, group = {"chk1", "chk2"}, state = true,  r = "goUp"},
@@ -277,7 +287,7 @@ return
 		call = clearPerimeter,
 		title = "04-Clear perimeter wall",
 		description = "Clearing perimeter",
-		fuel = "(R.width + R.length) * 2",
+		fuel = "( R.width + R.length ) * 2",
 		data =
 		{
 			["chk1"] = {text = {"Outside ?","forward 1", "first"}, state = false, r = "forward"},
@@ -341,7 +351,7 @@ return
 		call = clearSolid,
 		title = "06-Clear solid structure",
 		description = "Clearing solid structure",
-		fuel = "(R.width * R.length) + ((R.width + R.length) * R.height)",
+		fuel = "( R.width * R.length ) + (( R.width + R.length ) * R.height )",
 		data = 
 		{
 			["chk1"] = {text = {"Bottom","to top",""}, state = true, group = {"chk1", "chk2"}, r = "goUp"},
@@ -668,7 +678,7 @@ height * 2 + 2 soul sand
 		inventory =
 		{
 			{"stone", "R.length * 2", false, ""},
-			{"minecraft:torch", "math.ceil(R.length / R.torchInterval)", false, ""}
+			{"minecraft:torch", "math.ceil( R.length / R.torchInterval )", false, ""}
 		}
 	},
 	
@@ -719,7 +729,7 @@ height * 2 + 2 soul sand
 		call = createEnclosure,
 		title = "05-Fence or wall land enclosure",
 		description = "Building land enclosure",
-		fuel = "(R.length + R.width) * 2",
+		fuel = "( R.length + R.width ) * 2",
 		items =
 [[	
 ~red~l*w*2 ~yellow~stone or fence
@@ -730,13 +740,13 @@ height * 2 + 2 soul sand
 		{
 			["default"] =
 			{
-				{{"stone", "fence"}, {"(R.length + R.width) * 2", "(R.length + R.width) * 2"}, {true, true}, {"", ""}},
-				{"minecraft:torch", "math.ceil(((R.length + R.width) * 2) / R.torchInterval))", false, ""}
+				{{"stone", "fence"}, {"( R.length + R.width ) * 2", "( R.length + R.width ) * 2"}, {true, true}, {"", ""}},
+				{"minecraft:torch", "math.ceil((( R.length + R.width ) * 2) / R.torchInterval )", false, ""}
 			},
 			["barrel"] =
 			{
-				{{"stone", "fence"}, {"(R.length + R.width) * 2", "(R.length + R.width) * 2"}, {true, true}, {"", ""}},
-				{"minecraft:torch", "math.ceil(((R.length + R.width) * 2) / R.torchInterval)", false, ""},
+				{{"stone", "fence"}, {"( R.length + R.width ) * 2", "( R.length + R.width ) * 2"}, {true, true}, {"", ""}},
+				{"minecraft:torch", "math.ceil((( R.length + R.width ) * 2) / R.torchInterval )", false, ""},
 				{"minecraft:barrel", 4, false, "for storage"}
 			}
 		},
@@ -766,7 +776,7 @@ height * 2 + 2 soul sand
 		inventory =
 		{
 			{{"stone", "fence"}, {"R.length", "R.length"}, {true, true}, {"", ""}},
-			{"minecraft:torch", "math.ceil(R.length / R.torchInterval)", false, ""}
+			{"minecraft:torch", "math.ceil( R.length / R.torchInterval )", false, ""}
 		},
 		data = 
 		{
@@ -831,7 +841,6 @@ height * 2 + 2 soul sand
 ~green~5     ~yellow~ladder (Network ONLY)
 ~green~2     ~yellow~full size wired modems
 ~green~57    ~yellow~Computercraft cable
-
 ]],
 		inventory =
 		{
@@ -891,7 +900,7 @@ height * 2 + 2 soul sand
 	{
 		call = createLadder,
 		title = "01-Ladder up or down",
-		fuel = "math.abs(R.destinationLevel - R.startLevel) * 2",
+		fuel = "math.abs( R.destinationLevel - R.startLevel ) * 2",
 		description = "Creating ladder",
 		items = 
 [[~red~1          ~yellow~ladder for each level
@@ -901,9 +910,9 @@ height * 2 + 2 soul sand
 		inventory =
 		{
 			{"minecraft:bucket", 1, false, ""},
-			{"minecraft:ladder", "math.abs(R.destinationLevel - R.startLevel)", true, ""},
-			{"minecraft:torch", "math.abs(math.ceil((R.destinationLevel - R.startLevel) / 3))", false, ""},
-			{"stone", "math.abs(R.destinationLevel - R.startLevel)", true, ""},
+			{"minecraft:ladder", "math.abs( R.destinationLevel - R.startLevel )", true, ""},
+			{"minecraft:torch", "math.abs(math.ceil(( R.destinationLevel - R.startLevel ) / 3))", false, ""},
+			{"stone", "math.abs( R.destinationLevel - R.startLevel )", true, ""},
 		},
 		data = 
 		{
@@ -929,7 +938,7 @@ height * 2 + 2 soul sand
 		items =
 [[
 ~red~64 ~yellow~stone
-~red~1  ~yellow~chest
+~red~1  ~yellow~chest or barrel
 ~green~24 ~yellow~torch
 ~green~1  ~yellow~bucket
 ]],
@@ -938,7 +947,8 @@ height * 2 + 2 soul sand
 			{"minecraft:torch", 24, false, ""},
 			{"minecraft:bucket", 1, false, ""},
 			{"stone", 64, true, ""},
-			{"minecraft:chest", 1, true, ""}
+			--{"minecraft:chest", 1, true, ""}
+			{{"chest", "barrel"}, {1, 1}, {true, true}, {"", ""}}
 		}
 	},
 	
@@ -995,11 +1005,11 @@ height * 2 + 2 soul sand
 			{
 				{"slab", "R.length", true, "Add slabs to req length"},
 				{"stone", "R.length", true, "NOT bricks!"},
-				{"minecraft:torch", "math.ceil(R.length / R.torchInterval)", false, "if required"},
+				{"minecraft:torch", "math.ceil( R.length / R.torchInterval )", false, "if required"},
 			},
 			["ice"] =	-- 4 turtles ice only (positions 2 and 3)
 			{
-				{{"minecraft:packed_ice", "minecraft:blue_ice"}, {"math.ceil(R.length / 2)", "math.ceil(R.length / 2)"}, {false, false}, {"", ""}}
+				{{"minecraft:packed_ice", "minecraft:blue_ice"}, {"math.ceil( R.length / 2)", "math.ceil( R.length / 2)"}, {false, false}, {"", ""}}
 			},
 		}
 	}, 
@@ -1136,7 +1146,7 @@ height * 2 + 2 soul sand
 		inventory =
 		{
 			{"stone", "R.length", false, ""},
-			{"minecraft:torch", "math.floor(R.length / R.torchInterval)", false, ""}
+			{"minecraft:torch", "math.floor( R.length / R.torchInterval )", false, ""}
 		}
 	},
 
@@ -1186,7 +1196,7 @@ height * 2 + 2 soul sand
 ]],
 		inventory = 
 		{
-			{"obsidian", "(R.length - 2 + R.height - 2) * R.width * 2", true, ""},
+			{"obsidian", "( R.length - 2 + R.height - 2) * R.width * 2", true, ""},
 			{"stone", "R.width * 4", true, ""}
 		}
 	},
@@ -1269,7 +1279,7 @@ height * 2 + 2 soul sand
 		call = createSafeDrop,
 		fuel = "R.height * 2",
 		title = "04-Safe drop to water block",
-		description = "Creating safe drop $R.height$ blocks deep",
+		description = "Creating safe drop $ R.height $ blocks deep",
 		items =
 [[~green~4 * height ~yellow~stone
 ~red~1          ~yellow~water bucket
@@ -1354,7 +1364,7 @@ length * width slabs
 ]],
 		inventory =
 		{
-			{"stone", "(R.width * R.length) + (R.length * R.height * 2) + (R.width * R.height * 2)", true, ""}
+			{"stone", "( R.width * R.length ) + ( R.length * R.height * 2) + ( R.width * R.height * 2)", true, ""}
 		}
 	},
 
@@ -1362,8 +1372,8 @@ length * width slabs
 	{
 		call = createStaircase,
 		title = "02-Stairs up or down",
-		fuel = "(math.abs(R.destinationLevel - R.startLevel) * 16)",
-		description = "Creating staircase $math.abs(R.destinationLevel - R.startLevel)$ blocks high",
+		fuel = "(math.abs( R.destinationLevel - R.startLevel ) * 16)",
+		description = "Creating staircase $math.abs( R.destinationLevel - R.startLevel )$ blocks high",
 		items =
 [[~orange~2  ~yellow~slabs for each level
    or 2 stone per level -> craft
@@ -1374,9 +1384,9 @@ length * width slabs
 		{
 			--{"minecraft:torch", 24, false, ""},
 			{"minecraft:bucket", 1, false, "for fuel"},
-			{"slab", "math.abs(R.destinationLevel - R.startLevel) * 2", false, ""},
+			{"slab", "math.abs( R.destinationLevel - R.startLevel ) * 2", false, ""},
 			{"minecraft:chest", 1, true, ""},	-- needed for crafting
-			{"stone", "math.abs(R.destinationLevel - R.startLevel) * 4", true, ""}
+			{"stone", "math.abs( R.destinationLevel - R.startLevel ) * 4", true, ""}
 			--{"sign", 2, false, "wet entrance"}
 		},
 		data = 
@@ -1409,9 +1419,9 @@ length * width slabs
 		inventory =
 		{
 			{"stone", "R.length * 4", true, ""},
-			{"cobble", "math.floor(R.length / 16) * 4", true, "For Chunk boundaries"},
+			{"cobble", "math.floor( R.length / 16) * 4", true, "For Chunk boundaries"},
 			{{"minecraft:bucket", "minecraft:lava_bucket"}, {1, 1}, {false, false}, { "For refuelling", ""}},
-			{"minecraft:torch", "math.floor(R.length / 8)", false, ""}
+			{"minecraft:torch", "math.floor( R.length / 8)", false, ""}
 		},
 		data = 
 		{
@@ -1594,8 +1604,8 @@ length * width slabs
 			["4pathT"] =	-- 4 turtles, towpath only (positions 1 and 4) with torches
 			{
 				{"slab", "R.length", true, ""},
-				{"stone", "math.ceil(R.length / R.torchInterval)", false, ""},
-				{"minecraft:torch", "math.ceil(R.length / R.torchInterval)", false, ""}
+				{"stone", "math.ceil( R.length / R.torchInterval )", false, ""},
+				{"minecraft:torch", "math.ceil( R.length / R.torchInterval )", false, ""}
 			},
 			["4water"] =	-- 4 turtles water only (positions 2 and 3)
 			{
@@ -1612,7 +1622,7 @@ length * width slabs
 			{
 				{"slab", "R.length", true, ""},
 				{"stone", "R.length", false, ""},	-- need stone for canal base
-				{"minecraft:torch", "math.ceil(R.length / R.torchInterval)", false, ""},
+				{"minecraft:torch", "math.ceil( R.length / R.torchInterval )", false, ""},
 				{"minecraft:water_bucket", 2, false, ""},
 			},
 		}
@@ -2021,7 +2031,7 @@ length * width slabs
 	["quickMineCorridor"] =
 	{
 		call = quickMineCorridor,
-		fuel = "(R.width * 2 + R.length * 2) * 2",
+		fuel = "( R.width * 2 + R.length * 2) * 2",
 		title = "06-QuickMine corridor system",
 		description = "QuickMine corridor: ~R.width~ x ~R.length~",
 		items =
@@ -2032,7 +2042,7 @@ length * width slabs
 		inventory = 
 		{
 			{"stone", "R.width * 2 + R.length * 2", false, ""},
-			{"minecraft:torch", "math.floor(((R.width * 2) + (R.length * 2) / R.torchInterval))", false, ""},
+			{"minecraft:torch", "math.floor((( R.width * 2) + ( R.length * 2) / R.torchInterval ))", false, ""},
 			{"minecraft:bucket", 1, false, ""}
 		},
 		data =
