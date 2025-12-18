@@ -1,4 +1,4 @@
-local version = 20251003.1700
+local version = 20251218.1400
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.MultiButton")
@@ -590,13 +590,38 @@ Log:saveToLog("MainMenu:onMbClick:START: mb.name = "..mb.name..", U.subMenuName 
 			elseif sIndex == 12 then
 				key = self.m12[index]
 			end
---Log:saveToLog("F[key] key =  "..tostring(key))
+Log:saveToLog("F[key] key =  "..tostring(key))
 			local title = F[key].title
 			if mb.name == "mbItems" then
 --Log:saveToLog("item button key = "..key..", title = "..title)
 				if F[key].items == nil then
 					self.lblInfo:setText("No Items to display")
 				else
+					-- items can be changed from default here
+					if key == "createFarmExtension" then
+						F["assessFarm"].call()
+						if R.networkFarm then
+							F["createFarmExtension"].items =
+[[~red~64    ~yellow~stone
+~red~128   ~yellow~dirt
+~red~4     ~yellow~water bucket
+~red~1     ~yellow~barrel
+~red~1     ~yellow~sapling (spruce preferred)
+~green~5     ~yellow~ladder
+~green~2     ~yellow~full size wired modems
+~green~57    ~yellow~Computercraft cable
+]]
+						else
+							F["createFarmExtension"].items =
+[[~red~64    ~yellow~stone
+~red~128   ~yellow~dirt
+~red~4     ~yellow~water bucket
+~red~1     ~yellow~barrel
+~green~5     ~yellow~5 chests
+~red~1     ~yellow~sapling (spruce preferred)
+]]
+						end
+					end
 					self.sceneMgr:getSceneByName("Help"):setup(title, key, true)	-- using Help scene to display items
 					self.sceneMgr:switch("Help")
 				end
@@ -629,7 +654,7 @@ Log:saveToLog("MainMenu:onMbClick:START: mb.name = "..mb.name..", U.subMenuName 
 					R.auto = true	-- stop at stronghold/trial chamber
 					U.currentTask = "createLadder"	
 				elseif mb.selectedButtonName == self.m1[2] then -- stairs
-					R.goUp = true
+					R.goDown = true
 					R.auto = true	-- stop at stronghold/trial chamber
 					U.currentTask = "createStaircase"
 				elseif mb.selectedButtonName == self.m1[3] then -- mine at this level
@@ -710,7 +735,7 @@ Log:saveToLog("MainMenu:onMbClick:START: mb.name = "..mb.name..", U.subMenuName 
 						U.executeTask = true
 					end
 					if R.networkFarm then
-						U.currentTask = "harvestTreeFarm"			-- uses network to get supplies
+						U.currentTask = "harvestTreeFarm"		-- uses network to get supplies
 						U.executeTask = true
 					elseif R.earlyGame then
 						U.currentTask = "harvestTreeFarm"		
@@ -719,22 +744,60 @@ Log:saveToLog("MainMenu:onMbClick:START: mb.name = "..mb.name..", U.subMenuName 
 					R.inventoryKey = "default"
 					U.currentTask = "createEnclosure"
 				elseif mb.selectedButtonName == self.m2[6] then -- Harvest and replant forest
+					R.auto = false;								-- true to replant saplings
 					U.currentTask = "clearAndReplantTrees"
 				elseif mb.selectedButtonName == self.m2[7] then -- Convert tree farm to network
 					R.inventoryKey = "convertStorage"
-					R.down = true	--disabled in convertTreeFarm if R.data = "convert"
+					R.down = true								--disabled in convertTreeFarm if R.data = "convert"
 					U.currentTask = "convertTreefarm"			-- uses network to get supplies
 				end 
 			--elseif mb.name == self.subMenuList[self.mm[3]] then	-- "mbFarming"
-			elseif U.subMenuName == self.mm[3][1][1] then	-- "mbFarming"
+			elseif U.subMenuName == self.mm[3][1][1] then		-- "mbFarming"
 				if mb.selectedButtonName == self.m3[1] then 	-- Create modular crop farm
+					R.networkFarm = false
+					R.data = "new"								-- if user selects network farm, storage will be placed
+					
 					U.currentTask = "createFarm"
 				elseif mb.selectedButtonName == self.m3[2] then -- Extend modular crop farm
 					F["assessFarm"].call()
-					R.data = "right"
+-- *********  EXAMPLE data change before displaying task options menu   *********
+					--[[
+					data =
+					{
+						["chk1"] = {text = {"Use", "network","storage"}, state = false, required = true, r = {"networkFarm"}},
+						["chk2"] = {text = {"To right", "of current","Farm"}, state = true, group = {"chk2", "chk3"}, required = true, r = {"data", "right", "back"}},
+						["chk3"] = {text = {"Behind", "current", "farm"}, state = false, group = {"chk2", "chk3"}, required = true, r = {"data", "back", "right"}},
+					}
+					]]
+					
+					F["createFarmExtension"].data["chk1"].state = R.networkFarm
+					if R.networkFarm then
+						F["createFarmExtension"].inventory =
+						{
+							{"stone", 64, true, ""},
+							{"dirt", 128, false, ""},
+							{"water_bucket", 4, true, ""},
+							{"barrel", 1, true, ""},
+							{"sapling", 1, true, ""},
+							{"ladder", 5, true, ""},
+							{"wired_modem_full", 2, true, ""},
+							{"computercraft:cable", 57, true, ""}
+						}
+					else
+						F["createFarmExtension"].inventory =
+						{
+							{"stone", 64, true, ""},
+							{"dirt", 128, false, ""},
+							{"water_bucket", 4, true, ""},
+							{"barrel", 1, true, ""},
+							{"chest", 5, true, ""},
+							{"sapling", 1, true, ""}
+						}
+					end
+					R.data = "right"							-- default value
 					U.currentTask = "createFarmExtension"
 				elseif mb.selectedButtonName == self.m3[3] then -- Manage farm:plant,harvest,convert
-					F["checkFarmPosition"].call()
+					F["checkFarmPosition"].call()				-- now facing crops, R.ready = true/false, R.networkFarm = true/false
 					R.inventoryKey = "farm"
 					U.currentTask = "manageFarmSetup"
 				elseif mb.selectedButtonName == self.m3[4] then -- Build single wall or fence
@@ -749,7 +812,7 @@ Log:saveToLog("MainMenu:onMbClick:START: mb.name = "..mb.name..", U.subMenuName 
 					U.currentTask = "upgradeFarmland"
 				end 
 			--elseif mb.name == self.subMenuList[self.mm[4]] then	-- "mbObsidian"
-			elseif U.subMenuName == self.mm[4][1][1] then	-- "mbObsidian"
+			elseif U.subMenuName == self.mm[4][1][1] then		-- "mbObsidian"
 				if mb.selectedButtonName == self.m4[1] then 	-- "lavaRefuel"
 					R.side = "L"
 					U.currentTask = "lavaRefuel"
