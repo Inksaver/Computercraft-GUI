@@ -1,4 +1,4 @@
-local version = 20251005.1800
+local version = 20251216.1700
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as T.lua, preferably in /lib folder
@@ -88,7 +88,7 @@ local stone =
 	"minecraft:cracked_polished_blackstone_bricks",
 	"minecraft:chiseled_polished_blackstone",
 	"minecraft:basalt",
-	"minecraft:deepslate",
+	--"minecraft:deepslate", found in deepslate ores so marks them as stone
 	"minecraft:cobbled_deepslate",
 	"minecraft:chiseled_deepslate",
 	"minecraft:polished_deepslate",
@@ -327,30 +327,6 @@ function T:new(useLog)
 	self.logFileExists = false
 end
 
---[[function T.new(useLog) --note dot, NOT colon, list of args or ... table
-	local self = setmetatable({}, T)
-	if useLog == nil then useLog = false end
-	self.x = 0
-	self.y = 0
-	self.z = 0
-	self.facing = 0
-	self.compass = ""
-	self.equippedLeft = ""
-	self.equippedRight = ""
-	self.placeSlot = 0
-	self.placeItem = ""
-	self.osVersion = os.version() -- eg CraftOS 1.8
-	self.userBlocks = {}
-	self.useLog = useLog
-	if self.useLog then
-		print("Logging enabled")
-		sleep(1.5)
-	end
-	self.logFileName = "log.txt"
-	self.logFileExists = false
-	return self
-end]]
-
 -- helper function for iterating lists
 function T:values(t) -- general diy iterator
 	local i = 0
@@ -442,8 +418,8 @@ function T:getY() return self.y end
 function T:setY(newVal) self.y = newVal end
 function T:getZ() return self.z end
 function T:setZ(newVal) self.z = newVal end
-function T:getFacing() return self.facing end
-function T:setFacing(newVal)
+--function T:getFacing() return self.facing end
+--[[function T:setFacing(newVal)
 	local direction = {"south", "west", "north", "east"}
 	self.facing = newVal
 	if self.facing < 0 then
@@ -452,7 +428,7 @@ function T:setFacing(newVal)
 		self.facing = 0
 	end
 	self.compass = direction[self.facing + 1] --+1 to allow for lua indexing at 1
-end
+end]]
 function T:getCompass() return self.compass end
 function T:getPlaceItem() return self.placeItem end
 function T:setPlaceItem(item)
@@ -569,7 +545,8 @@ function T:doMoves(numBlocksRequested, direction)
 	if numBlocksRequested == 0 then
 		return 0
 	end
-	for i = 1, numBlocksRequested, 1 do
+	--for i = 1, numBlocksRequested, 1 do
+	while numBlocksMoved < numBlocksRequested do
 		local digOK, digError
 		if bypass then
 			bypassCount = bypassCount + 1
@@ -579,18 +556,23 @@ function T:doMoves(numBlocksRequested, direction)
 			end
 		else
 			if direction == "back" then
-				moveOK, moveError = turtle.back() -- try to move back
-				if not moveOK then
-					turtle.turnRight()
-					turtle.turnRight()
-					turtle.dig()
-					moveOK, moveError = turtle.forward() -- try to move forward
-					turtle.turnRight()
-					turtle.turnRight()
-				end
-				if moveOK then
+				moveOK, moveError = turtle.back() 				-- try to move back
+				if moveOK then								
 					numBlocksMoved = numBlocksMoved + 1
-					self:changeCoords(direction)
+				else											-- unable to move back
+					turtle.turnRight()							-- face opposite direction
+					turtle.turnRight()
+					for m = 1, numBlocksRequested do			-- dig and move
+						turtle.dig()
+						moveOK, moveError = turtle.forward() 	-- try to move forward
+						if moveOK then
+							numBlocksMoved = numBlocksMoved + 1
+							self:changeCoords(direction)
+						end
+					end											-- unless in front of bedrock or minecart all moves completed
+					turtle.turnRight()
+					turtle.turnRight()
+					return numBlocksMoved, errorMsg				-- exit
 				end
 			else
 				if Detect() then -- block above/forward/below
@@ -603,7 +585,7 @@ function T:doMoves(numBlocksRequested, direction)
 							if digError:lower():find("unbreakable") ~= nil then -- different messages between versions all contain 'unbreakable'
 								errorMsg = digError
 								print(digError)
-								break
+								return numBlocksMoved, errorMsg				-- exit
 							else -- not bedrock, could be mob or minecart
 								self:attack()
 							end
@@ -624,7 +606,7 @@ function T:doMoves(numBlocksRequested, direction)
 								if digError:lower():find("unbreakable") ~= nil then -- different messages between versions all contain 'unbreakable'
 									errorMsg = digError
 									print(digError)
-									break
+									return numBlocksMoved, errorMsg				-- exit
 								else -- not bedrock, could be mob or minecart
 									self:attack()
 								end
@@ -659,7 +641,7 @@ function T:changeCoords(direction)
 	--	1 = go west  (x decreases)
 	--	2 = go north (z decreases
 	--	3 = go east  (x increases)
-	if direction == "forward" then
+	--[[if direction == "forward" then
 		if self.facing == 0 then
 			self.z = self.z + 1 
 		elseif self.facing == 1 then
@@ -683,10 +665,11 @@ function T:changeCoords(direction)
 		self.y = self.y + 1
 	elseif direction == "down" then
 		self.y = self.y - 1
-	end
+	end]]
 end
 
 function T:down(steps, getBlock)
+	--[[can be used to get blocktpe only by passing 0 steps ]]
 	steps = steps or 1
 	if getBlock == nil then getBlock = false end
 	local success, blockType = false, nil
@@ -707,24 +690,35 @@ function T:down(steps, getBlock)
 	return success, blocksMoved, errorMsg, blockType
 end
 
-function T:forward(steps)    
+function T:forward(steps, getBlock)    
+	--[[can be used to get blocktpe only by passing 0 steps ]]
 	steps = steps or 1
-	local success = false
+	if getBlock == nil then getBlock = false end
+	local success, blockType = false, nil
+	if steps == 0 then 
+		if getBlock then
+			blockType = self:getBlockType("forward")
+		end
+		return true, 0, "", blockType
+	end
 	local blocksMoved, errorMsg = self:doMoves(steps, "forward")
 	if blocksMoved == steps then
 		success = true
 	end
-	return success, blocksMoved, errorMsg
+	if getBlock then
+		blockType = self:getBlockType("forward")
+	end
+	return success, blocksMoved, errorMsg, blockType
 end
 
 function T:turnLeft(steps)
 	steps = steps or 1
 	for i = 1, steps do
 		turtle.turnLeft()
-		self.facing = self.facing - 1
-		if self.facing < 0 then
-			self.facing = 3
-		end
+		-- self.facing = self.facing - 1
+		-- if self.facing < 0 then
+			-- self.facing = 3
+		-- end
 	end
 end
 
@@ -732,20 +726,21 @@ function T:turnRight(steps)
 	steps = steps or 1
 	for i = 1, steps do
 		turtle.turnRight()
-		self.facing = self.facing + 1
-		if self.facing > 3 then
-			self.facing = 0
-		end
+		-- self.facing = self.facing + 1
+		-- if self.facing > 3 then
+			-- self.facing = 0
+		-- end
 	end
 end
 
 function T:up(steps, getBlock)
+	--[[can be used to get blocktpe only by passing 0 steps ]]
 	steps = steps or 1
 	if getBlock == nil then getBlock = false end
 	local success, blockType = false, nil
 	if steps == 0 then 
 		if getBlock then
-			blockType = self:getBlockType("down")
+			blockType = self:getBlockType("up")
 		end
 		return true, 0, "", blockType
 	end
@@ -887,7 +882,7 @@ function T:checkNoDigBlocks(direction, moveRound)
 	-- if mob spawner or chest found, go round it. Do not break!
 	if blockType ~= "" then
 		if blockType:find("spawner") ~= nil then
-			self:writeCoords("SpawnerCoords.txt")
+			--self:writeCoords("SpawnerCoords.txt")
 			bypass = true
 			isSpawner = true
 			print("Spawner Found!")
@@ -1518,7 +1513,7 @@ function T:emptyTrash(direction)
 	local itemName = ""
 	local move = false
 	-- store these items permanently inside turtle
-	local keepItems = 	{"netherrack", "cobble", "chest", "torch", "ore", "bucket", "coal", "diamond", "debris", "deepslate","iron","gold","copper"}			
+	local keepItems = 	{"netherrack", "cobble", "chest", "barrel", "torch", "ore", "bucket", "coal", "diamond", "debris", "deepslate","iron","gold","copper"}			
 	local keepit = false					
 	-- empty excess cobble, dirt, all gravel, unknown minerals
 	for i = 1, 16 do
@@ -1957,7 +1952,7 @@ function T:getCoords(fromFile)
 			print("  x = "..self.x)
 			print("  y = "..self.y)
 			print("  z = "..self.z)
-			print("  facing "..self.compass.." ("..self.facing..")")
+			--print("  facing "..self.compass.." ("..self.facing..")")
 			print()
 			write("Is this correct? (y/n)")
 			event, param1 = os.pullEvent ("char")
@@ -2587,6 +2582,26 @@ function T:getPolishedItem(blockType)
 	return "", 0
 end
 
+function T:getSaplingFromLogType(logType)
+	--[[ get type of sapling to plant from logType ]]
+	if logType:find("dark_oak") ~= nil then
+		return "minecraft:dark_oak_sapling"
+	elseif logType:find("pale") ~= nil then
+		return "minecraft:pale_oak_sapling"
+	elseif logType:find("oak") ~= nil then
+		return "minecraft:oak_sapling"
+	elseif logType:find("spruce") ~= nil then
+		return "minecraft:spruce_sapling"
+	elseif logType:find("birch") ~= nil then
+		return "minecraft:birch_sapling"
+	elseif logType:find("jungle") ~= nil then
+		return "minecraft:jungle_sapling"
+	elseif logType:find("acacia") ~= nil then
+		return "minecraft:acacia_sapling"
+	end
+	return "sapling"
+end
+
 function T:getSaplingSlot(name)
 	local saplingSlot = 0
 	local count = 0
@@ -2608,7 +2623,7 @@ function T:getSaplingSlot(name)
 end
 
 function T:getPlaceChestDirection()
-	local facing = self.facing
+	--local facing = self.facing
 	local chestDirection = "forward"
 	local turns = 0
 	
@@ -2830,7 +2845,7 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 			if leaveExisting then -- leave alone if non-gravity
 				if self:detect(direction[modifier + 1]) then -- solid block ahead, not air, water or lava
 					local blockType = self:getBlockType("forward")
-					if not self:isStone(blockType) and blockType ~= "minecraft:ladder" then
+					if not self:isStone(blockType) and blockType ~= "minecraft:ladder" and blockType ~= "minecraft:deepslate" then
 					--if self:digValuable(direction[modifier + 1]) then
 						fill = true
 					elseif self:digGravityBlock(direction[modifier + 1]) then -- sand or gravel
@@ -3274,105 +3289,275 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 end
 
 function T:harvestTree(direction)
-	-- Assume calling code will already check position is against or within a tree
-	-- If inside, direction will be set to "up" or "down"
-	direction = direction or "forward"
-	local double = false
-	local craftChest = false
-	local goHeight = 0
-	local onLeft = true		-- default position in double tree
-	if turtle.getFuelLevel() == 0 then
-		turtle.dig()
-		self:craft("planks", 4)
-		turtle.refuel()
-		turtle.dig()
-		craftChest = true
-	end
-	if direction == "forward" then
-		self:go("F1")-- dig base of tree if not done for refuelling, go under.
-	end
-	-- check if on r or l of double width tree
-	self:turnLeft(1)
-	local blockType = self:getBlockType("forward")
-	if blockType:find("log") ~= nil then
-		double = true
-		onLeft = false 				-- placed on right side of 2 block tree
-	end
-	self:turnRight(2)	-- check if double tree
-	blockType = self:getBlockType("forward")
-	if blockType:find("log") ~= nil then
-		turtle.dig()
-		double = true
-		onLeft = true 				-- placed on left side of 2 block tree
-	end
-	self:turnLeft(1)	-- return to correct position
-	if double then
-		turtle.dig()
-	end
-	if craftChest then -- started with no fuel, used 4 planks, needs a chest
-		self:dig("up")
-		self:up(1)
-		self:dig("up")
-		while not self:detect("down") do
-			self:down(1)
-		end
-		self:craft("planks", 8)
-		self:craft("chest", 1)
-		while turtle.up() do -- return to underside of tree
-			goHeight = goHeight + 1
-			if goHeight > 3 then
-				while turtle.down() do end
-				return double
-			end
-		end
-	end
-	-- Loop to climb up tree and harvest trunk and surrounding leaves
-	while turtle.detectUp() do -- continue loop while block detected above
-		self:up(1)  -- Move up
-		goHeight = goHeight + 1
-		if double then
-			turtle.dig() -- Dig logs in double tree
+	-- assume calling code will already check position is against or within a tree
+	-- if inside, direction will be set to "up" or "down"
+
+	if direction == nil then	-- probably called direct from MainMenu.lua
+		-- check if tree above
+		if self:getBlockType("up"):find("log") ~= nil then
+			direction = "up"
+		elseif self:getBlockType("down"):find("log") ~= nil then
+			direction = "down"
 		else
-			-- Inner loop to check for leaves/ break double tree logs
-			for i = 1, 4 do
-				turtle.dig()
-				turtle.turnRight()
-			end
+			direction = "forward"
 		end
 	end
-	-- At top of the tree. New loop to return to ground
-	if double then -- double tree
+	
+	local singleTypes ="minecraft:birch_log, minecraft:acacia_log, minecraft:cherry_log, minecraft:warped_stem"
+	local dualTypes = "minecraft:spruce_log, minecraft:jungle_log, minecraft:crimson_stem"
+	local doubleTypes = "minecraft:dark_oak_log, minecraft:pale_oak_log"
+	local logType = ""
+	local double, onLeft  = false, true -- default position in double tree
+	
+	local lib = {}
+	
+	function lib.doubleUpDown(onLeft, forward)
+		-- starts facing away from trunk
+		local sideA = "F1x1 R1x1 R1F1 L1x1 R1F1 L1x1 R1F1 L1x1 R1x1B1"
+		local sideB = "F1x1 L1x1 L1F1 R1x1 L1F1 R1x1 L1F1 R1x1 L1x1B1"
 		if onLeft then
-			self:go("F1R1F1R1") -- move to other side of trunk | |V|
+			if forward then
+				self:go(sideA)	-- ends on other side of trunk, facing out
+			else
+				self:go(sideB)
+			end
 		else
-			self:go("F1L1F1L1") -- face cut side of trunk |V| |
-		end
-		while turtle.detectUp() do -- In case more logs / leaves above
-			self:up(1)
-			turtle.dig() --Dig leaves / logs in double tree.
-			goHeight = goHeight + 1
+			if forward then
+				self:go(sideB)
+			else
+				self:go(sideA)
+			end
 		end
 	end
-	for i = 1, goHeight do
-		self:go("x1D1")
-		if double then
+	
+	function lib.cutBranch()
+		local blockType = self:getBlockType("forward")
+		if blockType == "" then						-- air in front, ignore
+			return false
+		end
+		if blockType:find("leaves") ~= nil then
 			turtle.dig()
+			return false
+		end
+		local moves = 0
+		
+		while blockType:find("log") ~= nil or blockType:find("mangrove_root") ~= nil or blockType:find("stem") ~= nil do	-- log or roots in front
+			self:forward(1)
+			moves = moves + 1
+			lib.cutUp()								-- while moving along the branch, check what is above
+			blockType = self:getBlockType("forward")
+		end
+		-- move 1 further in case of acacia
+		if blockType:find("fence") == nil then	-- Mangrove farmed in a fence cage. Do not break it!
+			self:forward(1)						-- Not a fence in front
+			moves = moves + 1
+			lib.cutUp()
+		end
+		self:back(moves)
+		moves = 0
+		return true
+	end
+	
+	function lib.cutUp()
+		local blockType = self:getBlockType("up")
+		if blockType:find("leaves") ~= nil then
+			turtle.digUp()
+		else
+			local movesUp = 0
+			while blockType:find("log") ~= nil or blockType:find("mangrove_root") ~= nil or blockType:find("stem") ~= nil do	-- log above
+				self:up(1)
+				movesUp = movesUp + 1
+				lib.cutBranch()
+				blockType = self:getBlockType("up")
+			end
+			self:down(movesUp)
+			movesUp = 0
 		end
 	end
+	
+	function lib.isDouble()
+		-- check if on r or l of double width tree
+		local double, onLeft = false, false
+		self:turnLeft(1)
+		local blockType = self:getBlockType("forward")
+		if blockType:find("log") ~= nil then
+			double = true				-- placed on right side of 2 block tree
+		end
+		self:turnRight(2)	-- check if double tree
+		blockType = self:getBlockType("forward")
+		if blockType:find("log") ~= nil then
+			double = true
+			onLeft = true 				-- placed on left side of 2 block tree
+		end
+		self:turnLeft(1)				-- return to start position
+		return double, onLeft
+	end
+	
+	function lib.dual(double, onLeft)
+		-- spruce or jungle can be single or double
+		-- no side branches
+		if double then
+			while turtle.detectUp() do
+				self:go("x1U1")
+			end
+			if onLeft then
+				self:go("R1F1L1")
+			else
+				self:go("L1F1R1")
+			end
+			while turtle.down() do end					-- move to log surface
+			local blockType = self:getBlockType("down")
+			while blockType:find("log") ~= nil or blockType:find("leaves") ~= nil do
+				self:go("x1D1")
+				blockType = self:getBlockType("down")
+			end
+			if onLeft then
+				self:go("x1L1F1R1")
+			else
+				self:go("x1R1F1L1")
+			end
+		else
+			lib.single()
+		end
+	end
+	
+	function lib.doubleOak(onLeft)
+		-- Loop to climb up tree and harvest trunk and surrounding leaves
+		-- only pale and dark oak use this function starts on l or r of the trunk
+		-- starting position inside lower left corner of trunk
+		local forward = true
+		if onLeft then
+			self:turnLeft(2)							-- face away from trunk
+		else
+			self:turnRight(2)							-- face away from trunk
+		end
+		while turtle.detectUp() do 						-- continue loop while block detected above
+			lib.doubleUpDown(onLeft, forward)			-- move across trunk ending on opposite side, facing out
+			self:up(1)
+			forward = not forward						-- reverse direction
+		end
+		lib.doubleUpDown(onLeft, forward)				-- one more to clear top layer
+		--forward = not forward
+		--lib.doubleUpDown(onLeft, forward)
+		-- at top of the tree. change position. could be facing either direction dependant on height
+		-- move to other side of trunk | |V|
+		if onLeft then
+			if forward then
+				self:go("R1F1L1")
+			else
+				self:go("L1F1R1")
+			end
+		else
+			if forward then
+				self:go("L1F1R1")
+			else
+				self:go("R1F1L1")
+			end
+		end
+		-- New loop to return to ground on the other side of the tree
+		while turtle.down() do end
+		while turtle.detectDown() do 					-- continue loop while log detected below
+			lib.doubleUpDown(onLeft, forward)
+			self:down(1)
+			forward = not forward
+			local blockType = self:getBlockType("down")
+			if blockType:find("log") == nil and blockType:find("stem") == nil and blockType:find("leaves") == nil and blockType ~= "" then
+				break
+			end
+		end
+		-- return to start position
+		if onLeft then
+			if forward then
+				self:go("L1F1 L1F1 L1x1 L1")
+			else
+				self:go("R2x1 L1F1 R1")
+			end
+		else
+			if forward then
+				self:go("R1F1 R1F1 R1x1 R1")
+			else
+				self:go("R2x1 R1F1 L1")
+			end
+		end
+	end
+	
+	function lib.oak()
+		-- usually single stem, but can have multiple branches
+		-- start same as single, but if side branch found move into diagonals
+		while turtle.detectUp() do 		-- continue loop while block detected above
+			self:up(1)  				-- move up
+			--self:go("F1x0x1x2 L1x1 R2x1 R1F2 x0x1x2 L1x1 R2x1 L1B1")
+			self:turnLeft(1)			-- check left side of trunk
+			lib.cutBranch()
+			self:go("R1F1L1")			-- move in front of trunk, turn left
+			lib.cutBranch()
+			self:turnRight(1)			-- return to front of trunk
+			lib.cutBranch()
+			self:turnRight(1)			-- turn right
+			lib.cutBranch()
+			self:go("L1B1R1")			-- return to centre of trunk, turn to right side	
+			lib.cutBranch()
+			self:go("R1F1L1")			-- move in back of trunk, turn left
+			lib.cutBranch()
+			self:turnRight(1)			-- return to back of trunk
+			lib.cutBranch()
+			self:turnRight(1)			-- turn right
+			lib.cutBranch()
+			self:go("L1B1L2")			-- return to centre of trunk facing forward
+		end
+		while turtle.down() do end 
+	end
+	
+	function lib.mangrove()
+		lib.single()
+	end
+	
+	function lib.single()
+		while turtle.detectUp() do 		-- continue loop while block detected above
+			-- check for side branches
+			for i = 1, 4 do
+				lib.cutBranch()			-- if leaves cut them. If branch follow length and cut above at the same time
+				turtle.turnRight()		-- repeat above 4x
+			end
+			self:up(1)
+		end
+		-- move up 1 more in case of acacia
+		self:up(1)  				-- move up
+		-- check for side branches
+		for i = 1, 4 do
+			lib.cutBranch()			-- if leaves cut them. If branch follow length and cut above at the same time
+			turtle.turnRight()		-- repeat above 4x
+		end
+		while turtle.down() do end 
+	end
+	
+	logType = self:getBlockType(direction)
+	if direction == "forward" then
+		self:forward(1)					-- dig base of tree if not done for refuelling, go under.
+	end
+	
+	if logType == "minecraft:oak_log" then
+		lib.oak()
+	elseif singleTypes:find(logType) ~= nil then
+		lib.single()
+	elseif dualTypes:find(logType) ~= nil then
+		double, onLeft = lib.isDouble()
+		lib.dual(double, onLeft)
+	elseif doubleTypes:find(logType) ~= nil then	-- pale and dark oak
+		double, onLeft = lib.isDouble()
+		lib.doubleOak(onLeft)
+	elseif logType == "minecraft:mangrove_log" or logType == "minecraft:mangrove_roots"then
+		lib.mangrove()
+	end
+
 	-- check for logs below in case felling started above ground
 	while self:getBlockType("down"):find("log") ~= nil do
 		self:down(1)
 		if double then
-			self:dig("forward")
+			turtle.dig()
 		end
 	end
-	-- if double then
-		-- if onLeft then
-			-- self:go("F1L1F1R2")
-		-- else
-			-- self:go("F1R1F1R2")
-		-- end
-	-- end
+	
 	return double	-- true if double tree
 end
 
@@ -3460,7 +3645,7 @@ function T:isLog(direction)
 	
 	if Detect() then
 		blockType = self:getBlockType(direction)
-		if blockType:find('log') ~= nil then
+		if blockType:find('log') ~= nil or blockType:find('mangrove_root') ~= nil then
 			success = true
 		end
 	end
@@ -3470,8 +3655,8 @@ end
 
 function T:isValuable(direction) 
 	local success = false
-	local ignoreList = "minecraft:dirt,minecraft:grass,minecraft:gravel,minecraft:chest,"..
-					 "minecraft:sand,minecraft:torch,minecraft:bedrock,minecraft:ladder"
+	local ignoreList = "minecraft:dirt,minecraft:grass,minecraft:gravel,minecraft:chest,minecraft:barrel"..
+					   "minecraft:ender_chest,minecraft:shulker_box,minecraft:sand,minecraft:torch,minecraft:bedrock,minecraft:ladder"
 		 
 	local Detect = turtle.detect
 	
@@ -3485,7 +3670,9 @@ function T:isValuable(direction)
 	
 	if blockType ~= "" then --block found
 		success = true
-		if self:isStone(blockType) then
+		if blockType == "minecraft:deepslate" then
+			success = false
+		elseif self:isStone(blockType) then
 			success = false
 		elseif ignoreList:find(blockType) ~= nil then
 			success = false
@@ -4012,7 +4199,7 @@ function T:sortInventory(useChest)
 		end
 	end
 	local blockType
-	local facing = self.facing
+	--local facing = self.facing
 	local chestPlaced = false
 	local chestDirection, turns = "", 0
 	if chestSlot > 0 then -- chest found
@@ -4109,6 +4296,14 @@ function T:suck(direction, slot, quantity)
 	return success, msg
 end
 
+function T:suckAll()
+	--[[ Collect saplings, sticks and apples ]]
+	turtle.select(1)
+	turtle.suck()
+	turtle.suckUp()
+	turtle.suckDown()
+end
+
 function T:trimItemName(item)
 	itemName = item
 	colonPos = item:find(":")
@@ -4125,10 +4320,10 @@ function T:writeCoords(filename)
 	fileHandle.writeLine("x="..self.x)
 	fileHandle.writeLine("y="..self.y)
 	fileHandle.writeLine("z="..self.z)
-	fileHandle.writeLine("f="..self.facing)
+	--fileHandle.writeLine("f="..self.facing)
 	fileHandle.close()
 	self:saveToLog(filename.." file created", true)
-	self:saveToLog("x = "..self:getX()..", y = "..self:getY()..", z = "..self:getZ()..", f = "..self:getFacing(), false)
+	self:saveToLog("x = "..self:getX()..", y = "..self:getY()..", z = "..self:getZ()..", f = "..tostring(self:getFacing()), false)
 end
 
 return T
