@@ -1,4 +1,4 @@
-local version = 20251005.1800
+local version = 20251218.1530
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as lib/TurtleUtils.lua
@@ -408,6 +408,10 @@ function U.compareR()
 	return retValue
 end
 
+function U.LogR()
+	Log:saveToLog("R values: "..textutils.serialise(R, {compact = true}))
+end
+
 function U.getColour(number)
 	return colours[number]
 end
@@ -655,10 +659,36 @@ function U.parseExpression(expression)
 		return bracketStart, bracketEnd -- eg brackets.open = {11, 12}, brackets.closed = {39, 58}
 	end
 	
+	function lib.evaluateR(expression)
+		-- "math.abs( R.height - R.currentLevel ) / 3"
+		local elements = U.split(expression, " ")
+		-- eg "math.abs(", "R.height", "-", "R.currentLevel", ")", "/", "3"
+		local evalString = "return "
+		for i = 1, #elements do 
+			if elements[i]:find("U.") ~= nil then
+				local key = elements[i]:sub(3)
+				evalString = evalString..U[key]
+			elseif elements[i]:find("R.") ~= nil then
+				local key = elements[i]:sub(3)
+				evalString = evalString..R[key]
+			else
+				evalString = evalString..elements[i]
+			end
+		end
+		return evalString
+	end
+	
 	if tonumber(expression) ~= nil then
 		return tonumber(expression)		-- simple number returned immediately
 	end
 	-- eg "math.abs(R.height - R.currentLevel) * 2"
+	local evalString = lib.evaluateR(expression)
+	local func = loadstring(evalString)
+	local result = func()
+	-- change R. values to numbers
+	
+	
+	--[[
 	local parts = {}
 	local bracketStart, bracketEnd = 0, 0
 	local start, part, remain = "", "", ""
@@ -683,7 +713,8 @@ function U.parseExpression(expression)
 	if tonumber(expression) == nil then
 		sum = lib.parse(expression, sum)
 	end
-	return sum
+	return sum]]
+	return result
 end
 
 function U.restoreCursor(withColours)
@@ -866,7 +897,7 @@ function U.attachModem()
 					"\nThe centre square should be lit red.\n"..
 					"If embedded use narrow gap at side\n", colors.red)
 	local event, side = os.pullEvent("peripheral")
-	for timer = 5, 0, -1 do
+	for timer = 3, 0, -1 do							-- countdown from 3 to 1
 		-- text, fg, bg, width, isInput, cr
 		menu.colourWrite("Thanks. continuing in ".. timer.." seconds", colors.lime, colors.black, 0, false, true)
 		sleep(1)
@@ -1337,7 +1368,7 @@ function U.sendItemToNetworkStorage(storageType, itemToSend, amountToSend, fromS
 			end
 		end
 		--U.moveItemsFromTurtle(turtleName, toInventoryName, fromTurtleSlot, quantity, toSlot)
---Log:saveToLog("U.moveItemsFromTurtle(turtleName = "..U.turtleName..", storageToUse = "..tostring(storageToUse)..", slot = "..tostring(turtleSlot)..", slotCount = "..tostring(slotCount)..")")
+Log:saveToLog("U.moveItemsFromTurtle(turtleName = "..U.turtleName..", storageToUse = "..tostring(storageToUse)..", slot = "..tostring(turtleSlot)..", slotCount = "..tostring(slotCount)..")")
 		U.moveItemsFromTurtle(storageToUse, turtleSlot, slotCount)
 	end
 	
@@ -1415,7 +1446,7 @@ function U.sendItemToNetworkStorage(storageType, itemToSend, amountToSend, fromS
 		return 0, message
 	end 
 	--local storageToUse  = ""
-	_G.Log:saveToLog("U.sendItemToNetworkStorage(storageType = '"..storageType.."', itemToSend = '"..itemToSend.."', amountToSend = "..amountToSend..")")
+Log:saveToLog("==> U.sendItemToNetworkStorage(storageType = '"..storageType.."', itemToSend = '"..itemToSend.."', amountToSend = "..amountToSend..")")
 	local savedItems = nil
 	if storageType == "barrel" then
 		savedItems = U.barrelItems
@@ -1424,20 +1455,22 @@ function U.sendItemToNetworkStorage(storageType, itemToSend, amountToSend, fromS
 	end
 	
 	if itemToSend == "all" then	-- empty Turtle, so item names not relevant
-		_G.Log:saveToLog("itemToSend = all")
+Log:saveToLog("    itemToSend = all")
 		repeat
 			local item, turtleSlot, slotCount, itemsPerSlot = "", 0, 0, 64
 			for slot = 1, 16 do
 				item, slotCount = T:getSlotContains(slot)
 				if slotCount > 0 then
 					turtleSlot = slot
-					_G.Log:saveToLog("for slot = 1, 16 do: item = "..item..", slotCount = "..slotCount)
+Log:saveToLog("    for slot = 1, 16 do: item = "..item..", slotCount = "..slotCount)
 					itemsPerSlot = U.getSlotCapacity(slot)	-- most items capacity is 64 per slot
-					_G.Log:saveToLog("sending'"..item.."' from slot "..slot..", quantity = "..slotCount)
+Log:saveToLog("    sending'"..item.."' from slot "..slot..", quantity = "..slotCount)
 					break
 				end
 			end
 			if turtleSlot > 0 then
+Log:saveToLog("    lib.sendItem(savedItems = "..textutils.serialise(savedItems, {compact = true}).."peripheralNames = "..textutils.serialise(peripheralNames, {compact = true})..
+				", item = ".. item..", slotCount = "..slotCount..", itemsPerSlot = ".. itemsPerSlot)
 				lib.sendItem(savedItems, peripheralNames, turtleSlot, item, slotCount, itemsPerSlot)
 			end
 		until turtleSlot == 0
@@ -1451,14 +1484,14 @@ function U.sendItemToNetworkStorage(storageType, itemToSend, amountToSend, fromS
 		repeat	-- until item no longer present in inventory or requested amount has been sent
 			local sourceSlot, total, data = T:getItemSlot(itemToSend)	-- which slot and how much of itemToSend is in turtle?
 			local slotCount = data.leastCount
-			_G.Log:saveToLog("T:getItemSlot('"..itemToSend.."' sourceSlot = "..sourceSlot..", total = "..total..")")
+Log:saveToLog("    T:getItemSlot('"..itemToSend.."' sourceSlot = "..sourceSlot..", total = "..total..")")
 			if sourceSlot == 0 then
-				_G.Log:saveToLog(itemToSend.." not found in turtle inventory")
+Log:saveToLog("    "..itemToSend.." not found in turtle inventory, return 0")
 				return 0	-- exit function
 			else
 				local itemsPerSlot = U.getSlotCapacity(sourceSlot)	-- most items capacity is 64 per slot
 				itemToSend = data.leastName								-- full name of item with lowest itemCount
-				_G.Log:saveToLog("U.sendItemToNetworkStorage("..itemToSend..", sourceSlot = "..sourceSlot..", slotCount = "..slotCount) --..", data = "..textutils.serialise(data)..")")
+Log:saveToLog(    "U.sendItemToNetworkStorage("..itemToSend..", sourceSlot = "..sourceSlot..", slotCount = "..slotCount) --..", data = "..textutils.serialise(data)..")")
 				if sourceSlot > 0 then									-- item is present in turtle inventory
 					local sent = lib.send(storageType, peripheralNames, savedItems, itemToSend,  sourceSlot, slotCount, itemsPerSlot)
 					totalSent = totalSent + sent
