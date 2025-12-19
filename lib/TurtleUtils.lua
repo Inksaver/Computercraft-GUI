@@ -1,4 +1,4 @@
-local version = 20251218.1530
+local version = 20251219.2200
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as lib/TurtleUtils.lua
@@ -946,8 +946,13 @@ function U.checkInventory(inventory, itemName, itemsPerSlot, matchPart)
 	return inStock, canStore, partMatch -- eg 1, 3647, false if contains only 1 matching item in otherwise empty chest
 end
 
-function U.emptyInventory(barrels, chests, sticksAsFuel)
-	--[[U.emptyInventory({"sapling", "propagule", "dirt", "crafting"}, {"all"}, true)]]
+function U.emptyInventory(barrels, chests, sticksAsFuel, relist)
+	--[[
+		U.emptyInventory({"sapling", "propagule", "dirt", "crafting"}, {"all"}, true)
+		put {"sapling", "propagule", "dirt", "crafting"} into barrels
+		put anything else into chests
+	]]
+	U.wrapModem(relist)
 	if not T:isEmpty() then
 		if sticksAsFuel then
 			U.useSticksAsFuel()
@@ -1029,7 +1034,7 @@ function U.loadStorageLists()
 	end
 	
 	-- populate these module scope variables:
-	local message = U.wrapModem(R)
+	local message = U.wrapModem()
 	if message == "Modem not found" then return message end
 	local redo = false
 	if U.barrelItems == nil then	-- module scope variable not yet loaded
@@ -1216,7 +1221,7 @@ function U.getItemFromNetwork(storageType, itemRequired, countRequired, toTurtle
 	--elseif storageType == "chest" then
 		--savedItems = chestItems
 	end
-	local message = U.wrapModem(R)	-- list of chest/barrel peripherals, name of turtle, list of storage names
+	local message = U.wrapModem()	-- list of chest/barrel peripherals, name of turtle, list of storage names
 	--local storage, turtleName, storageNames = network.wrapModem(R, storageType)	-- list of chest/barrel peripherals, name of turtle, list of storage names
 	--if turtleName == "Modem not found" then return 0, nil, nil, turtleName end
 	if countRequired > 0 then 						-- not enough in stock, or ignore current stock
@@ -1235,7 +1240,7 @@ function U.getItemFromNetwork(storageType, itemRequired, countRequired, toTurtle
 			end
 		end
 		if testStores == nil then	-- no match in storage lists
-			_G.Log:saveToLog("Unable to find recorded storage, using all "..storageType.."s")
+Log:saveToLog("Unable to find recorded storage, using all "..storageType.."s")
 			sent, countRequired = lib.getItem(storageNames, itemRequired, countRequired, toTurtleSlot, sent)
 			--sent, countRequired = lib.getItem(U.chestNames, itemRequired, countRequired, toTurtleSlot, sent)
 		else -- match found, list of storage availble -- eg {"minecraft:barrel_17", "minecraft:barrel_18"...}
@@ -1331,6 +1336,7 @@ function U.moveItemsFromTurtle(toInventoryName, fromTurtleSlot, quantity, toSlot
 	quantity: 			The amount to transfer (nil for full stack)
 	toSlot: 			The slot to move to. (nil will use any available slot(s))
 	]]
+	U.wrapModem()
 	return peripheral.call(toInventoryName, "pullItems", U.turtleName, fromTurtleSlot, quantity, toSlot)
 end
 
@@ -1348,6 +1354,7 @@ function U.sendItemToNetworkStorage(storageType, itemToSend, amountToSend, fromS
 	-- used to remove items from turtle inventory
 	-- Must be next to a modem: MUST remove crafting table if modem on that side. Other tools ok
 	-- fromSlot is given if emptying a specific slot
+	U.wrapModem()
 	local peripheralNames = U.chestNames
 	if storageType == "barrel"then
 		peripheralNames = U.barrelNames
@@ -1569,7 +1576,7 @@ function U.transferItem(fromInventoryName, toInventoryName, itemName, quantity, 
 		end
 	end
 	if fromSlot > 0 then						-- now have slot with min required quantity
-		_G.Log:saveToLog("U.transferItem() from: "..fromInventoryName..", to: "..toInventoryName..", fromSlot: "..fromSlot..", toSlot: "..tostring(toSlot)..", quantity: "..tostring(quantity))
+Log:saveToLog("U.transferItem() from: "..fromInventoryName..", to: "..toInventoryName..", fromSlot: "..fromSlot..", toSlot: "..tostring(toSlot)..", quantity: "..tostring(quantity))
 		U.transferItems(fromInventoryName, toInventoryName, fromSlot, toSlot, quantity)
 		return 0
 	else									-- available must be at least 1
@@ -1601,7 +1608,8 @@ function U.transferItems(fromInventoryName, toInventoryName, fromSlot, toSlot, q
 	toSlot: 			The slot to move to. (nil will use any available slot(s))
 	quantity: 			The amount to transfer (nil for full stack)
 	]]
-	_G.Log:saveToLog("U.transferItems(from: "..fromInventoryName..", to: "..toInventoryName..", fromSlot: "..fromSlot..", toSlot: "..tostring(toSlot)..", quantity: "..tostring(quantity)..")")
+	U.wrapModem()
+Log:saveToLog("U.transferItems(from: "..fromInventoryName..", to: "..toInventoryName..", fromSlot: "..fromSlot..", toSlot: "..tostring(toSlot)..", quantity: "..tostring(quantity)..")")
 	return peripheral.call(fromInventoryName, "pushItems", toInventoryName, fromSlot, quantity, toSlot)
 end
 
@@ -1612,7 +1620,8 @@ function U.transferItemToTurtle(availableStorage, availableStorageKeys, crafterD
 	-- crafterData = {{2,64}, {4,64}, {6,64}, {8,64}} 64 items in each of 4 slots in the crafter
 	-- glitch? in crafter inventory, cannot add sequentially to existing items. 
 	-- send to turtle slot first, then transfer
-	_G.Log:saveToLog("U.transferItemToTurtle(availableStorage = "..textutils.serialise(availableStorage, {compact = true})..
+	U.wrapModem()
+Log:saveToLog("U.transferItemToTurtle(availableStorage = "..textutils.serialise(availableStorage, {compact = true})..
 				"\navailableStorageKeys = "..textutils.serialise(availableStorageKeys, {compact = true})..
 				"\n"..U.turtleName..", crafterData = "..textutils.serialise(crafterData, {compact = true}))
 				
@@ -1631,49 +1640,49 @@ function U.transferItemToTurtle(availableStorage, availableStorageKeys, crafterD
 		for _, crafterSlotData in ipairs(crafterData) do			-- eg {{2,22}, {4,22}, {6,22}, {8,22}} -> iteration 1 = {2, 22} iterate crafter slots to be filled
 			local toCrafterSlot = crafterSlotData[1]				-- eg slot 2 in turtle
 			local amountToSend = crafterSlotData[2]					-- eg place 22 items in slot 2
-			_G.Log:saveToLog("storageData = "..textutils.serialise(storageData, {compact = true}))
-			_G.Log:saveToLog("crafterSlotData = "..textutils.serialise(crafterSlotData, {compact = true}))
+Log:saveToLog("storageData = "..textutils.serialise(storageData, {compact = true}))
+Log:saveToLog("crafterSlotData = "..textutils.serialise(crafterSlotData, {compact = true}))
 			for i = 1, #storageData do								-- {{14,64},{15,26}}					
 				local slotData = storageData[i]						-- {14,64}
 				local availableToSend = slotData[2]					-- 64
 				local fromStorageSlot = slotData[1]					-- 14
 				local confirmedSent = 0
 				
-				_G.Log:saveToLog("i = "..i..", slotData = "..textutils.serialise(slotData, {compact = true}))
+Log:saveToLog("i = "..i..", slotData = "..textutils.serialise(slotData, {compact = true}))
 				if availableToSend >= amountToSend then
-					_G.Log:saveToLog("availableToSend ("..availableToSend..") >= amountToSend: ("..amountToSend.."), current value of sent = "..sent)
-					_G.Log:saveToLog("?confirmedSent = peripheral.call("..storageName..", 'pushItems', "..U.turtleName..
+Log:saveToLog("availableToSend ("..availableToSend..") >= amountToSend: ("..amountToSend.."), current value of sent = "..sent)
+Log:saveToLog("?confirmedSent = peripheral.call("..storageName..", 'pushItems', "..U.turtleName..
 								", from slot "..fromStorageSlot..", amountToSend = "..
 								amountToSend..", to turtle slot "..toCrafterSlot)
 					confirmedSent = peripheral.call(storageName, "pushItems", U.turtleName, fromStorageSlot, amountToSend, toCrafterSlot)
 					sent = sent + confirmedSent
-					_G.Log:saveToLog("verified confirmedSent = "..confirmedSent..", sent = "..sent)
+Log:saveToLog("verified confirmedSent = "..confirmedSent..", sent = "..sent)
 					slotData[2] = slotData[2] - confirmedSent
 					crafterSlotData[2] = 0
-					_G.Log:saveToLog("slotData[2] = "..slotData[2]..", crafterSlotData[2] = "..crafterSlotData[2])
+Log:saveToLog("slotData[2] = "..slotData[2]..", crafterSlotData[2] = "..crafterSlotData[2])
 				else
-					_G.Log:saveToLog("availableToSend ("..availableToSend..") < amountToSend: ("..amountToSend.."), current value of sent = "..sent)
-					_G.Log:saveToLog("?confirmedSent = peripheral.call("..storageName..", 'pushItems', "..U.turtleName..
+Log:saveToLog("availableToSend ("..availableToSend..") < amountToSend: ("..amountToSend.."), current value of sent = "..sent)
+Log:saveToLog("?confirmedSent = peripheral.call("..storageName..", 'pushItems', "..U.turtleName..
 								", from slot "..fromStorageSlot..", availableToSend = "..
 								availableToSend..", to turtle slot "..toCrafterSlot)
 					-- taking items from multiple storage slots requires loading into turtle first
 					confirmedSent = peripheral.call(storageName, "pushItems", U.turtleName, fromStorageSlot, availableToSend, toCrafterSlot)
 					sent = sent + confirmedSent
-					_G.Log:saveToLog("verified confirmedSent = "..confirmedSent..", sent = "..sent)
+Log:saveToLog("verified confirmedSent = "..confirmedSent..", sent = "..sent)
 					amountToSend = amountToSend - confirmedSent
 					slotData[2] = slotData[2] - confirmedSent
 					crafterSlotData[2] = amountToSend
-					_G.Log:saveToLog("slotData[2] = "..slotData[2]..", crafterSlotData[2] = "..crafterSlotData[2])
+Log:saveToLog("slotData[2] = "..slotData[2]..", crafterSlotData[2] = "..crafterSlotData[2])
 				end
 				
 				if crafterSlotData[2] == 0 then
-					_G.Log:saveToLog("crafterSlotData[2]("..crafterSlotData[2]..") == 0: breaking\n")
+Log:saveToLog("crafterSlotData[2]("..crafterSlotData[2]..") == 0: breaking\n")
 					break	-- already sent correct amount
 				end
 			end
 		end
 		if sent >= total then 
-			_G.Log:saveToLog("sent("..sent..") >= total ("..total.."): breaking\n")
+Log:saveToLog("sent("..sent..") >= total ("..total.."): breaking\n")
 			break
 		end
 	end
@@ -1721,7 +1730,7 @@ function U.updateStorageFile(storageType)
 	outputHandle.close()								
 end
 
-function U.wrapModem()
+function U.wrapModem(relist)
 	--[[To move turtle inventory items use the target peripheral:
 		local modem = peripheral.wrap("front")		-- wrap modem next to turtle (beware crafting table!)
 		local turtleName = modem.getNameLocal()		-- get name of the turtle
@@ -1729,12 +1738,13 @@ function U.wrapModem()
 		barrel.pushItems(turtleName, 1, 1)			-- push items FROM turtle to barrel  pushItems(toName, fromSlot , limit , toSlot)
 		barrel.pullItems(turtleName, fromSlot , limit , toSlot)
 	]]
+	if relist == nil then relist = false end
 	local modem = peripheral.find("modem")		-- find modem
 	if modem == nil then
 		return "Modem not found"
 	end
 --Log:saveToLog("network.wrapModem: U.turtleName = "..U.turtleName)
-	if U.turtleName == "" then						-- modem not already wrapped
+	if U.turtleName ~= modem.getNameLocal() or relist then						-- modem not already wrapped
 		-- populate module level variables barrelObjects, barrelNames, chestObjects, chestNames
 --Log:saveToLog("creating U. lists/objects")
 		U.chestObjects = {}
