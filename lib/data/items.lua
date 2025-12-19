@@ -1,6 +1,5 @@
-local version = 20250914.1600
--- pastebin(1): RzfRt0c4 lib.data.items
--- pastebin(2): EFwNVRM6
+local version = 20251219.2200
+
 return
 {
   building =
