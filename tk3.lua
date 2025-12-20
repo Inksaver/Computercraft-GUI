@@ -1,4 +1,4 @@
-local version = 20251219.2200
+local version = 20251220.1500
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -393,7 +393,8 @@ function utils.clearVegetation(direction)
 end
 
 function utils.craftItem()
-	local message = U.loadStorageLists()	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+	--local message = U.loadStorageLists()	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+	local message = U.wrapModem(true)	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
 	if message ~= "" then return {message} end
 	_G.Log:saveToLog("call U.emptyInventory({'sapling', 'propagule', 'dirt', 'crafting'}, {'all'}, true)")
 	U.emptyInventory({"sapling", "propagule", "dirt", "crafting"}, {"all"}, true)	-- 2 lists, one for barrels, one for chests
@@ -3433,8 +3434,8 @@ Log:saveToLog("==> lib.storeOutput() call --> U.sendItemToNetworkStorage('chest'
 	end
 	
 	function lib.getStorageData(essence)
-		local message = U.wrapModem()
-		if message == "Modem not found" then return 0, nil, nil, "" end
+		--local message = U.wrapModem(true)
+		--if message == "Modem not found" then return 0, nil, nil, "" end
 		local availableStorage = {}
 		local availableStorageKeys = {}
 		local total = 0
@@ -3464,7 +3465,8 @@ Log:saveToLog("==> lib.storeOutput() call --> U.sendItemToNetworkStorage('chest'
 					"mysticalagriculture:supremium_essence",
 					"mysticalagriculture:insanium_essence"}
 	
-	local message = U.loadStorageLists()
+	--local message = U.loadStorageLists()
+	local message = U.wrapModem(true)	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
 	if message ~= nil then return {message} end
 	local essence = essences[R.subChoice]
 	local missing = ""
@@ -9077,7 +9079,8 @@ function harvestTreeFarm()
 	_G.Log:saveToLog("harvestTreeFarm() R.earlyGame = "..tostring(R.earlyGame))
 
 	if R.networkFarm then
-		local message = U.loadStorageLists()	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+		--local message = U.loadStorageLists()	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+		local message = U.wrapModem(true)	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
 		if message ~= "" then return {message} end
 		U.emptyInventory({"sapling", "propagule", "dirt"}, {"all"}, true)
 		if turtle.getFuelLevel() < turtle.getFuelLimit() / 2 then
@@ -10153,14 +10156,38 @@ Log:saveToLog("==> lib.refuelWithLogs(logSlot = "..logSlot..")")
 		if R.networkFarm then
 Log:saveToLog("==> manageFarm() call --> U.sendItemToNetworkStorage('barrel', 'minecraft:crafting_table, 1")
 			U.sendItemToNetworkStorage("barrel", "minecraft:crafting_table", 1)
-			lib.getEquipment("minecraft:diamond_hoe")
+			--lib.getEquipment("minecraft:diamond_hoe")
+			if not T:equip("right", "minecraft:diamond_hoe") then		-- ? equip hoe
+				lib.getEquipment("minecraft:diamond_hoe")				-- get hoe
+				T:equip("right", "minecraft:diamond_hoe")				-- equip hoe
+			end
 		else
 			while turtle.suckDown() do end									-- recover any dropped items if over storage
 			T:dropItem("minecraft:crafting_table", "down")
 			T:go("B1R1")													-- facing crops
 		end
 	end
-				
+	
+	function lib.storeCraftingTable(overStorage)
+		-- turtle facing crops unless overStorage is true
+		if overStorage == nil then overStorage = false end
+		-- return crafting table
+Log:saveToLog("==> lib.storeCraftingTable(overStorage = "..tostring(overStorage)..")")
+		if R.networkFarm then
+
+			U.sendItemToNetworkStorage("barrel", "minecraft:crafting_table", 1)
+		else
+			if overStorage then
+				T:dropItem("minecraft:crafting_table", "down")
+				T:go("B1R1")
+			else
+				T:go("L1F1")
+				T:dropItem("minecraft:crafting_table", "down")
+				T:go("B1R1")
+			end
+		end
+	end
+	
 	function lib.storeCrops(overStorage)
 		-- turtle facing crops unless overStorage is true
 		if overStorage == nil then overStorage = false end
@@ -10259,7 +10286,8 @@ Log:saveToLog("manageFarm() calling checkFarmPosition()")
 	checkFarmPosition()											-- should be facing crops, placed above water source. R.ready, R.networkFarm is true/false
 	local message = ""
 	if R.networkFarm then
-		message = U.loadStorageLists()							-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+		--message = U.loadStorageLists()						-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+		message = U.wrapModem(true)								-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
 		if message ~= "" then return {message} end				-- return to main menu
 	end
 	if not R.ready then											-- not in correct starting place
@@ -10275,7 +10303,6 @@ Log:saveToLog("manageFarm() calling checkFarmPosition()")
 			}
 		end
 	end
-	--local overStorage = false
 	local empty = T:isEmpty()
 	if not empty then											-- items still in turtle inventory
 		T:sortInventory(false)									-- sort inventory prior to unloading.
@@ -10288,7 +10315,6 @@ Log:saveToLog("manageFarm() calling checkFarmPosition()")
 		return {"Too many items in inventory. 3 free slots required"}
 	end
 	if logSlot == 0 and not empty then							-- no logs, so empty inventory
-		--lib.storeCrops(overStorage)							-- stores crops and seeds
 		lib.storeCrops(false)									-- stores crops and seeds
 	end
 	-- if logs present, use as fuel, or fuelLevel < 1000
@@ -10304,59 +10330,20 @@ Log:saveToLog("manageFarm() calling checkFarmPosition()")
 		if craftSlot > 0 then									-- need to get crafting table
 			T:equip("right", "minecraft:crafting_table")		-- get crafting table
 		end
-		lib.refuelWithLogs(logSlot)								-- obtain and equip crafting table if not alrerady present
+		if logSlot > 0 then
+			lib.refuelWithLogs(logSlot)							-- obtain and equip crafting table if not alrerady present
+		end
+	else
+		-- store crafting table as not required
+		if craftSlot > 0 then
+			lib.storeCraftingTable(false)
+		end
 	end														
 	-- if logs present or lib.manageTree(), refuelling already occurred
 	if not T:equip("right", "minecraft:diamond_hoe") then		-- ? equip hoe
 		lib.getEquipment("minecraft:diamond_hoe")				-- get hoe
 		T:equip("right", "minecraft:diamond_hoe")				-- equip hoe
 	end
-	-- if not R.networkFarm then
-		-- T:go("L1F1") 											-- move to buried storage chest/barrel
-		-- while T:suck("down") do end								-- empty storage for crafter
-		-- overStorage = true										-- turtle now above chest / barrel
-	-- end
-	-- local hoeSlot = T:getItemSlot("minecraft:diamond_hoe")		-- if hoe is in inventory
-	-- local axeSlot = T:getItemSlot("minecraft:diamond_pickaxe")	-- if pickaxe in inventory
-	
-	-- if axeSlot == 0 then										-- pickaxe is always present hoe and crafter are swapped
-		-- axeSlot = lib.getEquipment("minecraft:diamond_pickaxe") -- gets item or errors
-	-- end
-	
-	-- if logSlot > 0 then											-- if logs present, equip crafting table with axe
-		-- if craftSlot == 0 then									-- no crafter present
-			-- craftSlot = lib.getEquipment("minecraft:crafting_table") -- gets item or errors
-		-- end
-		-- T:equip("right", "minecraft:crafting_table")			-- equip with crafting table
-		-- lib.refuelWithLogs(logSlot)
-	-- end
-	-- no logs or logs have been crafted to max fuel level so equip hoe
-	-- while T:suck("down") do end									-- recover items from storage below ?seeds/crops ?crafting/pickaxe
-	-- equippedLeft, equippedRight = lib.getEquipped()
-	-- if equippedRight ~= "minecraft:diamond_hoe" then
-		-- T:unequip("right")						-- currently crafting table is equipped on right
-	-- end
-	-- hoeSlot = T:getItemSlot("minecraft:diamond_hoe")
-	-- if hoeSlot == 0 then
-		-- hoeSlot = lib.getEquipment("minecraft:diamond_hoe") -- gets item or errors
-	-- end
-	-- T:equip("right", "minecraft:diamond_hoe")
-	
-	-- if R.networkFarm then
--- Log:saveToLog("==> manageFarm() call --> U.sendItemToNetworkStorage('barrel', 'minecraft:crafting_table, 1")
-		-- U.sendItemToNetworkStorage("barrel", "minecraft:crafting_table", 1)
-	-- else
-		-- T:dropItem("minecraft:crafting_table", "down")
-	-- end
-
-	-- if not T:isEmpty() then										-- items still in turtle inventory
-		-- lib.storeCrops(overStorage)
-	-- end
-	-- if overStorage then
-		-- T:go("B1R1")
-		-- overStorage = false
-	-- end
-	-- check if crops already planted
 	
 	local isFarmToRight, isFarmToFront = false, false
 	--local isReady, crop, seed, status
@@ -10383,20 +10370,6 @@ Log:saveToLog("Beginning "..crop.. " management", true)
 		isFarmToRight, isFarmToFront = lib.harvest(seed, crop)	-- harvest plot a1 plots to right / front recorded
 		lib.farmAll(isFarmToRight, isFarmToFront)
 		if not R.auto then -- not started from startup.lua
-			if R.networkFarm then
-				--T:unequip("right")	-- unequip hoe
-				--U.getItemFromNetwork("barrel", "minecraft:crafting_table", 1)
-				--U.sendItemToNetworkStorage("barrel", "minecraft:diamond_hoe", 1)
-				--T:equip("right", "minecraft:crafting_table", 0) -- equip crafting_table
-			else
-				--T:go("L1F1")
-				--while T:suck("down") do end						-- recover items from storagebelow
-				--T:equip("right", "minecraft:crafting_table", 0) -- equip crafting_table 
-				--T:dropItem("minecraft:diamond_hoe", "down") 	-- drop hoe into storage
-				--T:dropItem("crafting", "down") 					-- in case spare one picked by mistake
-				--utils.goBack(1)
-				--T:turnRight(1)
-			end
 			return {"Crop management of all modules completed"}
 		end
 	end
@@ -11235,7 +11208,8 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 	menu.clear()
 	menu.colourPrint("plantTreefarm starting: size "..R.subChoice, colors.lime)
 	if R.networkFarm then
-		local message = U.loadStorageLists()	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+		--local message = U.loadStorageLists()	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+		local message = U.wrapModem(true)	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
 		if message ~= "" then return {message} end
 		lib.emptyInventory()
 	end
@@ -11738,7 +11712,8 @@ end
 local function sceneLoader()
 --Log:saveToLog("sceneLoader() started")
 	T:clear()										-- clear terminal, reset cursor to 1,1 and reset colours
-	local message = U.loadStorageLists()			-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+	--local message = U.loadStorageLists()			-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+	--local message = U.wrapModem()	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
 	--if message ~= "" then return {message} end
 	-- essential libraries:
 	local Event 	= require("lib.Events")
