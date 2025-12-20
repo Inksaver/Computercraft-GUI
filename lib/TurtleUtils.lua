@@ -1,4 +1,4 @@
-local version = 20251219.2200
+local version = 20251220.1500
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as lib/TurtleUtils.lua
@@ -172,12 +172,12 @@ U.currentMB = ""				-- which multibutton in a scene is currently in use for char
 U.keyboardInput = ""			-- build keyboard entries eg 0, 1 = "01" or "q" or "b"
 U.turtleName = ""
 U.isStorageConfigured = false
-U.barrelObjects = nil 			-- list of barrel objects returned by {periheral.find("minecraft:barrel")} in U.wrapModem(R)
-U.chestObjects = nil			-- list of chest objects returned by {periheral.find("minecraft:chest")} in U.wrapModem(R)
+U.barrelObjects = nil 			-- list of barrel objects returned by {periheral.find("minecraft:barrel")} in U.wrapModem()
+U.chestObjects = nil			-- list of chest objects returned by  {periheral.find("minecraft:chest")}  in U.wrapModem()
 U.barrelNames = nil 			-- list of barrel Names returned by {periheral.getName(barrelObject[#])}
 U.chestNames = nil				-- list of chest Names returned by {periheral.getName(chestObject[#])}
-U.barrelItems = nil				-- list of items and the barrels where they are usually found
-U.chestItems = nil				-- list of items and the chests where they are usually found
+U.barrelItems = nil				-- list of items and the barrels where they are usually found. ALSO SAVED in lib/data/barrelItems.lua
+U.chestItems = nil				-- list of items and the chests where they are usually found,  ALSO SAVED in lib/data/chestItems.lua
 U.itemDatabase = nil			-- database of all Items, their name, displayName and crafting recipe
 U.crafts = nil					-- table of displayNames of all items that can be crafted. populated in scene:Craft.S.enter()from U.fillCrafts()
 U.smelts = nil					-- table of displayNames of all items that can be smelted. populated in scene:Smelt.S.enter()from U.fillSmelts()
@@ -958,7 +958,13 @@ function U.emptyInventory(barrels, chests, sticksAsFuel, relist)
 			U.useSticksAsFuel()
 		end
 		for _, item in ipairs(barrels) do
-			U.sendItemToNetworkStorage("barrel", item, 0)
+			if item == "all" then
+				U.sendItemToNetworkStorage("barrel", "all", 0)
+				break
+			end
+			if T:getItemCount(item) > 0 then
+				U.sendItemToNetworkStorage("barrel", item, 0)
+			end
 		end
 		for _, item in ipairs(chests) do
 			U.sendItemToNetworkStorage("chest", item, 0)
@@ -967,6 +973,11 @@ function U.emptyInventory(barrels, chests, sticksAsFuel, relist)
 end
 
 function U.loadStorageLists()
+	--[[
+		called from U.wrapModem() only if not previously done, or redo lists specified
+		lists of barrel and chest peripherals has already been created
+		contents of each now needs to be found
+	]]
 	local lib = {}
 	
 	function lib.createList(storageType)
@@ -982,21 +993,26 @@ function U.loadStorageLists()
 			local contents = peripheral.call(store, "list")		-- list of items / slots for this chest
 			for slot, item in pairs(contents) do				-- for each item check if this storage is listed
 				if locations[item.name] == nil then				-- this item not yet found
+Log:saveToLog("    lib.createList("..storageType..") creating new key: "..item.name)
 					locations[item.name] = {store}				-- add to table eg locations["minecraft:cobblestone"] = {"minecraft:chest_1"}
 				else											-- already has at least 1 location
-					U.addToStorageList(storageType, locations[item.name], store, false)
+					if not U.contains(locations[item.name], store) then
+						table.insert(locations[item.name], store )
+Log:saveToLog("    lib.createList("..storageType..") adding to key: "..item.name..": store = "..store)
+					end
+					--U.addToStorageList(storageType, locations[item.name], store, false)
 				end
 			end
 			total = total + 1
 		end
 --Log:saveToLog("found ".. total.." "..storageType)
 		local output = textutils.serialize(locations)		-- serialise to json ready to write to file
+		--local fileName = "lib/data/"..storageType.."Items.lua"			-- barrelList.lua or chestList.lua
 		local fileName = "lib/data/"..storageType.."Items.lua"			-- barrelList.lua or chestList.lua
 		local outputHandle = fs.open(fileName, "w")			-- open file
 		outputHandle.writeLine("return")					-- start file with return
 		outputHandle.write(output)							-- add serialised table
 		outputHandle.close()								-- close file
-		
 		return locations
 	end
 	
@@ -1004,20 +1020,20 @@ function U.loadStorageLists()
 		-- see if named chest/barrel in list is found in fresh peripheral.find
 		-- turtle may have moved to a different network
 		-- list = eg [ "minecraft:stick" ] = {"minecraft:barrel_91","minecraft:barrel_114"}
-		local rawStorage = nil						-- peripheral find can return duplicate values
-		local using = "minecraft:barrel"			-- storageType may be barrel, barrels, minecraft:barrel
+		local rawStorage = nil									-- peripheral find can return duplicate values
+		local using = "minecraft:barrel"						-- storageType may be barrel, barrels, minecraft:barrel
 		local found = false
 		if storageType:find("chest") ~= nil then
 			using = "minecraft:chest"
 		end
 		rawStorage = {peripheral.find(using)}
 		
-		if not U.isTableEmpty(rawStorage) then		-- chests / barrels are attached see if they match
-			for item, storeList in pairs(list) do		-- existing storage names can be found here
-				for key, value in ipairs(rawStorage) do	-- look in the fresh list of storage names to see if there are missing entries
+		if not U.isTableEmpty(rawStorage) then					-- chests / barrels are attached see if they match
+			for item, storeList in pairs(list) do				-- existing storage names can be found here
+				for key, value in ipairs(rawStorage) do			-- look in the fresh list of storage names to see if there are missing entries
 					local name = peripheral.getName(value)				
 					for _, storageName in ipairs(storeList) do 	-- check each storage name found
-						if storageName == name then 	-- recorded name matches, check next one
+						if storageName == name then 			-- recorded name matches, check next one
 							found = true
 							break
 						end
@@ -1026,53 +1042,62 @@ function U.loadStorageLists()
 				end
 				if not found then
 					-- no match in existing list for this storage: list needs updating
-					return true-- list does not match
+					return true									-- list does not match
 				end
 			end
 		end
-		return false	-- list is ok
+		return false											-- list is ok
 	end
 	
-	-- populate these module scope variables:
-	local message = U.wrapModem()
-	if message == "Modem not found" then return message end
-	local redo = false
-	if U.barrelItems == nil then	-- module scope variable not yet loaded
---Log:saveToLog("U.barrelItems == nil")
+	-- populate module scope variables U.barrelItems and U.chestItems
+	U.barrelItems = {}
+	U.chestItems = {}
+	U.barrelItems = lib.createList("barrel")
+	U.chestItems = lib.createList("chest")
+	--[[local redo = false
+	if U.barrelItems == nil then								-- module scope variable not yet loaded
+Log:saveToLog("==> U.loadStorageLists() --> U.barrelItems == nil, checking if file exists")
 		if fs.exists("lib/data/barrelItems.lua") then
---Log:saveToLog("U.barrelItems = require('lib.data.barrelItems)")
-			U.barrelItems = require("lib.data.barrelItems")	-- module scope variable
-			if U.barrelItems == nil then
+Log:saveToLog("    U.loadStorageLists() --> File found. U.barrelItems = require('lib.data.barrelItems)")
+			U.barrelItems = require("lib.data.barrelItems")		-- module scope variable
+			if U.isTableEmpty(U.barrelItems) then				-- loaded empty table
+Log:saveToLog("    U.loadStorageLists() --> File loaded. U.barrelItems is empty")
 				redo = true
 			else
---Log:saveToLog("U.barrelItems ~= nil")
 				redo = lib.listNeedUpdating("barrel", U.barrelItems)
+Log:saveToLog("    U.loadStorageLists() --> ? U.barrelItems needs updating")
 			end
-		else
---Log:saveToLog("U.barrelItems = lib.createList('barrel'")
-			U.barrelItems = lib.createList("barrel")
+		else													-- file does not exist
+Log:saveToLog("    U.loadStorageLists() --> U.barrelItems file does not exist")
+			redo = true											
 		end
 	end
-	if U.chestItems == nil then	-- module scope variable not yet loaded
---Log:saveToLog("U.chestItems == nil")
+	if redo then
+Log:saveToLog("    U.loadStorageLists() --> redo barrelList")
+		U.barrelItems = lib.createList("barrel")
+	end
+	redo = false
+	if U.chestItems == nil then									-- module scope variable not yet loaded
+Log:saveToLog("    U.loadStorageLists() --> U.chestItems == nil, checking if file exists")
 		if fs.exists("lib/data/chestItems.lua") then
---Log:saveToLog("U.chestItems = require('lib.data.chestItems')")
-			U.chestItems = require("lib.data.chestItems")	-- module scope variable
-			if U.chestItems == nil then
+Log:saveToLog("    U.loadStorageLists() --> File found. U.chestItems = require('lib.data.chestItems)")
+			U.chestItems = require("lib.data.chestItems")		-- module scope variable
+			if U.isTableEmpty(U.chestItems) then			-- loaded empty table
+Log:saveToLog("    U.loadStorageLists() --> File loaded. U.chestItems is empty")
 				redo = true
 			else
---Log:saveToLog("U.chestItems ~= nil")
 				redo = lib.listNeedUpdating("chest", U.chestItems)
+Log:saveToLog("    U.loadStorageLists() --> ? U.chestItems needs updating")
 			end
 		else
---Log:saveToLog("U.chestItems = lib.createList('chest'")
-			U.chestItems = lib.createList("chest")
+Log:saveToLog("    U.loadStorageLists() --> U.chestItems file does not exist")
+			redo = true
 		end	
 	end
 	if redo then
-		U.barrelItems = lib.createList("barrel")
+Log:saveToLog("    U.loadStorageLists() --> redo chestList")
 		U.chestItems = lib.createList("chest")
-	end
+	end]]
 	if fs.exists("lib/data/items.lua") then
 --Log:saveToLog("loading items database")
 		U.itemDatabase = require ("lib/data/items")
@@ -1221,7 +1246,7 @@ function U.getItemFromNetwork(storageType, itemRequired, countRequired, toTurtle
 	--elseif storageType == "chest" then
 		--savedItems = chestItems
 	end
-	local message = U.wrapModem()	-- list of chest/barrel peripherals, name of turtle, list of storage names
+	--local message = U.wrapModem()	-- list of chest/barrel peripherals, name of turtle, list of storage names
 	--local storage, turtleName, storageNames = network.wrapModem(R, storageType)	-- list of chest/barrel peripherals, name of turtle, list of storage names
 	--if turtleName == "Modem not found" then return 0, nil, nil, turtleName end
 	if countRequired > 0 then 						-- not enough in stock, or ignore current stock
@@ -1714,20 +1739,7 @@ function U.updateList(storageType)
 	outputHandle.writeLine("return")					-- start file with return
 	outputHandle.write(output)							-- add serialised table
 	outputHandle.close()								-- close file
-end
-
-function U.updateStorageFile(storageType)
-	-- storageType should be "chest" or "barrel"
-	local output  = nil
-	if storageType == "chest" then
-		output = textutils.serialize(U.chestItems)					-- serialise to json ready to write to file
-	else
-		output = textutils.serialize(U.barrelItems)					-- serialise to json ready to write to file
-	end 
-	local outputHandle = fs.open("lib/data/"..storageType.."Items.lua", "w")		-- open file
-	outputHandle.writeLine("return")								-- start file with return
-	outputHandle.write(output)										-- add serialised table
-	outputHandle.close()								
+Log:saveToLog("U.updateList("..storageType..") completed: "..fileName)
 end
 
 function U.wrapModem(relist)
@@ -1743,26 +1755,33 @@ function U.wrapModem(relist)
 	if modem == nil then
 		return "Modem not found"
 	end
---Log:saveToLog("network.wrapModem: U.turtleName = "..U.turtleName)
-	if U.turtleName ~= modem.getNameLocal() or relist then						-- modem not already wrapped
+Log:saveToLog("==> U.wrapModem: U.turtleName = '"..U.turtleName.."'")
+	if U.turtleName ~= modem.getNameLocal() or relist then	-- modem not already wrapped
 		-- populate module level variables barrelObjects, barrelNames, chestObjects, chestNames
---Log:saveToLog("creating U. lists/objects")
-		U.chestObjects = {}
-		U.chestNames  = {}
-		U.barrelObjects = {}
-		U.barrelNames  = {}
-		U.turtleName = modem.getNameLocal()			-- get name of the turtle (module scope variable)
---Log:saveToLog("U.turtleName (updated) = "..U.turtleName)
-		local rawStorage = nil						-- peripheral find can return duplicate values
-		rawStorage = {peripheral.find("minecraft:barrel")}
+Log:saveToLog("    creating U. lists/objects")
+		U.chestObjects = {}									-- memory only list of chest objects
+		U.chestNames  = {}									-- memory only list of chest names
+		U.barrelObjects = {}								-- memory only list of barrel objects
+		U.barrelNames  = {}									-- memory only list of barrel names
+		U.turtleName = modem.getNameLocal()					-- get name of the turtle (module scope variable)
+Log:saveToLog("    U.turtleName (updated) = "..U.turtleName)
+		local rawStorage = nil								-- peripheral find can return duplicate values
+		rawStorage = {peripheral.find("minecraft:barrel")}	-- eg {rawStorage.getItemDetail(), .getItemLimit(), .list(), .pullItems(), .pushItems(), .size()}
 		for k, value in ipairs(rawStorage) do
-			local name = peripheral.getName(value)
+			local name = peripheral.getName(value)			-- eg "minecraft:barrel_0"
 			if not U.tableContains(U.barrelNames, name, true) then	-- use exact match as checking peripherals
-				table.insert(U.barrelObjects, value)
-				table.insert(U.barrelNames, name)
+				table.insert(U.barrelObjects, value)		-- eg add minecraft:barrel_0 object
+				table.insert(U.barrelNames, name)			-- eg add "minecraft:barrel_0" to list of barrels
 			end
 		end
+		-- lists of barrel names and objects has been created
+		table.sort(U.barrelNames, function(a,b) return tonumber(a:sub(18)) < tonumber(b:sub(18)) end)
+		table.sort(U.barrelObjects, function(a,b) return tonumber(peripheral.getName(a):sub(18)) < tonumber(peripheral.getName(b):sub(18)) end)
+Log:saveToLog("    sorted U.barrelNames = "..textutils.serialise(U.barrelNames, {compact = true}))
+--Log:saveToLog("    sorted U.barrelObjects = "..textutils.serialise(U.barrelObjects, {compact = true}))
+		--U.updateList("barrel")								-- fill U.barrelItems and save to file
 		rawStorage = {peripheral.find("minecraft:chest")}
+--Log:saveToLog("==> U.wrapModem(relist = "..tostring(relist)..", chests =".. textutils.serialise(rawStorage, {compact = true}))
 		for k, value in ipairs(rawStorage) do
 			local name = peripheral.getName(value)
 			if not U.tableContains(U.chestNames, name, true) then	-- use exact match as checking peripherals
@@ -1770,12 +1789,12 @@ function U.wrapModem(relist)
 				table.insert(U.chestNames, name)
 			end
 		end
---Log:saveToLog("U.barrelNames = "..textutils.serialise(U.barrelNames, {compact = true}))
-		table.sort(U.barrelNames, function(a,b) return tonumber(a:sub(18)) < tonumber(b:sub(18)) end)
+		-- lists of chest names and objects has been created
 		table.sort(U.chestNames, function(a,b) return tonumber(a:sub(17)) < tonumber(b:sub(17)) end)
---Log:saveToLog("sorted U.barrelNames = "..textutils.serialise(U.barrelNames, {compact = true}))
-		table.sort(U.barrelObjects, function(a,b) return tonumber(peripheral.getName(a):sub(18)) < tonumber(peripheral.getName(b):sub(18)) end)
 		table.sort(U.chestObjects, function(a,b) return tonumber(peripheral.getName(a):sub(17)) < tonumber(peripheral.getName(b):sub(17)) end)
+Log:saveToLog("    sorted U.chestNames = "..textutils.serialise(U.chestNames, {compact = true}))
+		--U.updateList("chest")								-- fill U.chestItems and save to file
+		U.loadStorageLists()
 	end
 	return ""
 end
@@ -2891,7 +2910,7 @@ function U.removeFromStorageFile(storageType, itemName, chestName)
 	end
 	if #data == 0 then
 		storage[itemName] = nil		-- remove from locations
-		U.updateStorageFile()
+		U.updateList(storageType)
 	end
 end
 
