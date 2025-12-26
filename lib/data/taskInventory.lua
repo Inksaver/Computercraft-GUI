@@ -1,4 +1,4 @@
-local version = 20251218.1400
+local version = 20251223.1700
 -- ["lbl4"] = {text = "Text here", bg = colors.black, fg = colors.lime, alignH = "centre"},
 -- ["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
 -- ...state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, event = {"changeRValue", "inventoryKey", "1"}},
@@ -859,6 +859,7 @@ height * 2 + 2 soul sand
 			["chk1"] = {text = {"Use", "network","storage"}, state = false, required = true, r = {"networkFarm"}},
 			["chk2"] = {text = {"To right", "of current","Farm"}, state = true, group = {"chk2", "chk3"}, required = true, r = {"data", "right", "back"}},
 			["chk3"] = {text = {"Behind", "current", "farm"}, state = false, group = {"chk2", "chk3"}, required = true, r = {"data", "back", "right"}},
+			["chk4"] = {text = {"For", "melon", "or pumpkin"}, state = false, required = true, r = {"misc"}},
 		}
 	},
 	
@@ -1824,6 +1825,31 @@ length * width slabs
 			["chk1"] = {text = {"Lava is", "mostly on", "left side"}, 	state = true,  group = {"chk1", "chk2", "chk3"}, r = {"side", "L", ""}},
 			["chk2"] = {text = {"Single", "strip ahead", "only"}, 	state = false,  group = {"chk1", "chk2", "chk3"}, r = {"side", "C", ""}},
 			["chk3"] = {text = {"Lava is", "mostly on", "right side"}, 	state = false,  group = {"chk1", "chk2", "chk3"}, r = {"side", "R", ""}},
+		}
+	},
+	
+	["makeMud"] =
+	{
+		call = makeMud,
+		title = "08-Make Mud / Clay",
+		description = "Making mud or clay",
+		fuel = 120,
+		items =
+[[	
+~red~1     ~yellow~glass bottle or potion
+~green~100   ~yellow~dirt max 100 for clay
+]],
+		inventory =
+		{
+			{"bottle", 1, true, "empty/full"},
+			{"dirt", 100, false, ""},
+		},
+		data = 
+		{
+			["chk1"] = {text = {"Make", "mud", "blocks"},     state = true, r = "misc"},
+			["chk2"] = {text = {"Manage", "clay" , "blocks"}, state = false,  r = "auto"},
+			["lbl1"] = {text = "How many blocks? clay=100"},
+			["txt1"] = {text = "0", limits = {{1}, {960}}, r = "size"},
 		}
 	},
 	
