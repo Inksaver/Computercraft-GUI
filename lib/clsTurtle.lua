@@ -1,4 +1,4 @@
-local version = 20251216.1700
+local version = 20251226.0800
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as T.lua, preferably in /lib folder
@@ -1607,7 +1607,7 @@ function T:unequip(side)
 	return success, slot
 end
 
-function T:fillVoid(direction, tblPreferredBlock, leaveExisting)
+function T:fillVoid(direction, tblPreferredBlock, leaveExisting, allowSlab)
 	assert(type(direction) == "string", "direction is not a string: "..tostring(direction))
 	assert( tblPreferredBlock == nil or
 			type(tblPreferredBlock) == "string" or
@@ -1616,6 +1616,7 @@ function T:fillVoid(direction, tblPreferredBlock, leaveExisting)
 	if tblPreferredBlock == nil or tblPreferredBlock == "" then tblPreferredBlock = {} end
 	if type(tblPreferredBlock) ~= "table" then tblPreferredBlock = {tblPreferredBlock} end -- always use a table
 	if leaveExisting == nil then leaveExisting = true end
+	if allowSlab == nil then allowSlab = false end
 	
 	local Detect = turtle.detect
 	local Place = turtle.place
@@ -1692,6 +1693,7 @@ function T:fillVoid(direction, tblPreferredBlock, leaveExisting)
 		local found = false
 		for i = 1, 16 do
 			for k,v in pairs(tblPreferredBlock) do
+--print("checking stock of tblPreferredBlock k = "..k..", v = "..v) read()
 				if stock[i]:find(v) ~= nil then	-- eg stock[3] = "minecraft:cobblestone"
 					slot = i
 					placeBlock = stock[i]
@@ -1726,8 +1728,24 @@ function T:fillVoid(direction, tblPreferredBlock, leaveExisting)
 	end
 	
 	if slot == 0 then -- no suitable block found
+		if allowSlab then
+			if self:getItemSlot("slab") ~= nil then
+				for j = 1, 16 do
+					if stock[j]:find("slab") ~= nil then
+						slot = j --slot no
+						placeBlock = stock[j]
+						found = true
+						break
+					end
+				end
+				if found then
+					placed = lib.place(direction, placeBlock, currentBlock, slot)
+				end
+			end
+		else
 	-- print("No blocks found") read()
-		noBlocks = true
+			noBlocks = true
+		end
 	else
 	-- print("Placing: "..placeBlock) read()
 		placed = lib.place(direction, placeBlock, currentBlock, slot)
@@ -4017,8 +4035,16 @@ function T:refuel(minLevel, toLimitOnly)
 				term.setCursorPos(1,1)
 				print("Unable to refuel: "..turtle.getFuelLevel().." fuel remaining")
 				--checkInventoryForItem(self, items, quantities, required, message)
-				local result = self:checkInventoryForItem({"minecraft:lava_bucket", "coal", "planks"}, {1, 10, 32}, false) -- false allows user to press enter
+				local result = self:checkInventoryForItem({"minecraft:lava_bucket", "coal", "planks"}, {1, 10, 32}, true, "Press Enter when done") -- false allows user to press enter
 				if result == nil then
+					return false
+				else
+					for i = 1, 16 do
+						turtle.select(i)
+						if turtle.refuel() then
+							return true
+						end
+					end
 					return false
 				end
 			end
