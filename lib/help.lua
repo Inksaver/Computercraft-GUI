@@ -1,6 +1,4 @@
-local version = 20250914.1600
--- pastebin(1): mSrbecJK lib.help.lua
--- pastebin(2): rLtDsLxU
+local version = 20251223.1700
 -- display help about selected task
 -- terminal size = 39 x 13
 --[[This line of text = 39 characters]]
@@ -455,6 +453,21 @@ water in lower left corner.
 
 It will go through the water and place
 essence on soil from underneath.
+]]
+
+help["3+8"] = -- "makeMud": make mud or clay from dirt
+[[~yellow~Makes mud and/or clay from dirt.
+Use an enclosure for drying clay
+same size as a farm (10 x 10 inner).
+
+~brown~Place dripstone tips under the field
+~green~Place Turtle above water outside the
+lower left corner, at border height:
+
+~lightGray~|*|~brown~M|M|M|M|M|M|M|M|M|M|~lightGray~*|
+~lightGray~|*|*|*|*|*|*|*|*|*|*|*|*|
+~lightGray~|*|~red~T|~blue~W|~lightGray~*|
+~lightGray~|*|~blue~W|W|~lightGray~*|
 ]]
 --******************OBSIDIAN LAVA***********************
 
