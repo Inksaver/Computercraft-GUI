@@ -1,4 +1,4 @@
-local version = 20251218.1400
+local version = 20251223.1700
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.MultiButton")
@@ -173,7 +173,7 @@ function S:new(sceneMgr)
 	local m2Sizes = createSizes(m2, WIDTH - 6, 1)
 	local m2Buttons = createButtons(m2, true, nil)
 					
-	local m3 = {"createFarm", "createFarmExtension", "manageFarmSetup", "createFence", "createEnclosure", "convertFarm", "upgradeFarmland" }			
+	local m3 = {"createFarm", "createFarmExtension", "manageFarmSetup", "createFence", "createEnclosure", "convertFarm", "upgradeFarmland", "makeMud" }			
 	self.m3 = m3
 	local m3Styles = 
 	{
@@ -183,7 +183,8 @@ function S:new(sceneMgr)
 		[m3[4]] = {colors.white, colors.orange}, 	-- Build single wall or fence
 		[m3[5]] = {colors.white, colors.brown}, 	-- Build wall or fence enclosure
 		[m3[6]] = {colors.white, colors.gray}, 		-- Convert farm
-		[m3[7]] = {colors.black, colors.magenta} 	-- Mystical Agriculture convert essence
+		[m3[7]] = {colors.black, colors.magenta}, 	-- Mystical Agriculture convert essence
+		[m3[8]] = {colors.black, colors.brown} 		-- Make mud or clay
 	}
 	local m3Sizes = createSizes(m3, WIDTH - 6, 1)
 	local m3Buttons = createButtons(m3, true)
@@ -810,6 +811,9 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					U.currentTask = "convertFarm"
 				elseif mb.selectedButtonName == self.m3[7] then -- Mystical Agriculture soil upgrade
 					U.currentTask = "upgradeFarmland"
+				elseif mb.selectedButtonName == self.m3[8] then -- Make mud or clay
+					R.misc = true								-- make mud true
+					U.currentTask = "makeMud"
 				end 
 			--elseif mb.name == self.subMenuList[self.mm[4]] then	-- "mbObsidian"
 			elseif U.subMenuName == self.mm[4][1][1] then		-- "mbObsidian"
