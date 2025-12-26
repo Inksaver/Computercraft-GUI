@@ -1,7 +1,7 @@
 local version = 20251226.0800
 --[[
 	Last edited: see version YYYYMMDD.HHMM
-	save as T.lua, preferably in /lib folder
+	save as clsTurtle.lua, preferably in /lib folder
 	as is not meant to be run directly from CraftOS command line
 	usage:
 	T = require("lib/T").new()
@@ -4353,3 +4353,4 @@ function T:writeCoords(filename)
 end
 
 return T
+
