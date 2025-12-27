@@ -1,4 +1,4 @@
-local version = 20251223.1700
+local version = 20251227.1400
 -- ["lbl4"] = {text = "Text here", bg = colors.black, fg = colors.lime, alignH = "centre"},
 -- ["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
 -- ...state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, event = {"changeRValue", "inventoryKey", "1"}},
@@ -1852,7 +1852,6 @@ length * width slabs
 			["txt1"] = {text = "0", limits = {{1}, {960}}, r = "size"},
 		}
 	},
-	
 	["manageFarmSetup"] =
 	{
 		call = manageFarmSetup,
@@ -2145,6 +2144,4 @@ length * width slabs
 			{"essence", 95, false, ""}
 		}
 	}
-	
-	--["upgradeFarmland"] = {call = upgradeFarmland, title = ""}
 }
