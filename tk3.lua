@@ -1,4 +1,4 @@
-local version = 20251226.0800
+local version = 20251230.0800
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -6253,11 +6253,12 @@ function createRailway()
 	-- go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 	--[[
 		Build steps up or down ready for railtrack
+		R.up (default) or R.down
 		R.height = no blocks to move (up/down)
 		R.depth = headroom, default 2
 	]]
-	if R.down then
-		if R.height == 0 then
+	if R.down then									-- move downwards
+		if R.height == 0 then						-- stop when reaching existing ground
 			local blockType = ""
 			while blockType == "" do
 				T:go("F1D1", false, 0, true)
@@ -6269,7 +6270,7 @@ function createRailway()
 		else
 			for i = 1, R.height - 1 do
 				--T:go("U1x0 D1x1 F1x0x1 D1x1 C2", false, 0, false)
-				T:go("U"..math.min(1, R.depth - 1) .."x0 D"..math.min(1, R.depth - 1) .."x1 F1x0x1 D1x1 C2", false, 0, false)
+				T:go("U"..math.max(1, R.depth - 1) .."x0 D"..math.max(1, R.depth - 1) .."x1 F1x0x1 D1x1 C2", false, 0, false)
 			end
 		end
 	elseif R.up then
@@ -6479,44 +6480,40 @@ function createRetainingWall()
 end
 
 function createSafeDrop()
-	-- dig down height blocks, checking for blocks on all sides
+	-- dig down R.height blocks, checking for blocks on all sides
 	local drop = 0
-	local isBedrock = false
-	--menu.clear()
 	menu.colourPrint("Wait for my return!", colors.yellow)
-	T:down(2)
-	drop = 2
-	if R.height < U.bedrock then
-		R.height = U.bedrock + 5
-	end
-	local height = R.currentLevel + math.abs(R.height)	-- eg 64 + (-59) = 64+59 = 123
-	for i = 1, height - 1 do
+	local height = R.currentLevel - math.abs(R.height)	-- eg 74 - 64 = 10
+Log:saveToLog("createSafeDrop(): height = "..height)
+	for i = 1, height do
 		for j = 1, 4 do
 			-- go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 			T:go("C1R1", false, 0, true)
 		end
-		if T:down(1) then
-			 drop = drop + 1
-		else
-			isBedrock = true
-			break
+		if i < height then
+			if T:down(1) then
+				 drop = drop + 1
+			else
+				break
+			end
 		end
 		if T:isWaterOrLava("up") ~= "" then
 			T:go("C0x0", false, 0, false) -- delete water/ lava block
 		end
 	end
-	if not isBedrock then -- not sitting on bedrock, so break foot level exit block
-		T:go("U1R2x1")
+	local blockType = T:getBlockType("down")
+	if blockType:find("bedrock") ~= nil then	-- at bedrock
+		T:go("C1R1 C1R1 C1R1 C1R1 U1", false, 0, true )
+	else
+Log:saveToLog("createSafeDrop(): drop = "..drop.." blocks")
+		T:go("D1 C1R1 C1R1 C1R1 C1R1 U1")
 	end
 	T:placeWater("down")
-	if isBedrock then
-		T:go("U1x1 U1x1")
-	else
-		T:go("U1x1")
-	end
-	T:up(drop - 2)
+	T:go("R2 x1U1 x1 R2")
+	drop = drop - 2
+	T:up(drop)
 	
-	return {"Safe drop completed "..drop .. " blocks"}
+	return {"Safe drop completed "..drop + 2 .. " blocks"}
 end
 
 function createSandWall()
@@ -9394,13 +9391,15 @@ function makeMud()
 		turtle.dig()											-- dig mud block
 	end
 	
-	if bottleSlot > 0 then										-- found empty bottle
-		turtle.select(bottleSlot)								-- select empty bottle
-		turtle.placeDown()										-- fill from water source below
-	else
-		bottleSlot = T:getItemSlot("potion")					-- bottle may already contain water
-		if bottleSlot == 0 then									-- no bottle or potion present
-			return {"Unable to locate bottle or water bottle"}
+	if R.misc then
+		if bottleSlot > 0 then										-- found empty bottle
+			turtle.select(bottleSlot)								-- select empty bottle
+			turtle.placeDown()										-- fill from water source below
+		else
+			bottleSlot = T:getItemSlot("potion")					-- bottle may already contain water
+			if bottleSlot == 0 then									-- no bottle or potion present
+				return {"Unable to locate bottle or water bottle"}
+			end
 		end
 	end
 	
@@ -11623,8 +11622,10 @@ function test()
 	menu.clear()
 	-- In shaft, facing start direction, on lowest safe level
 	-- create a square space round shaft base, end facing original shaft, 1 space back
-	T:go("C2 L1n1 R1n3 R1n2 R1n3 R1n1", false, 0, true)
-	T:go("U1Q1 R1Q3 R1Q2 R1Q3 R1Q1 R1D1", false, 0, true)
+	--T:go("C2 L1n1 R1n3 R1n2 R1n3 R1n1", false, 0, true)
+	--T:go("U1Q1 R1Q3 R1Q2 R1Q3 R1Q1 R1D1", false, 0, true)
+	Log:saveToLog("calling T:placeWater('down')")
+	T:placeWater("down")
 	return {"function 'test' executed successfully"}
 end
 
@@ -11992,6 +11993,9 @@ tk farm     = runs manageFarm()
 Enter to exit]]
 			menu.colourPrint(help, colours.yellow)
 			read()
+		elseif args[1] == "attack" then
+			R.auto = true
+			attack()
 		elseif args[1] == "log" then
 			if args[2] ~= nil then
 				if args[2]:sub(1,1) == "d" then
