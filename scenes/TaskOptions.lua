@@ -1,4 +1,4 @@
-local version = 20251218.1400
+local version = 20251230.0800
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
 local Multilabel = require("lib.ui.MultiLabel")
@@ -296,8 +296,10 @@ function S:calculateHeight(key)
 			lowerLimit = R.currentLevel + 2	
 			upperLimit = U.ceiling
 		elseif R.down then
-			lowerLimit = R.currentLevel - 2	
-			upperLimit = U.bedrock + 5
+			--lowerLimit = R.currentLevel - 2	
+			--upperLimit = U.bedrock + 5
+			lowerLimit = U.bedrock + 5
+			upperLimit = R.currentLevel - 2	
 		end 
 		Log:saveToLog("calculated limits: lower = ".. lowerLimit..", upper = "..upperLimit)
 	else -- eg {{U.bedrock + 5} , {"currentLevel", 2}}
@@ -308,8 +310,10 @@ function S:calculateHeight(key)
 				lowerLimit = R.currentLevel + 2	
 				upperLimit = U.ceiling
 			elseif R.down then
-				lowerLimit = R.currentLevel - 2	
-				upperLimit = U.bedrock + 5
+				--lowerLimit = R.currentLevel - 2	
+				--upperLimit = U.bedrock + 5
+				lowerLimit = U.bedrock + 5
+				upperLimit = R.currentLevel - 2	
 			end 
 			Log:saveToLog("calculated limits: lower = ".. lowerLimit..", upper = "..upperLimit)
 		else
@@ -468,8 +472,10 @@ function S:calculateLimits(textbox, association)
 			lowerLimit = R.currentLevel + 2	
 			upperLimit = U.ceiling
 		elseif R.down then
-			lowerLimit = R.currentLevel - 2	
-			upperLimit = U.bedrock + 5
+			--lowerLimit = R.currentLevel - 2	
+			--upperLimit = U.bedrock + 5
+			lowerLimit = U.bedrock + 5
+			upperLimit = R.currentLevel - 2	
 		end 
 	else
 		-- limits consists of 2 tables		-- eg {{"U.bedrock + 5"} , {"R.currentLevel", 2}}
