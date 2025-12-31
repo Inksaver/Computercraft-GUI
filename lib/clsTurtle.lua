@@ -1,4 +1,4 @@
-local version = 20251226.0800
+local version = 20251230.0800
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as clsTurtle.lua, preferably in /lib folder
@@ -3937,11 +3937,18 @@ function T:placeWater(direction)
 		Place = turtle.placeDown
 	end
 	local slot = self:getItemSlot("minecraft:water_bucket")
+	--local slot = self:getItemSlot("water")
+--Log:saveToLog("T:placeWater("..direction.."): slot = "..slot)
 	if slot > 0 then
 		turtle.select(slot)
-		if Place() then
+		if Place() then					-- try given direction eg "down"
 			turtle.select(1)
 			return true
+		else							-- placing "down" in air does not work
+Log:saveToLog("T:placeWater("..direction.."): slot = "..slot.." failed. Using turtle.place()")
+			if turtle.place() then
+				return true
+			end
 		end
 	end
 	
@@ -4353,4 +4360,3 @@ function T:writeCoords(filename)
 end
 
 return T
-
