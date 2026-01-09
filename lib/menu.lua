@@ -1,7 +1,5 @@
-local version = 20250914.1600
+local version = 20260109.0800
 --[[
-	pastebin(1): BhjbYsw4 lib.menu.lua
-	pastebin(2): 
 	Last edited: see version YYYYMMDD.HHMM
 	This is meant to be used as a library for any of your programs.
 	Save it as menu.lua preferably in a subfolder called 'lib'
