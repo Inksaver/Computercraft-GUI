@@ -1,4 +1,4 @@
-local version = 20251227.1400
+local version = 20260109.0800
 -- ["lbl4"] = {text = "Text here", bg = colors.black, fg = colors.lime, alignH = "centre"},
 -- ["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
 -- ...state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, event = {"changeRValue", "inventoryKey", "1"}},
@@ -24,6 +24,9 @@ local version = 20251227.1400
 quantity can be numerical or expression to be parsed
 	IMPORTANT! 													"math.ceil( R.length / R.torchInterval )"  = CORRECT
 	any R.xxx variable MUST be surrounded by space characters 	"math.ceil(R.length / R.torchInterval)"    = WRONG
+	any operator MUST be surrounded by space characters
+	fuel = "math.abs( R.upperLevel - R.lowerLevel ) * 2",	= CORRECT
+	fuel = "math.abs( R.upperLevel- R.lowerLevel ) * 2",	= WRONG
 ]]
 
 return
@@ -31,18 +34,21 @@ return
 	["assessFarm"] = {call = assessFarm},
 	["assessTreeFarm"] = {call = assessTreeFarm},
 	
-	["attackMob"] =
+	["attack"] =
 	{
 		call = attack,
-		title = "09-Attack Dragon or other mob",
+		title = "07-Attack Dragon / mobs",
 		description = "Attacking Dragon or other mob",
 		fuel = 0,
 		data = 
 		{
 			["chk1"] = {text = "Infinite?", state = true, r = "auto"},
+			["chk2"] = {text = "Up?", state = true, r = "up"},
+			["chk3"] = {text = "Forward?", state = true, r = "forward"},
+			["chk4"] = {text = "Down?", state = true, r = "down"},
 			["lbl1"] = {text = "Length of attack (seconds):"},
-			["txt1"] = {text = "1", limits = {{1} , {9999}}, r = "length"}
-		}
+			["txt1"] = {text = "0", limits = {{0} , {9999}}, r = "length"}
+		},
 	},
 	
 	["buildGableRoof"] =
@@ -627,34 +633,33 @@ height * 2 + 2 soul sand
 	["createBubbleLift"] =
 	{
 		call = createBubbleLift,
-		fuel = "R.height * 6",
+		fuel = "math.abs( R.upperLevel - R.lowerLevel ) * 3",
 		title = "05-Single column bubble lift",
 		description = "Building bubble lift",
 		items =
 [[~green~2 * height ~yellow~stone
 ~orange~1          ~yellow~soul sand OR
 ~orange~1          ~yellow~dirt as placeholder
-~red~2          ~yellow~water bucket
-~green~10         ~yellow~empty buckets for speed
-~orange~2/4        ~yellow~signs (4 if in mine)
+~red~1          ~yellow~water bucket
+~red~height     ~yellow~kelp
+~orange~2          ~yellow~signs
 ]],
 		inventory = 
 		{
-			{"minecraft:water_bucket", 2, true, ""},
+			{"minecraft:water_bucket", 1, true, ""},
+			{"minecraft:kelp", "math.abs( R.upperLevel - R.lowerLevel )", true, ""},
 			{{"minecraft:soul_sand", "minecraft:dirt"}, {1, 1}, {true, true},  {"if available", ""}},
-			{"stone", "R.height * 2", false, ""}, -- estimate only partial cloaking needed
-			{"minecraft:bucket", "10", false, "10 = max speed"},
-			{"sign", 4, false, "4 if in mine"},
+			{"stone", "math.abs( R.upperLevel - R.lowerLevel ) * 2", false, ""}, -- estimate only
+			{"sign", 2, false, ""},
 		},
 		data =
 		{
-			--["chk1"] = {text = "No ladder",  state = true,  group = {"chk1", "chk2", "chk3"}, r = {"inventoryKey", "sign"}},
-			--["chk2"] = {text = {"Ladder", "on left", "side"},  state = false,  group = {"chk1", "chk2", "chk3"}, r = {"inventoryKey", "ladder", "sign"}},
-			--["chk3"] = {text = {"Ladder", "on right", "side"},  state = false,  group = {"chk1", "chk2", "chk3"}, r = {"inventoryKey", "ladder", "sign"}},
+			["chk1"] = {text = "Go UP?", state = false, group = {"chk1", "chk2"}, required = true, r = "up"},
+			["chk2"] = {text = "Go DOWN?", state = true, group = {"chk1", "chk2"}, required = true, r = "down"},
 			["lbl1"] = {text = "Current level (F3):"},
-			["lbl2"] = {text = "Go up to level:"},
-			["txt1"] = {text = "0", limits = {{"U.bedrock + 5"}, {"U.ceiling"}}, r = "currentLevel", event = {"calculateHeight", "lbl2"}},
-			["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
+			["lbl2"] = {text = "Go to level:"},
+			["txt1"] = {text = "0", limits = {{"U.bedrock + 5"}, {"U.ceiling"}}, r = "startLevel", event = {"calculateHeight", "lbl2"}},
+			["txt2"] = {text = "0", limits = {nil, nil}, r = "destinationLevel", event = {"calculateHeight", "lbl2"}}
 		}
 	},
 	
@@ -681,7 +686,28 @@ height * 2 + 2 soul sand
 			{"minecraft:torch", "math.ceil( R.length / R.torchInterval )", false, ""}
 		}
 	},
-	
+	["createDiveColumn"] =
+	{
+		call = createDiveColumn,
+		title = "08-Place underwater doors",
+		description = "Placing doors...",
+		fuel = 200,
+		items =
+[[	
+~red~10-64 ~yellow~door
+~red~10-64 ~yellow~dirt
+]],
+		data = 
+		{
+			["chk1"] = {text = {"Click here","to assess", "depth"}, state = false, event = {"executeCall", "findSeabed", "inventory"}}
+		},
+		-- default inventory, this is altered in code after depth is found 
+		inventory = 
+		{
+			{"door", 20, true, ""},
+			{"dirt", 20, true, ""},
+		}
+	},
 	["createDirectedPath"] =
 	{
 		call = createDirectedPath,
@@ -901,7 +927,7 @@ height * 2 + 2 soul sand
 	{
 		call = createLadder,
 		title = "01-Ladder up or down",
-		fuel = "math.abs( R.destinationLevel - R.startLevel ) * 2",
+		fuel = "math.abs( R.upperLevel - R.lowerLevel ) * 2",
 		description = "Creating ladder",
 		items = 
 [[~red~1          ~yellow~ladder for each level
@@ -911,17 +937,19 @@ height * 2 + 2 soul sand
 		inventory =
 		{
 			{"minecraft:bucket", 1, false, ""},
-			{"minecraft:ladder", "math.abs( R.destinationLevel - R.startLevel )", true, ""},
-			{"minecraft:torch", "math.abs(math.ceil(( R.destinationLevel - R.startLevel ) / 3))", false, ""},
-			{"stone", "math.abs( R.destinationLevel - R.startLevel )", true, ""},
+			{"minecraft:ladder", "math.abs( R.upperLevel - R.lowerLevel )", true, ""},
+			{"minecraft:torch", "math.abs(math.ceil(( R.upperLevel - R.lowerLevel ) / 3))", false, ""},
+			{"stone", "math.abs( R.upperLevel - R.lowerLevel )", true, ""},
 		},
 		data = 
 		{
 			["chk1"] = {text = "In Nether?", state = false, u = {"bedrock", 0, -64}},
 			["chk2"] = {text = "In Air?", state = false},
 			["chk3"] = {text = "Build Base?", state = false, r = {"data", "chamber", ""}},	-- use R.data and give value "chamber" if selected
-			["chk4"] = {text = "Go UP?", state = false, group = {"chk4", "chk5"}, required = true, r = "goUp"},
-			["chk5"] = {text = "Go DOWN?", state = true, group = {"chk4", "chk5"}, required = true, r = "goDown"},
+			--["chk4"] = {text = "Go UP?", state = false, group = {"chk4", "chk5"}, required = true, r = "goUp"},
+			["chk4"] = {text = "Go UP?", state = false, group = {"chk4", "chk5"}, required = true, r = "up"},
+			--["chk5"] = {text = "Go DOWN?", state = true, group = {"chk4", "chk5"}, required = true, r = "goDown"},
+			["chk5"] = {text = "Go DOWN?", state = true, group = {"chk4", "chk5"}, required = true, r = "down"},
 			["chk6"] = {text = {"Stop at","Stronghold","or Trial?"}, state = true, required = true, r = "auto"},
 			["lbl1"] = {text = "Current level (F3):", limits = {{"U.bedrock + 5"}, {"U.ceiling"}}},
 			["lbl2"] = {text = "Go to level:", limits = {{"U.bedrock + 5"} , {"startLevel", 2}}},
@@ -992,7 +1020,7 @@ height * 2 + 2 soul sand
 		},
 		items =
 [[~red~length   ~yellow~slabs
-~green~length   ~yellow~stone (NOT bricks)
+~green~length/8 ~yellow~stone (NOT bricks)
 ~orange~length/2 ~yellow~packed ice or blue ice
 ~green~1        ~yellow~torch per 8 blocks
 ]],
@@ -1005,7 +1033,7 @@ height * 2 + 2 soul sand
 			["pathT"] =	-- 4 turtles, towpath only (positions 1 and 4) with torches
 			{
 				{"slab", "R.length", true, "Add slabs to req length"},
-				{"stone", "R.length", true, "NOT bricks!"},
+				{"stone", "math.ceil( R.length / R.torchInterval )", true, "NOT bricks!"},
 				{"minecraft:torch", "math.ceil( R.length / R.torchInterval )", false, "if required"},
 			},
 			["ice"] =	-- 4 turtles ice only (positions 2 and 3)
@@ -1278,7 +1306,7 @@ height * 2 + 2 soul sand
 	["createSafeDrop"] =
 	{
 		call = createSafeDrop,
-		fuel = "R.height * 2",
+		fuel = "math.abs( R.upperLevel - R.lowerLevel ) * 2",
 		title = "04-Safe drop to water block",
 		description = "Creating safe drop $ R.height $ blocks deep",
 		items =
@@ -1288,14 +1316,14 @@ height * 2 + 2 soul sand
 		inventory = 
 		{
 			{"minecraft:water_bucket", 1, true, ""},
-			{"stone", "R.height * 2", false, ""} -- estimate only partial cloaking needed
+			{"stone", "math.abs( R.upperLevel - R.lowerLevel )", false, ""} -- estimate only
 		},
 		data =
 		{
 			["lbl1"] = {text = "Current level (F3):"},
 			["lbl2"] = {text = "Go down to level:"},
-			["txt1"] = {text = "0", limits = {{"U.bedrock + 5"}, {"U.ceiling"}}, r = "currentLevel", event = {"calculateHeight", "lbl2"}},
-			["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
+			["txt1"] = {text = "0", limits = {{"U.bedrock + 5"}, {"U.ceiling"}}, r = "startLevel", event = {"calculateHeight", "lbl2"}},
+			["txt2"] = {text = "0", limits = {nil, nil}, r = "destinationLevel", event = {"calculateHeight", "lbl2"}}
 		}
 	},
 	
@@ -1536,11 +1564,13 @@ length * width slabs
 		fuel = 200,
 		items =
 [[	
-~red~57    ~yellow~stone
+~red~55    ~yellow~stone
+~red~2     ~yellow~slab
 ]],
 		inventory =
 		{
-			{"stone", 57, true, ""} -- for covering spawner
+			{"stone", 55, true, ""}, -- for covering spawner
+			{"slab", 2, true, ""} -- for reducing exit
 		}
 	},
 		
@@ -1702,6 +1732,7 @@ length * width slabs
 	},
 	
 	["findPortal"] = {call = findPortal, title = "Find End Portal"},
+	["findSeabed"] = {call = findSeabed, title = "Find Water Depth"},
 	
 	["floodArea"] =
 	{
