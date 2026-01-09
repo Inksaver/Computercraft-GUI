@@ -1,4 +1,4 @@
-local version = 20251230.0800
+local version = 20251231.1500
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as clsTurtle.lua, preferably in /lib folder
@@ -3663,7 +3663,7 @@ function T:isLog(direction)
 	
 	if Detect() then
 		blockType = self:getBlockType(direction)
-		if blockType:find('log') ~= nil or blockType:find('mangrove_root') ~= nil then
+		if blockType:find('log') ~= nil or blockType:find('mangrove_root') ~= nil or blockType:find('stem') ~= nil then
 			success = true
 		end
 	end
