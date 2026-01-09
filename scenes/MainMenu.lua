@@ -1,4 +1,4 @@
-local version = 20260109.0800
+local version = 20260109.1700
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.MultiButton")
@@ -13,7 +13,7 @@ local function createButtons(names, fromDB, defaultCaption)
 	for index = 1, #names do
 		if fromDB then
 			local key = names[index]
-Log:saveToLog("index = "..index..", names[index] (key) = "..key)
+--Log:saveToLog("index = "..index..", names[index] (key) = "..key)
 			local title = F[key].title	-- eg F["createLadder"].title = "Ladder up or down"
 			table.insert(buttons, {{key, title}})
 			--[[
@@ -853,6 +853,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 				elseif mb.selectedButtonName == self.m4[10] then -- "Build portal ladder & platform"
 					U.currentTask = "createPortalPlatform"
 				elseif mb.selectedButtonName == self.m4[11] then -- "Shulker harvester"
+					R.subChoice = 1
 					U.currentTask = "harvestShulkers"
 				end 
 			--elseif mb.name == self.subMenuList[self.mm[5]] then	-- "mbCanal"
