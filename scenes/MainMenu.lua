@@ -1,4 +1,4 @@
-local version = 20251223.1700
+local version = 20260109.0800
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.MultiButton")
@@ -13,7 +13,7 @@ local function createButtons(names, fromDB, defaultCaption)
 	for index = 1, #names do
 		if fromDB then
 			local key = names[index]
---Log:saveToLog("index = "..index..", names[index] (key) = "..key)
+Log:saveToLog("index = "..index..", names[index] (key) = "..key)
 			local title = F[key].title	-- eg F["createLadder"].title = "Ladder up or down"
 			table.insert(buttons, {{key, title}})
 			--[[
@@ -71,7 +71,6 @@ function S:new(sceneMgr)
 		[mmHelp[9]]	 = {colors.yellow,  colors.lightGray},
 		[mmHelp[10]] = {colors.yellow,  colors.gray},
 		[mmHelp[11]] = {colors.yellow,  colors.lightGray},
-		--[mmHelp[12]] = {colors.yellow,  colors.gray}
 	}
 	local mmHelpSizes = createSizes(mmHelp, 1, 1)	-- {{1,1},{1,1},{1,1}...}
 	local mmHelpButtons = createButtons(mmHelp, false, "?")
@@ -191,7 +190,7 @@ function S:new(sceneMgr)
 					
 	local m4 = {"lavaRefuel", "harvestObsidian", "createPortal", "demolishPortal",
 				"createStripMine", "undermineDragonTowers", "deactivateDragonTower",
-				"createDragonTrap", "attackMob","createPortalPlatform", "harvestShulkers"}
+				"createDragonTrap", "attack","createPortalPlatform", "harvestShulkers"}
 	self.m4 = m4
 	local m4Styles = 
 	{
@@ -210,8 +209,8 @@ function S:new(sceneMgr)
 	local m4Sizes = createSizes(m4, WIDTH - 6, 1)
 	local m4Buttons = createButtons(m4, true)
 
-	local m5 = {"createPath", "createCorridor", "createWaterCanal",
-				"createIceCanal", "createPlatform", "createSinkingPlatform", "createBoatLift"}
+	local m5 = {"createPath", "createCorridor", "createWaterCanal", "createIceCanal",
+				"createPlatform", "createSinkingPlatform", "createBoatLift", "createDiveColumn"}
 	self.m5 = m5
 	local m5Styles = 
 	{
@@ -221,13 +220,14 @@ function S:new(sceneMgr)
 		[m5[4]] = {colors.black, colors.lightBlue}, -- Ice canal (4 options)
 		[m5[5]] = {colors.white, colors.brown}, 	-- Platform
 		[m5[6]] = {colors.white, colors.blue}, 		-- Sinking platform for oceans
-		[m5[7]] = {colors.black, colors.cyan} 		-- Boat bubble lift
+		[m5[7]] = {colors.black, colors.cyan}, 		-- Boat bubble lift
+		[m5[8]] = {colors.black, colors.blue} 		-- Dive Column
 	}
 	local m5Sizes = createSizes(m5, WIDTH - 6, 1)
 	local m5Buttons = createButtons(m5, true)
 	
 	local m6 = {"createMobFarmCube", "floodMobFarm", "createMobBubbleLift",
-				"createMobFarmCubeBlaze", "createBlazeGrinder", "createTrialCover"}
+				"createMobFarmCubeBlaze", "createBlazeGrinder", "createTrialCover", "attack"}
 	self.m6 = m6
 	local m6Styles = 
 	{
@@ -236,7 +236,8 @@ function S:new(sceneMgr)
 		[m6[3]] = {colors.black, colors.cyan}, 		-- Create mob bubble lift
 		[m6[4]] = {colors.black, colors.red}, 		-- Cube around Blaze spawner
 		[m6[5]] = {colors.black, colors.magenta},	-- createBlazeGrinder
-		[m6[6]] = {colors.black, colors.orange}		-- Surround trial spawner
+		[m6[6]] = {colors.black, colors.orange},	-- Surround trial spawner
+		[m6[7]] = {colors.black, colors.red}		-- Attack
 	}
 	local m6Sizes = createSizes(m6, WIDTH - 6, 1)
 	local m6Buttons = createButtons(m6, true)
@@ -339,8 +340,7 @@ function S:new(sceneMgr)
 		[mm[8]]  = "mbWater",
 		[mm[9]]  = "mbBuilding",
 		[mm[10]] = "mbMeasuring",
-		[mm[11]] = "mbNetwork",
-		--[mm[12]] = "mbSpare"
+		[mm[11]] = "mbNetwork"
 	}
 
 	--self.subMenuList = {}
@@ -651,7 +651,8 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 			if U.subMenuName == self.mm[1][1][1] then	-- mm[1]  = "mbMining",
 				-- setup captions for controls default is mining.ladder / stairs
 				if mb.selectedButtonName == self.m1[1] then -- ladder
-					R.goDown = true	-- down is default direction
+					--R.goDown = true	-- down is default direction
+					R.down = true	-- down is default direction
 					R.auto = true	-- stop at stronghold/trial chamber
 					U.currentTask = "createLadder"	
 				elseif mb.selectedButtonName == self.m1[2] then -- stairs
@@ -665,8 +666,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					U.currentTask = "createSafeDrop"
 				elseif mb.selectedButtonName == self.m1[5] then -- single col bubble lift
 					U.currentTask = "createBubbleLift"
-					--R.inventoryKey = "sign"
-					R.up = true
+					R.down = true
 				elseif mb.selectedButtonName == self.m1[6] then -- quickmine corridoor
 					R.width = 17
 					R.length = 17
@@ -749,7 +749,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					U.currentTask = "clearAndReplantTrees"
 				elseif mb.selectedButtonName == self.m2[7] then -- Convert tree farm to network
 					R.inventoryKey = "convertStorage"
-					R.down = true								--disabled in convertTreeFarm if R.data = "convert"
+					R.down = true								-- disabled in convertTreeFarm if R.data = "convert"
 					U.currentTask = "convertTreefarm"			-- uses network to get supplies
 				end 
 			--elseif mb.name == self.subMenuList[self.mm[3]] then	-- "mbFarming"
@@ -879,6 +879,8 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					U.currentTask = "createSinkingPlatform"
 				elseif mb.selectedButtonName == self.m5[7] then -- "Boat bubble lift"
 					U.currentTask = "createBoatLift"
+				elseif mb.selectedButtonName == self.m5[8] then -- "Dive column"
+					U.currentTask = "createDiveColumn"
 				end 
 			--elseif mb.name == self.subMenuList[self.mm[6]] then	-- "mbSpawner"	
 			elseif U.subMenuName == self.mm[6][1][1] then	-- "mbSpawner"	
@@ -903,6 +905,12 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					R.width = 5
 					R.length = 5
 					U.currentTask = "createTrialCover"
+				elseif mb.selectedButtonName == self.m6[7] then -- "Attack mob"
+					R.auto = true
+					R.up = true
+					R.forward = true
+					R.down = true
+					U.currentTask = "attack"
 				end 
 			--elseif mb.name == self.subMenuList[self.mm[7]] then	-- "mbArea"
 			elseif U.subMenuName == self.mm[7][1][1] then	-- "mbArea"
