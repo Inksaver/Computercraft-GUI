@@ -1,9 +1,9 @@
-local version = 20251220.1500
+local version = 20260109.0800
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as lib/TurtleUtils.lua
-	usage:This is part of the libraries required for tk2.lua (Toolkit 2)
-	a GUI interface suitable only for Advanced Turtles
+	usage:This is part of the libraries required for tk2.lua and tk3 (Toolkit 2/3)
+	a GUI interface ideal for Advanced Turtles. Works on non-advanced using numbers from keyboard
 	It also requires Items and Vector2 libraries:
 	Items 
 	Vector2
@@ -12,7 +12,7 @@ local Items 		= require("lib.data.items")
 local Vector2 		= require("lib.Vector2")
 local metals 		= {"iron", "gold", "copper", "netherite", "red_alloy"}
 local categories 	= {"building", "colored", "combat", "computercraft", "food", "functional", "ingredients", "morered", "natural", "redstone", "tools"}
-local timber 		= {"dark_oak", "oak", "birch", "spruce", "jungle", "acacia", "mangrove", "cherry", "bamboo", "crimson", "warped"}
+local timber 		= {"pale_oak", "dark_oak", "oak", "birch", "spruce", "jungle", "acacia", "mangrove", "cherry", "bamboo", "crimson", "warped"}
 local stone 		= {"cobblestone", "red_sandstone", "sandstone","end_stone", "blackstone", "stone", "deepslate","granite", "diorite", "andesite", "netherrack", "nether", "basalt", "mud", "dark_prismarine", "prismarine"}
 local minerals 		= {"iron", "gold", "copper", "netherite", "diamond", "emerald", "coal", "redstone", "lapis_lazuli", "quartz", "amethyst"}
 local ingots 		= {"iron", "gold", "copper", "netherite"}
@@ -199,7 +199,7 @@ U.windowAction = ""
 U.connected = false
 U.dialogActive = false
 U.dialogData = nil
-U.R = {}						-- used to hold a copy of original values of R
+U.R = {}						-- used to hold a copy of original values of global R created in tk3
 U.stack1 = {"bed", "shulker", "decorated_pot", "minecart", "boat", "shovel", "pickaxe", "axe", "hoe", "fishing_rod", "flint_n_steel", "*bucket", "spyglass", "book_n_quill",
 			"elytra", "shears", "horn", "music", "soup", "stew", "cake", "water_bottle", "potion", "enchanted_book", "helmet", "chestplate", "leggings", "boots",
 			"bow", "crossbow", "armor", "cap", "tunic", "pants"}
@@ -223,24 +223,6 @@ U.stack16 = {"ender_pearl", "snowball", "bucket", "egg", "sign", "honey_bottle",
 	right = 262, left = 263, down = 264, up = 265, 
 	backspace = 8, enter = 13
 ]]
---local keysToNumber = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"}
---[[local colours = {}
-table.insert(colours, 1,"white")
-table.insert(colours, 2, "orange")
-table.insert(colours, 4, "magenta")
-table.insert(colours, 8, "lightBlue")
-table.insert(colours, 16, "yellow")
-table.insert(colours, 32, "lime")
-table.insert(colours, 64, "pink")
-table.insert(colours, 128, "gray")
-table.insert(colours, 256, "lightGray")
-table.insert(colours, 512, "cyan")
-table.insert(colours, 1024, "purple")
-table.insert(colours, 2048, "blue")
-table.insert(colours, 4096, "brown")
-table.insert(colours, 8192, "green")
-table.insert(colours, 16384, "red")
-table.insert(colours, 32768, "black")]]
 
 local colours =
 {
@@ -516,9 +498,10 @@ function U.padRight(text, length, char)
 	return text
 end
 
-function U.parseExpression(expression)
+function U.parseExpression(expression, calledFrom)
 	--[[ {"R.height * 6"} or "math.abs(R.height - R.currentLevel) / 3" ]]
-	
+	if calledFrom == nil then calledFrom = "unknown" end
+Log:saveToLog("U.parseExpression(expression = "..expression..", called from "..calledFrom)
 	local lib = {}
 	
 	function lib.parse(part, sum)
@@ -1564,7 +1547,7 @@ function U.sendItemsToTurtle(fromInventoryName, fromInventorySlot, quantity, toT
 	quantity: 			The amount to transfer (nil for full stack)
 	toTurtleSlot: 		The slot to move to. (nil will use any available slot(s))
 	]]
-	U.wrapModem()
+	--U.wrapModem()
 	return peripheral.call(fromInventoryName, "pushItems", U.turtleName, fromInventorySlot, quantity, toTurtleSlot)
 end
 
@@ -1755,8 +1738,9 @@ function U.wrapModem(relist)
 	if modem == nil then
 		return "Modem not found"
 	end
+	U.turtleName = modem.getNameLocal()
 Log:saveToLog("==> U.wrapModem: U.turtleName = '"..U.turtleName.."'")
-	if U.turtleName ~= modem.getNameLocal() or relist then	-- modem not already wrapped
+	if relist then	-- modem not already wrapped
 		-- populate module level variables barrelObjects, barrelNames, chestObjects, chestNames
 Log:saveToLog("    creating U. lists/objects")
 		U.chestObjects = {}									-- memory only list of chest objects
