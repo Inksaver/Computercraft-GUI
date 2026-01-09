@@ -1,4 +1,4 @@
-local version = 20251230.0800
+local version = 20260109.0800
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -203,6 +203,7 @@ _G.R =
 	legacy = false,
 	length = 0,
 	logType = "",
+	lowerLevel = 0,
 	menu = 0,
 	message = "",
 	misc = false,
@@ -222,6 +223,7 @@ _G.R =
 	treeFarmVersion = 2,
 	turtleCount = 1,
 	up = false,
+	upperLevel = 0,
 	useBlockType = "",
 	width = 0,
 }
@@ -975,9 +977,9 @@ function utils.towpathOnly()
 			elseif i % R.torchInterval == 0 then		-- torch interval, already facing towards completed path
 				T:go("U1C2 U1x0") 						-- place block on ground level, up 1 and excavate ceiling
 				T:place("torch", "down")				-- place torch
-				utils.goBack(1)
-				T:go("D2")
-				placeOnly = false							-- no futher action as already moved forward
+				--utils.goBack(1)
+				T:go("B1x0 D2")							-- move back, delete block above, down 2
+				placeOnly = false						-- no futher action as already moved forward
 			end
 		end
 		
@@ -1121,33 +1123,46 @@ function assessTreeFarm()
 	return --R	-- sets R.networkFarm and R.useBlockType to sapling type
 end
 
-function attack()
+function attack(direction)
 	local totalHitsF = 0
 	local totalHitsU = 0
 	local totalHitsD = 0
 	local cycles = 0
 	local lib = {}
 	
-	function lib.attack()
+	function lib.attack(direction)
 		local hitF = false
 		local hitU = false
 		local hitD = false
-		if turtle.attackUp() then
-			hitU = true
-			totalHitsU = totalHitsU + 1
+		if R.up or direction == "up" or direction == nil then
+			if turtle.attackUp() then
+				hitU = true
+				totalHitsU = totalHitsU + 1
+			end
 		end
-		if turtle.attackDown() then
-			hitD = true
-			totalHitsD = totalHitsD + 1
+		if R.down or direction == "down" or direction == nil then
+			if turtle.attackDown() then
+				hitD = true
+				totalHitsD = totalHitsD + 1
+			end
 		end
-		if turtle.attack() then
-			hitF = true
-			totalHitsF = totalHitsF + 1
+		if R.forward or direction == "forward" or direction == nil then
+			if turtle.attack() then
+				hitF = true
+				totalHitsF = totalHitsF + 1
+			end
 		end
+		-- colourText(row, text, reset)
 		if hitF or hitU or hitD then
-			menu.colourText("~green~cycle "..cycles..": ~red~hits forward: "..totalHitsF..", up: "..totalHitsU..", down: "..totalHitsD)
+			menu.colourText(1, "~green~cycle "..cycles.."     ")
+			menu.colourText(2, "~red~hits forward:  "..totalHitsF.."          ")
+			menu.colourText(3, "~orange~hits up:   "..totalHitsU.."          ")
+			menu.colourText(4, "~yellow~hits down: "..totalHitsD.."          ")
 		else
-			menu.colourText("~green~cycle "..cycles..": ~yellow~No hits this time")
+			menu.colourText(1, "~green~cycle "..cycles.."               ")
+			menu.colourText(2, "~yellow~No hits this time                      ")
+			menu.colourText(3, "                            ")
+			menu.colourText(4, "                            ")
 		end
 	end
 	
@@ -1155,12 +1170,12 @@ function attack()
 	if R.auto then
 		while true do
 			cycles = cycles + 1
-			lib.attack()
+			lib.attack(direction)
 		end
 	else
 		for i = 1, R.length do
 			cycles = i
-			lib.attack()
+			lib.attack(direction)
 			sleep(1)
 		end
 	end
@@ -3363,16 +3378,29 @@ function composter()
 	else
 		T:place("composter", "down")
 	end
-	for slot = 1, 13 do
-		turtle.select(slot)
-		while turtle.getItemCount(slot) > 0 do
-			while turtle.dropDown() do end
-			sleep(2)
-			turtle.select(15)
-			turtle.digDown()
-			
-			turtle.placeDown()
+	local hasVeg = true
+	local bonemeal = 0
+	while hasVeg do
+		for slot = 1, 14 do
 			turtle.select(slot)
+			while turtle.getItemCount(slot) > 0 do
+				while turtle.dropDown() do end
+				sleep(2)
+				turtle.select(15)
+				turtle.digDown()
+				turtle.placeDown()
+				turtle.select(slot)
+			end
+			bonemeal = T:getItemCount("bonemeal")
+			if bonemeal >= 64 then
+				return {"Bulk composting halted. Bonemeal full"}
+			end
+		end
+		hasVeg = false
+		for slot = 1, 14 do
+			if turtle.getItemCount(slot) > 0 then
+				hasVeg = true
+			end
 		end
 	end
 	return {"Bulk composting completed"}
@@ -4016,7 +4044,7 @@ function createBorehole()
 	return {"File '"..fileName.."' written"}
 end
 
-function createBubbleLift()
+function createBubbleLiftOLD()
 	menu.clear()
 	local message = 
 [[~red~Additional blocks may be required
@@ -4180,11 +4208,14 @@ Add 64 blocks of any stone
 			oTurn = "R"
 		end 
 	end
+	R.height = math.abs(R.upperLevel - R.lowerLevel)
+	R.currentLevel = R.startLevel	-- eg 64 going down
 	R.useBlockType = T:getMostItem("", false)
 	local emptyBuckets = T:getItemCount("minecraft:bucket")
 	if emptyBuckets > 10 then
 		T:dropItem("minecraft:bucket","up", 10)
 	end
+	
 	if ladder then
 		T:go("F1"..turn.."1")										-- backing ladder column, on floor
 		lib.createSource()											-- starting position, but up 1
@@ -4226,6 +4257,75 @@ Add 64 blocks of any stone
 	lib.buildLift(height - 1)
 	
 	return {"Bubble lift created", "Check correct operation", "Check exit before using" }
+end
+
+function createBubbleLift()
+	-- Normal start at top- if start from bottom:
+	-- move in to column
+	-- dig directly up to upperLevel
+	local lib = {}
+	
+	function lib.addPipe()
+		for j = 1, 4 do
+			-- go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
+			T:go("C1R1", false, 0, true)
+		end
+	end
+	
+	function lib.placeKelp()
+		T:place("minecraft:kelp", "forward")
+		T:up(1)
+	end
+	
+	local drop = 0
+	if R.down then
+		menu.colourPrint("Wait for my return!", colors.yellow)
+	end
+	R.height = math.abs(R.upperLevel - R.lowerLevel)
+Log:saveToLog("createBubbleColumn(): R.height = "..R.height, true)
+	if R.up then
+		T:go("F1U"..R.height)
+	end
+	local atBedrock = false
+	local blockType = T:getBlockType("down")
+	for i = 1, R.height do
+		if blockType:find("bedrock") == nil then	-- not at bedrock
+			T:down(1)
+			drop = drop + 1
+			lib.addPipe()
+			if i == 1 then
+				T:placeWater("forward")
+			end
+			blockType = T:getBlockType("down")
+		else 										-- at bedrock
+			atBedrock = true
+			break
+		end
+	end
+	if atBedrock then
+		T:up(1)
+		drop = drop - 1
+	else
+		T:dig("down")
+	end
+	if not T:place("minecraft:soul_sand", "down") then
+		T:place("minecraft:dirt", "down")
+	end
+	T:go("R2F1R2C2")
+	lib.placeKelp()
+	T:place("sign", "down", false, "UP!")
+	lib.placeKelp()
+	T:place("sign", "down", false, "GOING")
+	for i = 1, drop - 2 do
+		lib.placeKelp()
+	end
+	while turtle.down() do end	-- on top of signs				
+	T:go("F1D1x2 U1B1")			-- break kelp and move over it, down 1, break last piece, return to column
+	for i = 1, drop - 2 do
+		T:go("U1C2")
+	end
+	
+	return {"Bubble column completed "..drop.. " blocks"}
 end
 
 function createCorridor()
@@ -4477,6 +4577,36 @@ direction + ~blue~number ~yellow~eg ~white~f2 ~yellow~= forward ~blue~2
 		end
 	end
 	return {}
+end
+
+function createDiveColumn()
+	-- place a series of doors in deep water to make a dive column
+	-- go to sea bed
+	local block = T:getMostItem("door", false)
+	local moves = 0
+	local lib = {}
+	
+	function lib.placeDoor()
+		-- place block, door above, open it, move above.
+		T:place(block, "forward")					
+		T:go("U1")
+		T:place("door", "forward")
+		rs.setAnalogOutput("front", 15)
+		T:up(2)							-- above door
+	end
+	
+	while turtle.down() do
+		moves = moves + 1						-- increment counter
+	end
+	
+	T:go("F1R2")								-- on sea bed. clear any block in front
+	while moves > 0 do							-- head back to surface
+		lib.placeDoor()
+		T:go("F3R2")
+		if moves < 3 then break end
+		moves = moves - 3
+	end
+	return {"Dive column created"}
 end
 
 function createDragonTrap()
@@ -5344,17 +5474,23 @@ function createLadder()
 	-- R.startLevel and R.destinationLevel set in taskInventory.lua
 	-- R.auto = stop at stronghold/trial chamber
 	-- R.startLevel eg 64 at top (R.goDown = true) or 5 at bedrock, R.goUp = true 
-	if R.goUp then
-		R.height = math.abs(R.destinationLevel - R.startLevel) --height of ladder
-	else	
-		R.height = math.abs(R.startLevel - R.destinationLevel) --height of ladder
-	end
+	-- R.lowerLevel = bottom of ladder
+	-- R.upperLevel = top of ladder
+Log:saveToLog("tk3.createLadder() starting; R.up = "..tostring(R.up).."R.down = "..tostring(R.down)
+			   .."R.startLevel = "..R.startLevel.."R.destinationLevel = "..R.destinationLevel)
+	-- if R.up then
+		-- R.height = math.abs(R.destinationLevel - R.startLevel) --height of ladder
+	-- else	
+		-- R.height = math.abs(R.startLevel - R.destinationLevel) --height of ladder
+	-- end
+	R.height = math.abs(R.upperLevel - R.lowerLevel)
 	R.currentLevel = R.startLevel	-- eg 64 going down
 	local retValue = {}
 	local ledge = 0
 	--local height = math.abs(R.currentLevel - R.height) --height of ladder
 	local blockType = T:getBlockType("forward")
-	if R.goUp then -- create ladder from current level to height specified
+	--if R.goUp then -- create ladder from current level to height specified
+	if R.up then -- create ladder from current level to height specified
 		print("Creating ladder going up "..R.height.." blocks")
 		for i = 1, R.height do -- go up, place ladder as you go
 			lib.buildDam()
@@ -6483,14 +6619,18 @@ function createSafeDrop()
 	-- dig down R.height blocks, checking for blocks on all sides
 	local drop = 0
 	menu.colourPrint("Wait for my return!", colors.yellow)
-	local height = R.currentLevel - math.abs(R.height)	-- eg 74 - 64 = 10
-Log:saveToLog("createSafeDrop(): height = "..height)
-	for i = 1, height do
-		for j = 1, 4 do
-			-- go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
-			T:go("C1R1", false, 0, true)
+	R.height = math.abs(R.upperLevel - R.lowerLevel)
+	--local height = R.currentLevel - math.abs(R.height)	-- eg 74 - 64 = 10
+	R.currentLevel = R.startLevel	-- eg 64 going down
+Log:saveToLog("createSafeDrop(): R.height = "..R.height, true)
+	for i = 1, R.height do
+		if i > 1 then
+			for j = 1, 4 do
+				-- go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
+				T:go("C1R1", false, 0, true)
+			end
 		end
-		if i < height then
+		if i < R.height then
 			if T:down(1) then
 				 drop = drop + 1
 			else
@@ -7604,85 +7744,92 @@ function createTrialCover()
 	function lib.isSpawner()
 		local blockType = T:getBlockType("down")
 		if blockType:find("spawner") ~= nil then
-			return true, "top"
+			return true, "top", ""
 		end
 		blockType = T:getBlockType("up")
 		if blockType:find("spawner") ~= nil then
-			return true, "bottom"
+			return true, "bottom", ""
 		end
 		blockType = T:getBlockType("forward")
 		if blockType:find("spawner") ~= nil then
-			return true, "forward"
+			return true, "forward", blockType
 		end
-		return false, ""
+		return false, "", blockType	-- block ahead always returned. Allows mushroom checking
 	end
 	
 	function lib.findSpawner()
 		local moves  = 0
+		local wallCleared = false
 		local quit = false
 		-- assume turtle placed facing trial spawner
 		print("Checking if next to spawner")
-		local found, position = lib.isSpawner() -- true/false, top/bottom/nil
-		if not found then -- move forward towards spawner
+		local found, position, blockType = lib.isSpawner() -- true/false, top/bottom/nil
+		while not found and not quit do -- move forward towards spawner
 			print("Not close to spawner")
-			while turtle.forward() and not quit do
-				moves = moves + 1
-				if moves > 32 then
+			
+			if blockType:find("mushroom") ~= nil then
+				turtle.dig()
+				blockType = ""
+			elseif blockType ~= "" then
+				if wallCleared then	
 					quit = true
+					break
+				else	-- could be behind a wall
+					print("Assuming spawner behind a wall")
+					turtle.dig()
+					blockType = ""
+					wallCleared = true
 				end
 			end
-			found, position = lib.isSpawner() -- true/false, top/bottom/nil
-			if not found then	-- could be behind a wall
-				print("Assuming spawner behind a wall")
-				T:forward(1)
-				moves = moves + 1
-				while turtle.forward() and not quit do 
-					moves = moves + 1
-					if moves > 32 then
-						quit = true
-					end
-				end
-				found, position = lib.isSpawner() -- true/false, top/bottom/nil
-				if not found then
-					T:go("R2F"..moves + 2 .."R2")
-				end
+			turtle.forward()
+			moves = moves + 1
+			if moves > 32 then
+				quit = true
 			end
+			found, position, blockType = lib.isSpawner() -- true/false, top/bottom/nil
+		end
+		if not found or quit then
+			T:go("R2F"..moves + 2 .."R2")
 		end
 		
 		return found, position
 	end
 	
-	function lib.attack()
-		local totalHitsF = 0
-		local totalHitsU = 0
-		local totalHitsD = 0
-		while true do
-			local hitF = false
-			local hitU = false
-			local hitD = false
-			if turtle.attackUp() then
-				hitU = true
-				totalHitsU = totalHitsU + 1
-			end
-			if turtle.attackDown() then
-				hitD = true
-				totalHitsD = totalHitsD + 1
-			end
-			if turtle.attack() then
-				hitF = true
-				totalHitsF = totalHitsF + 1
-			end
-			if hitF or hitU or hitD then
-				print("hits forward: "..totalHitsF..", up: "..totalHitsU..", down: "..totalHitsD)
-			end
-		end
+	
+	function lib.front()
+		-- in mid right side facing left | | |<|
+		T:go("C0C2 F1 C0C2 F1 C0C2")
+		T:go("B1C1 B1C1 B1C1")
+		-- ends outside mid right side facing left | | | |<
+	end
+	
+	function lib.sides()
+		-- on mid left side of a 3 x 3 square, facing right
+		T:go("C0C2 F1 C0C2 F1 C0C2 F1L1 F1")
+		T:go("C0C2 F1 C0C2 F1 C0C2 F1L1 F1")
+		T:go("C0C2 F1 C0C2 F1 C0C2")
+		T:go("B1C1 B1C1 B1C1")
+		T:go("R1B1")
+		T:go("B1C1 B1C1 B1C1")
+		T:go("R1B1")
+		T:go("B1C1 B1C1 B1C1")
+		-- ends on mid right of front facing back
+	end
+	
+	function lib.floor()
+		-- start in floor left corner 3 x 3 facing back
+		T:go("C2F1 C2F1 C2R1")	-- floor round spawner lowered by 1 block, facing player
+		T:go("F1 C2F1 C2R1")
+		T:go("F1 C2F1 C2R1")
+		T:go("F1C2 B1R1 F1R1")
 	end
 	
 	R.useBlockType = T:getMostItem("", false) -- use whatever block type available
 	local found, position = lib.findSpawner() -- move forwards until meet Spawner, go through wall if present
 	if not found then --outside dungeon
 		return {"Trial spawner not found"}
-	end 
+	end
+	-- move to face spawner, 1 block gap
 	if position == "top" then
 		T:go("B2D1")
 	elseif position == "forward" then
@@ -7690,17 +7837,21 @@ function createTrialCover()
 	else
 		T:go("B2U1")
 	end
-	T:go("R1F2R2")	--on lower right corner
-	-- starts with wall across spawner
-	buildStructure()
-	T:go("U3F1 R1F1 L1U1 F1")
-	R.height = 0
-	R.width = 3
-	R.length = 3
-	R.down = true
-	createFloorCeiling()
-	T:go("F1R1 B1D1 B1D2 F1")
-	lib.attack()
+	T:go("R1F1R2")				-- ends in right side of 3 x 3 face, looking left | | |<|
+								-- starts with wall across spawner
+	lib.front()					-- ends in right side of 3 x 3 face, looking left | | | |<
+	T:go("R1F1")				-- in position to start sides
+	lib.sides()					-- end right of mid front panel, facing rear
+	T:go("U1F1 L1F1 R2C1 L1")	-- end top right corner under ceiling, facing rear
+	T:go("C0F1 C0F1 C0L1 F1L1 C0F1 C0F1 C0R1 F1R1 C0F1 C0F1 C0") -- ceiling placed. end outside top right corner, facing left
+	T:go("R1D2")				-- on top of new floor level
+	lib.floor()					-- end facing player, on new floor, block ahead
+	T:go("F1C2 F1D1 C2U1 R2")	-- break through, fix player block 
+	T:place("slab","down")		-- slab for player
+	T:go("F1x0")				-- return to entrance, break block above 
+	T:place("slab","up")		-- reduce exit height
+	R.auto = true				-- ready for continuous attack
+	attack("forward")
 	return {}
 end
 
@@ -7746,11 +7897,17 @@ function createWaterCanal()
 	function lib.newCanalSide()
 		T:go("U1x1") 									
 		T:place("slab", "forward")					-- place slab on ground level
-		if turtle.detectUp() then
-			T:go("U1x1 U1x1 U1x1 D4")				-- go up 3 removing blocks ahead and up. back to water level
-		else
-			T:down(1)								-- back to water level
+		--if turtle.detectUp() then
+			--T:go("U1x1 U1x1 U1x1 D4")				-- go up 3 removing blocks ahead and up. back to water level
+		--else
+			--T:down(1)								-- back to water level
+		--end
+		local moves = 0
+		while turtle.detectUp() and moves <= 3 do
+			T:up(1)
+			moves = moves + 1
 		end
+		T:down(moves)
 	end
 	
 	function lib.newSource()
@@ -7779,8 +7936,6 @@ function createWaterCanal()
 		-- ends at back of canal/water source, facing down canal
 	end
 		
-	
-	
 	function lib.initialiseCanal()
 		--[[ move turtle to correct position. return moves]]
 		local newCanal, isWater, isSource = false, false, false
@@ -7830,10 +7985,13 @@ function createWaterCanal()
 					T:go(turn.."1U1C2")					-- place block below if not already source
 				end
 			end
-
-			if turtle.detectUp() then
-				T:go("U1x0D1")							-- up 1 and excavate blocks above canal. return to canal base
+			local moves = 0
+			while turtle.detectUp() and moves <= 3 do
+				T:up(1)
+				moves = moves + 1
+				--T:go("U2x0D1")							-- up 1 and excavate blocks above canal. return to canal base
 			end
+			T:down(moves)
 
 			--T:go(turn.."1C1"..oTurn.."1", false, 0, true) -- face canal wall, replace with stone if empty, face forward	
 			T:go(turn.."1")
@@ -7872,10 +8030,11 @@ function createWaterCanal()
 				if i == 1 or i % R.torchInterval == 0 then
 					T:go("U1x1") 							-- up to towpath level							
 					T:place("stone", "forward")				-- place block on ground level
-					T:go("U2x0F1x0")						-- 
+					T:go("U1x1 U1x1 U1x0 F1x0 D1")						-- 
 					T:place("torch", "down")				-- place torch	on block
-					utils.goBack(1)
-					T:down(3)								-- back to water level
+					T:go("B1D3")
+					--utils.goBack(1)
+					--T:down(3)								-- back to water level
 				else
 					lib.newCanalSide()
 				end
@@ -8383,9 +8542,9 @@ function fellTree()
 end
 
 function findPortal()
+	-- Called from TaskOptions:executeCall(key, value) key = "findPortal", value = "inventory"
 	local found = false
 	local onSide = false
-	--print("checking height")
 	sm:getSceneByName("TaskOptions"):setInfo("Checking height. Please wait...")
 	for i = 1, 64 do
 		if not turtle.up() then -- hit block above
@@ -8425,6 +8584,25 @@ function findPortal()
 	end
 	F["createPortalPlatform"].inventory = inventory
 	sm:getSceneByName("TaskOptions"):setInfo("Height = "..R.height..", Click 'Next' or type 'n'")
+	return inventory
+end
+
+function findSeabed()
+	-- Called from TaskOptions:executeCall(key, value) key = "findSeabed", value = "inventory"
+	sm:getSceneByName("TaskOptions"):setInfo("Checking water depth. Please wait...")
+	R.depth = 0
+	while utils.clearVegetation("down") do		-- go down to sea bed
+		T:go("x1D1")							-- make sure area in front is clear, go down
+		R.depth = R.depth + 1						-- increment counter
+	end
+	T:up(R.depth)
+	local inventory =  
+	{
+		{"door", math.floor(R.depth / 3) , true, ""},
+		{"dirt", math.floor(R.depth / 3), true, ""},
+	}
+	F["createDiveColumn"].inventory = inventory
+	sm:getSceneByName("TaskOptions"):setInfo("Depth = "..R.depth..", Click 'Next' or type 'n'")
 	return inventory
 end
 
@@ -11624,13 +11802,74 @@ function test()
 	-- create a square space round shaft base, end facing original shaft, 1 space back
 	--T:go("C2 L1n1 R1n3 R1n2 R1n3 R1n1", false, 0, true)
 	--T:go("U1Q1 R1Q3 R1Q2 R1Q3 R1Q1 R1D1", false, 0, true)
-	Log:saveToLog("calling T:placeWater('down')")
-	T:placeWater("down")
+	Log:saveToLog("calling createDiveColumn()")
+	createDiveColumn()
 	return {"function 'test' executed successfully"}
 end
 
 function test2()
-	print("test2 called")
+	R.upperLevel = 106
+	R.lowerLevel = 63
+	
+	local lib = {}
+	
+	function lib.addPipe()
+		for j = 1, 4 do
+			-- go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
+			T:go("C1R1", false, 0, true)
+		end
+	end
+	
+	function lib.placeKelp()
+		T:place("minecraft:kelp", "forward")
+		T:up(1)
+	end
+	
+	local drop = 0
+	menu.colourPrint("Wait for my return!", colors.yellow)
+	R.height = math.abs(R.upperLevel - R.lowerLevel)
+Log:saveToLog("createBubbleColumn(): R.height = "..R.height, true)
+
+	local atBedrock = false
+	local blockType = T:getBlockType("down")
+	for i = 1, R.height do
+		if blockType:find("bedrock") == nil then	-- not at bedrock
+			T:down(1)
+			drop = drop + 1
+			lib.addPipe()
+			if i == 1 then
+				T:placeWater("forward")
+			end
+			blockType = T:getBlockType("down")
+		else 										-- at bedrock
+			atBedrock = true
+			break
+		end
+	end
+	if atBedrock then
+		T:up(1)
+		drop = drop - 1
+	else
+		T:dig("down")
+	end
+	if not T:place("minecraft:soul_sand", "down") then
+		T:place("minecraft:dirt", "down")
+	end
+	T:go("R2F1R2C2")
+	lib.placeKelp()
+	T:place("sign", "down", false, "UP!")
+	lib.placeKelp()
+	T:place("sign", "down", false, "GOING")
+	for i = 1, drop - 2 do
+		lib.placeKelp()
+	end
+	while turtle.down() do end	-- on top of signs				
+	T:go("F1D1x2 U1B1")			-- break kelp and move over it, down 1, break last piece, return to column
+	for i = 1, drop - 2 do
+		T:go("U1C2")
+	end
+	
+	return {"Bubble column completed "..drop.. " blocks"}
 end
 
 function undermineDragonTowers()
@@ -11925,7 +12164,7 @@ local function sceneLoader()
 								Log:saveToLog("key = "..key)
 								description = description..tostring(R[key])
 							else
-								local expression = U.parseExpression(word)
+								local expression = U.parseExpression(word, "tk3.sceneLoader()")
 								description = description..tostring(expression)
 							end
 --Log:saveToLog("description = "..description)
@@ -11937,7 +12176,7 @@ local function sceneLoader()
 			end
 			local fuel = F[U.currentTask].fuel
 			if fuel ~= nil then
-				fuel = U.parseExpression(fuel)
+				fuel = U.parseExpression(fuel, "tk3.sceneLoader()")
 --Log:saveToLog("fuel = "..fuel)
 				utils.checkFuelNeeded(fuel)
 			end
@@ -11995,7 +12234,17 @@ Enter to exit]]
 			read()
 		elseif args[1] == "attack" then
 			R.auto = true
-			attack()
+			if args[2] == nil then
+				attack()
+			else
+				if args[2]:find("u") ~= nil then
+					attack("up")
+				elseif args[2]:find("f") ~= nil then
+					attack("forward")
+				elseif args[2]:find("d") ~= nil then
+					attack("down")
+				end
+			end
 		elseif args[1] == "log" then
 			if args[2] ~= nil then
 				if args[2]:sub(1,1) == "d" then
@@ -12036,6 +12285,8 @@ Enter to exit]]
 			Log:appendLine("Block below: "..T:getBlockType("down"))
 		elseif args[1] == "test" then
 			test()
+		elseif args[1] == "test2" then
+			test2()
 		elseif args[1]:find("v") ~= nil then
 			print("_HOST:")
 			print()
