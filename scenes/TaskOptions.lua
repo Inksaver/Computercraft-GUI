@@ -1,4 +1,4 @@
-local version = 20251230.0800
+local version = 20260109.0800
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
 local Multilabel = require("lib.ui.MultiLabel")
@@ -283,21 +283,38 @@ function S:exit()
 end
 
 function S:calculateHeight(key)
-	-- chk5 is default condition R.down = true
-	Log:saveToLog("TaskOptions:calculateHeight("..key..")")
+	-- user types into text box "txt1". The entry in taskInventory.lua for txt1 is:
+	-- ["txt1"] = {text = "0", limits = {{"U.bedrock + 5"}, {"U.ceiling"}}, r = "startLevel", event = {"calculateHeight", "lbl2"}},
+	-- this sets the limits and calls this function using "lbl2" passed as the key: S:calculateHeight(lbl2)
+	-- key = "lbl2"
+	-- limits = {{"U.bedrock + 5"}, {"U.ceiling"}}
+
+Log:saveToLog("TaskOptions:calculateHeight("..key..")")
 	local controlData = self.setupData[key]					-- ["lbl2"] = {text = "Go to level:", limits = {{U.bedrock + 5}, {"currentLevel", 2}}
 	local lowerLimit = U.bedrock + 5
 	local upperLimit = U.ceiling
 	-- get text from setup data, as label text may already have changed
+	-- need to use R.upperLevel and R.lowerLevel to calculate ladders and torches
+	-- if R.up then R.lowerLevel = R.startLevel, R.upperLevel = R.destinationLevel
+	-- if R.down then R.upperLevel = R.startLevel, R.lowerLevel = R.destinationLevel
 	local text = tostring(controlData.text)	-- eg lbl2.text = "Go to level:"
 	local limits = controlData["limits"]	-- eg limits = {{U.bedrock + 5} , {"R.currentLevel", 2}} -> {-59, 319}
+	
+	if R.up then
+		R.lowerLevel = R.startLevel
+		R.upperLevel = R.destinationLevel
+	elseif R.down then
+		R.lowerLevel = R.startLevel
+		R.upperLevel = R.destinationLevel				
+	end 
+Log:saveToLog("TaskOptions:calculateHeight("..key.."): R.up = "..tostring(R.up)..", R.down = "..tostring(R.down)..
+			  ", R.startLevel = "..R.startLevel..", R.destinationLevel = "..R.destinationLevel..
+			  ", R.lowerLevel = "..R.lowerLevel..", R.upperLevel = "..R.upperLevel)
 	if  limits == nil then	
 		if R.up then
 			lowerLimit = R.currentLevel + 2	
 			upperLimit = U.ceiling
 		elseif R.down then
-			--lowerLimit = R.currentLevel - 2	
-			--upperLimit = U.bedrock + 5
 			lowerLimit = U.bedrock + 5
 			upperLimit = R.currentLevel - 2	
 		end 
@@ -305,13 +322,12 @@ function S:calculateHeight(key)
 	else -- eg {{U.bedrock + 5} , {"currentLevel", 2}}
 		-- limits consists of 2 tables
 		Log:saveToLog("TaskOptions:calculateHeight() limits = "..textutils.serialise(limits, {compact = true}))
+		R.lowerLevel = R.startLevel
 		if  limits[1] == nil then	
 			if R.up then
 				lowerLimit = R.currentLevel + 2	
 				upperLimit = U.ceiling
-			elseif R.down then
-				--lowerLimit = R.currentLevel - 2	
-				--upperLimit = U.bedrock + 5
+			elseif R.down then			
 				lowerLimit = U.bedrock + 5
 				upperLimit = R.currentLevel - 2	
 			end 
@@ -320,7 +336,7 @@ function S:calculateHeight(key)
 			local lLimits = limits[1] 		-- eg {U.bedrock + 5} 
 			local uLimits = limits[2] 		-- eg {"R.currentLevel", 2}
 			if #lLimits == 1 then
-				lowerLimit  = U.parseExpression(lLimits[1])		-- eg -64 + 5 = -59
+				lowerLimit  = U.parseExpression(lLimits[1],"TaskOptions:calculateHeight")		-- eg -64 + 5 = -59
 				Log:saveToLog("lowerLimit = ".. lowerLimit)	
 			else								-- eg {"currentLevel", 2}
 				local Rkey = uLimits[1]		-- eg "currentLevel"
@@ -339,7 +355,7 @@ function S:calculateHeight(key)
 			end
 		
 			if #uLimits == 1 then
-				upperLimit  = U.parseExpression(uLimits[1])
+				upperLimit  = U.parseExpression(uLimits[1],"TaskOptions:calculateHeight")
 				Log:saveToLog("upperLimit = ".. upperLimit)	
 			else								-- eg {"currentLevel", 2}
 				local Rkey = uLimits[1]		-- eg "currentLevel"
@@ -482,11 +498,11 @@ function S:calculateLimits(textbox, association)
 		local lLimits = limits[1] 		-- eg {"U.bedrock + 5"} 
 		local uLimits = limits[2] 		-- eg {"R.currentLevel", 2}
 		if #lLimits == 1 then
-			lowerLimit = U.parseExpression(lLimits[1])
+			lowerLimit = U.parseExpression(lLimits[1], "TaskOptions:calculateLimits")
 		else								-- eg {"R.currentLevel", 2}
-			lowerLimit = U.parseExpression(lLimits[1]) -- eg {"R.currentLevel"}
+			lowerLimit = U.parseExpression(lLimits[1], "TaskOptions:calculateLimits") -- eg {"R.currentLevel"}
 			--Log:saveToLog("\tU.parseExpression("..lLimits[1]..") = "..lowerLimit.." (lowerLimit)")
-			local operand = U.parseExpression(lLimits[2])---- eg {2}
+			local operand = U.parseExpression(lLimits[2], "TaskOptions:calculateLimits")---- eg {2}
 			if R.up then
 				lowerLimit = lowerLimit	+ operand-- eg R.currentLevel + 2 -> 70+2 -> 72
 			elseif R.down then
@@ -499,7 +515,7 @@ function S:calculateLimits(textbox, association)
 			-- eg limits = {{"U.bedrock + 5"} , {"currentLevel", 2}}, r = "height", event = {"calculateHeight", "lbl2"}}
 			upperLimit = U.parseExpression(uLimits[1]) -- eg {"U.bedrock + 5"}
 			--Log:saveToLog("\tU.parseExpression("..uLimits[1]..") = "..upperLimit.." (upperLimit)")
-			local operand = U.parseExpression(uLimits[2])---- eg {2}
+			local operand = U.parseExpression(uLimits[2], "TaskOptions:calculateLimits")---- eg {2}
 			if R.up then
 				upperLimit = upperLimit	+ operand-- eg R.currentLevel + 2 -> 70+2 -> 72
 			elseif R.down then
@@ -513,11 +529,13 @@ end
 
 function S:executeCall(key, value)
 	-- self.execute	= function(key, value) 	self:executeCall(key, value) end
-	-- remeber to add to events  events:hook("executeCall", self.execute)
+	-- remember to add to events  events:hook("executeCall", self.execute)
 	-- eg event = {"execute", key = "findPortal", value = "inventory"}
 	Log:saveToLog("TaskOptions:execute(key = "..key..", value = "..value)
 	if key == "findPortal" then
 		F[U.currentTask].inventory = F[key].call()	-- set the inventory to return value of findPortal()
+	elseif key == "findSeabed" then
+		F[U.currentTask].inventory = F[key].call()	-- set the inventory to return value of findSeabed()
 	end
 end
 
