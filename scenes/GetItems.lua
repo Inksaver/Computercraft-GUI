@@ -1,4 +1,4 @@
-local version = 20251218.1400
+local version = 20260109.0800
 
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
@@ -177,7 +177,7 @@ function S:setup()
 			local quantities = {}
 --Log:saveToLog("S:setup() ipairs(v[2]) = "..textutils.serialise(v[2], {compact = true}))
 			for _, exp in ipairs(v[2]) do
-				local amount = U.parseExpression(exp)
+				local amount = U.parseExpression(exp, "GetItems:setup()")
 				Log:saveToLog("S:setup() for _, item in ipairs(v[2]) exp = "..exp..", amount = "..amount)
 				table.insert(quantities, amount)
 			end
@@ -203,7 +203,7 @@ function S:setup()
 				tempDisplay[1][2] = tempDisplay[1][2].." (".. v[4][2]..")"
 			end
 		else	-- single quantity
-			local amount = U.parseExpression(v[2])	-- eg 1 or "math.abs(R.height - R.currentLevel)"
+			local amount = U.parseExpression(v[2], "GetItems:setup()")	-- eg 1 or "math.abs(R.height - R.currentLevel)"
 --Log:saveToLog("S:setup() useTable = false, expression = "..v[2]..", amount = "..amount)
 			table.insert(tempDisplay, math.abs(amount))		-- [2] quantities
 			table.insert(tempInventory, math.abs(amount))
@@ -388,6 +388,7 @@ function S:onBtnClick(button)
 	elseif button.name == "btnNext" then
 		-- start the process. 
 		-- Loop running in tk3.sceneLoader() checks if U.executeTask is true
+Log:saveToLog("GetItems:onBtnClick("..button.name.."): U.executeTask = true. Exiting this function")
 		U.executeTask = true
 	end
 end
