@@ -1,4 +1,4 @@
-local version = 20260109.0800
+local version = 20260111.0800
 -- ["lbl4"] = {text = "Text here", bg = colors.black, fg = colors.lime, alignH = "centre"},
 -- ["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
 -- ...state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, event = {"changeRValue", "inventoryKey", "1"}},
@@ -58,8 +58,11 @@ return
 		description = "Building gable end roof",
 		fuel = "R.height * R.length * 2) + ( R.height * R.width * 2)",
 		items =
-[[~red~width * length * height stone, stairs or planks
-~orange~length + 2 slabs for ridge
+[[~red~width*
+length*
+height~yellow~| stone, stairs or planks
+~orange~length
++ 2   ~yellow~| slabs for ridge
 ]],
 		inventory =
 		{
@@ -90,8 +93,10 @@ return
 		title = "04-Build a pitched roof",
 		description = "Building pitched roof",
 		items =
-[[~red~width * length * height stone, stairs or planks
-~orange~length slabs for ridge
+[[~red~width*
+length*
+height~yellow~| stone, stairs or planks
+~orange~length~yellow~| slabs for ridge
 ]],
 		inventory =
 		{
@@ -117,7 +122,7 @@ return
 	["buildStructure"] =
 	{
 		call = buildStructure,
-		title = "02-Build a walled area / house",
+		title = "02-Build walled area, house",
 		description = "Building walled area / house",
 		fuel = "( R.height * R.length * 2) + ( R.height * R.width * 2)",
 		data = 
@@ -131,8 +136,10 @@ return
 			["txt3"] = {text = "0", limits = {{1} , {50}}, r = "height"}
 		},
 		items =
-[[~red~stone planks or bricks
-~green~quantities calculated on length, width and height
+[[~red~width 
+length
+height~yellow~| stone planks or bricks
+~yellow~      | quantities calculated
 ]],
 		inventory =
 		{
@@ -156,7 +163,7 @@ return
 		description = "Building wall",
 		fuel = " R.width * R.length * 2",
 		items =
-[[~red~length ~yellow~stone or fence
+[[~red~length~yellow~| stone or fence
 ]],
 		inventory = 
 		{
@@ -182,7 +189,7 @@ return
 	["clearAndReplantTrees"] =
 	{
 		call = clearAndReplantTrees,
-		title = "06-Harvest and replant forest",
+		title = "06-Harvest & replant forest",
 		description = "Harvesting / replanting forest",
 		fuel = 2000,
 		data =
@@ -194,8 +201,8 @@ return
 			["txt2"] = {text = "0", limits = {{0}, {64}}, r = "length"}
 		},
 		items = 
-[[~green~1 chest for crafting fuel
-64 saplings mixed types
+[[~green~1     ~yellow~| chest for crafting fuel
+64    ~yellow~| saplings mixed types
 ]],
 		inventory =
 		{
@@ -219,7 +226,8 @@ return
 			["txt2"] = {text = "0", limits = {{0}, {64}}, r = "length"}
 		},
 		items =
-[[ width * length dirt if resurfacing is required]],
+[[~green~width*
+length~yellow~| dirt if resurfacing is required]],
 		inventory =
 		{
 			{"minecraft:dirt", "R.width * R.length", false, "if required"}
@@ -255,8 +263,8 @@ return
 		title = "09-Rob disused mineshaft",
 		description = "Asset stripping mineshaft",
 		items =
-[[~green~1  ~yellow~UNUSED diamond sword for webs
-~green~1  ~yellow~torch per 8 blocks
+[[~green~1      ~yellow~| UNUSED diamond sword for webs
+~green~1      ~yellow~| torch per 8 blocks
 ]],
 		data =
 		{
@@ -307,7 +315,7 @@ return
 	["clearRectangle"] =
 	{
 		call = clearRectangle,
-		title = "02-Clear a rectangle + u/d opt",
+		title = "02-Clear a rectangle & u/d",
 		description = "Clearing rectangle",
 		fuel = "R.width * R.length",
 		data =
@@ -340,7 +348,7 @@ return
 	["clearSandWall"] =
 	{
 		call = clearSandWall,
-		title = "02-Remove sand wall in water",
+		title = "02-Remove sand wall",
 		description = "Clearing sand wall",
 		fuel = 200,
 		data =
@@ -376,7 +384,7 @@ return
 	["clearWall"] =
 	{
 		call = clearWall,
-		title = "03-Clear single wall up/down",
+		title = "03-Clear linear wall",
 		description = "Clearing wall",
 		fuel = "R.length * R.height",
 		data =
@@ -408,8 +416,8 @@ return
 			["txt2"] = {text = "0", limits = {{0}, {64}}, r = "length"}
 		},
 		items = 
-[[~green~16 ~yellow~sand
-~green~16 ~yellow~stone to replace slabs]],
+[[~green~16    ~yellow~| sand
+~green~16    ~yellow~| stone to replace slabs]],
 		inventory =
 		{
 			{{"sand", "stone"}, {64, 64}, {false, false}, {"",""}}
@@ -444,14 +452,14 @@ return
 		fuel = 900,
 		items =
 [[	
-~red~16    ~yellow~stone
-~red~2     ~yellow~dirt
-~red~1     ~yellow~sapling (spruce preferred)
-~red~1     ~yellow~barrel
-~red~5     ~yellow~ladders
-~orange~8     ~yellow~chests (if storage added)
-~orange~2-3   ~yellow~full wired modems
-~orange~57-70 ~yellow~computercraft cable
+~red~16    ~yellow~| stone
+~red~2     ~yellow~| ~dirt
+~red~1     ~yellow~| sapling (spruce preferred)
+~red~1     ~yellow~| barrel
+~red~5     ~yellow~| ladders
+~orange~8     ~yellow~| chests (if storage added)
+~orange~2-3   ~yellow~| full wired modems
+~orange~57-70 ~yellow~| computercraft cable
 ]],
 		inventory = 
 		{
@@ -492,12 +500,12 @@ return
 		fuel = 900,
 		items =
 [[	
-~red~1  ~yellow~hopper
-~red~1  ~yellow~log to indicate sapling type
-~red~2  ~yellow~barrels
-~red~3  ~yellow~full wired modems
-~red~8  ~yellow~chests (if storage added)
-~red~24 ~yellow~computercraft cable (with storage)
+~red~1     ~yellow~| hopper
+~red~1     ~yellow~| log to indicate sapling type
+~red~2     ~yellow~| ~barrels
+~red~3     ~yellow~| full wired modems
+~red~8     ~yellow~| chests (if storage added)
+~red~24    ~yellow~| computercraft cable (with storage)
 ]],
 		inventory =
 		{
@@ -540,8 +548,8 @@ return
 			["txt3"] = {text = "0", limits = {{0}, {64}}, r = "height"}
 		},
 		items =
-[[~red~12    ~yellow~buckets or water buckets
-~red~128   ~yellow~slabs
+[[~red~12    ~yellow~| buckets or water buckets
+~red~128   ~yellow~| slabs
 ]],
 		inventory =
 		{
@@ -556,9 +564,6 @@ return
 		title = "01-Craft an Item",
 		fuel = 0,
 		description = "Craft any item",
-		items =
-[[    
-]],
 		inventory =
 		{
 			{{"chest", "barrel"}, {1, 1}, {true, true}, {"", ""}}
@@ -573,11 +578,11 @@ return
 		description = "Building grinder for blaze farm",
 		items =
 [[
-~red~81    ~yellow~slabs
-~red~88    ~yellow~nether bricks
-~red~4     ~yellow~lava buckets
-~red~1     ~yellow~chest / barrel
-~red~1     ~yellow~hopper     
+~red~81    ~yellow~| slabs
+~red~88    ~yellow~| nether bricks
+~red~4     ~yellow~| lava buckets
+~red~1     ~yellow~| chest / barrel
+~red~1     ~yellow~| hopper     
 ]],
 		inventory =
 		{
@@ -616,10 +621,13 @@ return
 			["txt1"] = {text = "", limits = {{1} , {"U.ceiling - 2"}}, r = "height"}
 		},
 		items =
-[[~red~2 buckets or water buckets
-height * 10 stone
-height * 2 gates
-height * 2 + 2 soul sand
+[[~red~2     ~yellow~| buckets or water buckets
+~red~2height
+* 10  ~yellow~| stone
+~red~2height
+* 2   ~yellow~| gates
+~red~2height
+*2 + 2~yellow~| soul sand
 ]],
 		inventory = 
 		{
@@ -637,12 +645,12 @@ height * 2 + 2 soul sand
 		title = "05-Single column bubble lift",
 		description = "Building bubble lift",
 		items =
-[[~green~2 * height ~yellow~stone
-~orange~1          ~yellow~soul sand OR
-~orange~1          ~yellow~dirt as placeholder
-~red~1          ~yellow~water bucket
-~red~height     ~yellow~kelp
-~orange~2          ~yellow~signs
+[[~green~h * 2 ~yellow~| stone
+~orange~1     ~yellow~| soul sand OR
+~orange~1     ~yellow~| dirt as placeholder
+~red~1     ~yellow~| water bucket
+~red~height~yellow~| kelp
+~orange~2     ~yellow~| signs
 ]],
 		inventory = 
 		{
@@ -677,8 +685,9 @@ height * 2 + 2 soul sand
 			["txt2"] = {text = "0", limits = {{0} , {64}}, r = "torchInterval"}
 		},
 		items =
-[[~red~2 * length ~yellow~stone
-~green~1          ~yellow~torch per 8 blocks
+[[~red~2length
+* 2   ~yellow~| stone
+~green~1     ~yellow~| torch per 8 blocks
 ]],
 		inventory =
 		{
@@ -694,8 +703,8 @@ height * 2 + 2 soul sand
 		fuel = 200,
 		items =
 [[	
-~red~10-64 ~yellow~door
-~red~10-64 ~yellow~dirt
+~red~10-64 ~yellow~| door
+~red~10-64 ~yellow~| dirt
 ]],
 		data = 
 		{
@@ -731,10 +740,10 @@ height * 2 + 2 soul sand
 		description = "Building dragon water trap",
 		fuel = 256,
 		items =
-[[~red~356    ~yellow~stone
-~red~1      ~yellow~obsidian
-~red~145    ~yellow~ladder
-~red~1      ~yellow~water bucket
+[[~red~356   ~yellow~| stone
+~red~1     ~yellow~| obsidian
+~red~145   ~yellow~| ladder
+~red~1     ~yellow~| water bucket
 ]],
 		inventory =
 		{
@@ -753,14 +762,14 @@ height * 2 + 2 soul sand
 	["createEnclosure"] =
 	{
 		call = createEnclosure,
-		title = "05-Fence or wall land enclosure",
+		title = "05-Fenced or walled enclosure",
 		description = "Building land enclosure",
 		fuel = "( R.length + R.width ) * 2",
 		items =
 [[	
-~red~l*w*2 ~yellow~stone or fence
-~green~1     ~yellow~torch per 8 blocks
-~green~4     ~yellow~barrels if required for storage
+~red~l*w*2 ~yellow~| stone or fence
+~green~1     ~yellow~| torch per 8 blocks
+~green~4     ~yellow~| barrels if required for storage
 ]],
 		inventory =
 		{
@@ -791,13 +800,13 @@ height * 2 + 2 soul sand
 	["createFence"] =
 	{
 		call = createFence,
-		title = "04-Build single fence or wall",
+		title = "04-Build linear fence, wall",
 		description = "Building fence or wall",
 		fuel = "R.length",
 		items =
 [[	
-~red~length ~yellow~stone or fence
-~green~1      ~yellow~torch per 8 blocks
+~red~length~yellow~| stone or fence
+~green~1     ~yellow~| torch per 8 blocks
 ]],
 		inventory =
 		{
@@ -821,15 +830,15 @@ height * 2 + 2 soul sand
 		description = "Creating modular crop farm",
 		fuel = 300,
 		items =
-[[~red~64    ~yellow~stone
-~red~128   ~yellow~dirt
-~red~4     ~yellow~water bucket
-~red~1     ~yellow~barrel
-~red~1     ~yellow~sapling ~lime~(spruce preferred)
-~green~8     ~yellow~chests 5=early game,~cyan~ 8=Network
-~green~5     ~cyan~ladder (if networked)
-~green~3     ~cyan~full size wired modems
-~green~70    ~cyan~Computercraft cable
+[[~red~64    ~yellow~| stone
+~red~128   ~yellow~| dirt
+~red~4     ~yellow~| water bucket
+~red~1     ~yellow~| barrel
+~red~1     ~yellow~| sapling ~lime~(spruce preferred)
+~green~8     ~yellow~| chests 5=early game,~cyan~ 8=Network
+~green~5     ~cyan~| ladder (if networked)
+~green~3     ~cyan~| full size wired modems
+~green~70    ~cyan~| Computercraft cable
 
 ]],
 		inventory =
@@ -858,15 +867,15 @@ height * 2 + 2 soul sand
 		description = "Extending modular crop farm",
 		fuel = 300,
 		items =
-[[~red~64    ~yellow~stone
-~red~128   ~yellow~dirt
-~red~4     ~yellow~water bucket
-~red~1     ~yellow~barrel
-~green~5     ~yellow~5 chests if NO network else 0
-~red~1     ~yellow~sapling (spruce preferred)
-~green~5     ~yellow~ladder (Network ONLY)
-~green~2     ~yellow~full size wired modems
-~green~57    ~yellow~Computercraft cable
+[[~red~64    ~yellow~| stone
+~red~128   ~yellow~| dirt
+~red~4     ~yellow~| water bucket
+~red~1     ~yellow~| barrel
+~green~5     ~yellow~| 5 chests if NO network else 0
+~red~1     ~yellow~| sapling (spruce preferred)
+~green~5     ~yellow~| ladder (Network ONLY)
+~green~2     ~yellow~| full size wired modems
+~green~57    ~yellow~| Computercraft cable
 ]],
 		inventory =
 		{
@@ -892,7 +901,7 @@ height * 2 + 2 soul sand
 	["createFloorCeiling"] =
 	{
 		call = createFloorCeiling,
-		title = "09-Place a floor (or ceiling)",
+		title = "09-Place a floor or ceiling",
 		description = "Placing floor or ceiling",
 		fuel = "R.width * R.length",
 		data = 
@@ -913,9 +922,9 @@ height * 2 + 2 soul sand
 			["txt5"] = {text = "0", limits = {{0}, {64}}, r = "height"}
 		},
 		items =
-[[~green~w * l ~yellow~stone
-      Mix multiple blocks to produce
-      ~orange~patterned ~brown~floors ~yellow~and ~cyan~ceilings
+[[~green~w * l   ~yellow~| stone
+      ~yellow~| Mix multiple blocks to produce
+      ~orange~| patterned ~brown~floors ~yellow~and ~cyan~ceilings
 ]],
 		inventory =
 		{
@@ -930,10 +939,10 @@ height * 2 + 2 soul sand
 		fuel = "math.abs( R.upperLevel - R.lowerLevel ) * 2",
 		description = "Creating ladder",
 		items = 
-[[~red~1          ~yellow~ladder for each level
-~red~height * 4 ~yellow~stone
-~green~height / 4 ~yellow~torches
-~green~1          ~yellow~bucket for lava refuel]],
+[[~red~1     ~yellow~| ladder per level
+~red~h * 4 ~yellow~| stone
+~green~h / 4 ~yellow~| torches
+~green~1     ~yellow~| bucket for lava refuel]],
 		inventory =
 		{
 			{"minecraft:bucket", 1, false, ""},
@@ -966,10 +975,10 @@ height * 2 + 2 soul sand
 		fuel = 960,
 		items =
 [[
-~red~64 ~yellow~stone
-~red~1  ~yellow~chest or barrel
-~green~24 ~yellow~torch
-~green~1  ~yellow~bucket
+~red~64    ~yellow~| stone
+~red~1     ~yellow~| chest or barrel
+~green~24    ~yellow~| torch
+~green~1     ~yellow~| bucket
 ]],
 		inventory =
 		{
@@ -984,7 +993,7 @@ height * 2 + 2 soul sand
 	["createIceCanal"] =
 	{
 		call = createIceCanal,
-		title = "04-Ice canal (multiple options)",
+		title = "04-Ice canal options",
 		fuel = 2048,
 		description = "Building ice canal",
 		data = 
@@ -1019,10 +1028,12 @@ height * 2 + 2 soul sand
 			["txt2"] = {text = "0", limits = {{0}, {64}}, event = {"changeRValue", "torchInterval", "txt2"}},
 		},
 		items =
-[[~red~length   ~yellow~slabs
-~green~length/8 ~yellow~stone (NOT bricks)
-~orange~length/2 ~yellow~packed ice or blue ice
-~green~1        ~yellow~torch per 8 blocks
+[[~red~length ~yellow~| slabs
+~green~length
+ / 8  ~yellow~| stone (NOT bricks)
+~orange~length
+ / 2  ~yellow~| packed ice or blue ice
+~green~1     ~yellow~| torch per 8 blocks
 ]],
 		inventory =
 		{
@@ -1055,8 +1066,10 @@ height * 2 + 2 soul sand
 		},
 		items =
 [[	
-~red~height      ~yellow~ladder
-~red~3*height+10 ~yellow~stone
+~red~height ~yellow~| ladder
+~red~3*
+height
+ + 10 ~yellow~| stone
 ]],
 		inventory =
 		{
@@ -1086,9 +1099,9 @@ height * 2 + 2 soul sand
 			["txt2"] = {text = "0", limits = {{7}, {64}}, r = "length"},
 		},
 		items =
-[[~red~1   ~yellow~slab
-~green~500 ~yellow~stone. Full cube = 700
-~green~1   ~yellow~chest (If chests inside)
+[[~red~1     ~yellow~| slab
+~green~500   ~yellow~| stone. Full cube = 700
+~green~1     ~yellow~| chest (If chests inside)
 ]],
 		inventory = 
 		{
@@ -1113,8 +1126,8 @@ height * 2 + 2 soul sand
 		},
 		items =
 [[	
-~red~122 slab
-~green~576 approx stone. Max = 700 blocks
+~red~122   ~yellow~| slab
+~green~576   ~yellow~| approx stone. Max = 700 blocks
 ]],
 		inventory = 
 		{
@@ -1136,12 +1149,12 @@ height * 2 + 2 soul sand
 		},
 		items =
 [[	
-~red~6    ~yellow~slab
-~green~256  ~yellow~stone. Full cube = 700 blocks
-~red~2    ~yellow~water bucket
-~green~1    ~yellow~soul sand if not present
-~green~1    ~yellow~hopper
-~green~2    ~yellow~chest (if hopper used)
+~red~6     ~yellow~| slab
+~green~256   ~yellow~| stone. Full cube = 700 blocks
+~red~2     ~yellow~| water bucket
+~green~1     ~yellow~| soul sand if not present
+~green~1     ~yellow~| hopper
+~green~2     ~yellow~| chest (if hopper used)
 ]],
 		inventory =
 		{
@@ -1169,8 +1182,8 @@ height * 2 + 2 soul sand
 		},
 		items =
 [[	
-~green~length ~yellow~stone
-~green~1      ~yellow~torch per 8 blocks
+~green~length~yellow~| stone
+~green~1     ~yellow~| torch per 8 blocks
 ]],
 		inventory =
 		{
@@ -1193,7 +1206,7 @@ height * 2 + 2 soul sand
 			["txt1"] = {text = "0", limits = {{1}, {256}}, r = "width"},
 			["txt2"] = {text = "0", limits = {{1}, {256}}, r = "length"}
 		},
-		items = [[~red~l * w ~yellow~stone or dirt]],
+		items = [[~red~l * w ~yellow~| stone or dirt]],
 		inventory = 
 		{
 			{{"stone", "dirt"}, {"R.width * R.length", "R.width * R.length"}, {true, true}, { "", ""}}
@@ -1220,8 +1233,8 @@ height * 2 + 2 soul sand
 		},
 		items =
 [[
-~red~10    ~yellow~obsidian	
-~green~width ~yellow~stone (economise obsidian)
+~red~10    ~yellow~| obsidian	
+~green~width ~yellow~| stone (economise obsidian)
 ]],
 		inventory = 
 		{
@@ -1233,14 +1246,14 @@ height * 2 + 2 soul sand
 	["createPortalPlatform"] =
 	{
 		call = createPortalPlatform,
-		title = "10-Build end portal platform",
+		title = "10-Build end portal stage",
 		description = "Building portal ladder & platform",
 		fuel = 200,
 		items =
 [[	
-~red~10-30 ~yellow~ladder
-~red~1     ~yellow~trapdoor
-~red~20-64 ~yellow~stone
+~red~10-30 ~yellow~| ladder
+~red~1     ~yellow~| trapdoor
+~red~20-64 ~yellow~| stone
 ]],
 		data = 
 		{
@@ -1272,7 +1285,8 @@ height * 2 + 2 soul sand
 		},
 		items =
 [[	
-~red~2 * height ~yellow~stone
+~red~height
+ * 2  ~yellow~| stone
 ]],
 		inventory = 
 		{
@@ -1295,7 +1309,9 @@ height * 2 + 2 soul sand
 		},
 		items =
 [[	
-~red~height * length stone
+~red~height~yellow~| 
+~red~ *    ~yellow~|  
+~red~length ~yellow~| stone
 ]],
 		inventory =
 		{
@@ -1310,8 +1326,8 @@ height * 2 + 2 soul sand
 		title = "04-Safe drop to water block",
 		description = "Creating safe drop $ R.height $ blocks deep",
 		items =
-[[~green~4 * height ~yellow~stone
-~red~1          ~yellow~water bucket
+[[~green~h * 4 ~yellow~| stone
+~red~1     ~yellow~| water bucket
 ]],
 		inventory = 
 		{
@@ -1330,7 +1346,7 @@ height * 2 + 2 soul sand
 	["createSandWall"] =
 	{
 		call = createSandWall,
-		title = "01-Create sand wall in water",
+		title = "01-Create sand wall",
 		description = "Creating sand wall in water",
 		fuel = 200,
 		data =
@@ -1340,7 +1356,7 @@ height * 2 + 2 soul sand
 		},
 		items =
 [[	
-~red~1024  ~yellow~sand or gravel. Mix ok
+~red~1024  ~yellow~| sand or gravel. Mix ok
 ]],
 		inventory =
 		{
@@ -1362,8 +1378,10 @@ height * 2 + 2 soul sand
 		},
 		items =
 [[	
-~red~12 buckets or water buckets
-length * width slabs
+~red~12    ~yellow~| buckets or water buckets
+length ~yellow~| 
+~red~ *    ~yellow~| 
+~red~width ~yellow~| slabs
 ]],
 		inventory =
 		{
@@ -1389,7 +1407,7 @@ length * width slabs
 		},
 		items =
 [[	
-~red~w * l ~yellow~stone
+~red~w * l ~yellow~| stone
 ]],
 		inventory =
 		{
@@ -1404,10 +1422,10 @@ length * width slabs
 		fuel = "(math.abs( R.destinationLevel - R.startLevel ) * 16)",
 		description = "Creating staircase $math.abs( R.destinationLevel - R.startLevel )$ blocks high",
 		items =
-[[~orange~2  ~yellow~slabs for each level
-   or 2 stone per level -> craft
-~red~6  ~yellow~* height stone
-~red~1  ~yellow~chest for crafting
+[[~orange~2     ~yellow~| slabs per level
+      | or 2 stone per level -> crafted
+~red~6 * h ~yellow~| stone
+~red~1     ~yellow~| chest for crafting
 ]],
 		inventory = 
 		{
@@ -1440,10 +1458,10 @@ length * width slabs
 		description = "Stripmining Netherite",
 		items =
 [[	
-~red~4 * length ~yellow~stone
-~red~64         ~yellow~cobble for chunk boundaries
-~green~1          ~yellow~bucket for fuel
-~green~2          ~yellow~torch per 16 blocks
+~red~l * 4 ~yellow~| stone
+~red~64    ~yellow~| cobble for chunk boundaries
+~green~1     ~yellow~| bucket for fuel
+~green~2     ~yellow~| torch per 16 blocks
 ]],
 		inventory =
 		{
@@ -1466,12 +1484,12 @@ length * width slabs
 		description = "Converting tree farm",
 		items =
 [[	
-~red~1 log to indicate sapling type
-2 barrels
-1 hopper
-8 chests 
-3 full wired modems
-24 computercraft cable
+~red~1     ~yellow~| log to indicate sapling type
+~red~2     ~yellow~| barrels
+~red~1     ~yellow~| hopper
+~red~8     ~yellow~| chests 
+~red~3     ~yellow~| full wired modems
+~red~24    ~yellow~| computercraft cable
 ]],
 		inventory = 
 		{
@@ -1492,14 +1510,14 @@ length * width slabs
 		fuel = 900,
 		items =
 [[	
-~red~320   ~yellow~stone
-~red~4     ~yellow~water buckets
-~red~1     ~yellow~hopper
-~red~1     ~yellow~log to indicate sapling type
-~red~2     ~yellow~barrels
-~red~8     ~yellow~chests
-~red~3     ~yellow~full wired modems
-~red~22-34 ~yellow~computercraft cable
+~red~320   ~yellow~| stone
+~red~4     ~yellow~| water buckets
+~red~1     ~yellow~| hopper
+~red~1     ~yellow~| log to indicate sapling type
+~red~2     ~yellow~| barrels
+~red~8     ~yellow~| chests
+~red~3     ~yellow~| full wired modems
+~red~22-34 ~yellow~| computercraft cable
 ]],
 		inventory =
 		{
@@ -1564,8 +1582,8 @@ length * width slabs
 		fuel = 200,
 		items =
 [[	
-~red~55    ~yellow~stone
-~red~2     ~yellow~slab
+~red~55    ~yellow~| stone
+~red~2     ~yellow~| slab
 ]],
 		inventory =
 		{
@@ -1621,10 +1639,10 @@ length * width slabs
 		},
 		items =
 [[	
-~orange~length ~yellow~slabs (towpath or 2 turtle)
-~orange~length ~yellow~stone (all parts)
-~orange~2      ~yellow~water buckets (water / 2 turtle)
-~green~1      ~yellow~torch/9 blocks (path / 2 turtle)
+~orange~length ~yellow~| slabs (towpath or 2 turtle)
+~orange~length ~yellow~| stone (all parts)
+~orange~2      ~yellow~| water buckets (water / 2 turtle)
+~green~1      ~yellow~| torch/9 blocks (path / 2 turtle)
 ]],
 		inventory =
 		{
@@ -1703,7 +1721,7 @@ length * width slabs
 		fuel = 2000,
 		items =
 [[	
-~green~256 stone
+~green~256   ~yellow~| stone
 ]],
 		inventory =
 		{
@@ -1728,7 +1746,7 @@ length * width slabs
 		call = fellTree,
 		title = "01-Fell Tree",
 		description = "Tree Cutting...",
-		items = [[~green~1 ~yellow~chest if fuel is low]]
+		items = [[~green~1     ~yellow~| chest if fuel is low]]
 	},
 	
 	["findPortal"] = {call = findPortal, title = "Find End Portal"},
@@ -1749,7 +1767,7 @@ length * width slabs
 			["txt3"] = {text = "0", limits = {{0}, {64}}, r = "depth"}
 		},
 		items =
-[[~red~4     ~yellow~water buckets
+[[~red~4     ~yellow~| water buckets
 ]],
 		inventory =
 		{
@@ -1769,11 +1787,11 @@ length * width slabs
 		},
 		items =
 [[	
-~red~2 ~yellow~water buckets
-~green~2 ~yellow~fence (Bubble lift only)
-~green~2 ~yellow~sign (Bubble lift only)
-~green~1 ~yellow~slab (Bubble lift only)
-~green~1 ~yellow~soul sand or dirt (Bubble lift only)
+~red~2     ~yellow~| water buckets
+~green~2     ~yellow~| fence (Bubble lift only)
+~green~2     ~yellow~| sign (Bubble lift only)
+~green~1     ~yellow~| slab (Bubble lift only)
+~green~1     ~yellow~| soul sand or dirt (Bubble lift only)
 ]],
 		inventory =
 		{
@@ -1800,8 +1818,8 @@ length * width slabs
 		fuel = "R.width * R.length * 3",
 		items =
 [[	
-~green~w * l ~yellow~stone
-~green~1     ~yellow~bucket for fuel
+~green~w * l ~yellow~| stone
+~green~1     ~yellow~| bucket for fuel
 ]],
 		inventory =
 		{
@@ -1846,7 +1864,7 @@ length * width slabs
 		title = "01-Refuel from lava lake",
 		description = "Refuelling from lava lake",
 		fuel = 0,
-		items = [[~red~1     ~yellow~bucket or lava bucket]],
+		items = [[~red~1     ~yellow~| bucket or lava bucket]],
 		inventory =
 		{
 			{{"bucket", "lava_bucket"}, {1, 1}, {true, true}, {"lava if 0 fuel", ""}}
@@ -1867,8 +1885,8 @@ length * width slabs
 		fuel = 120,
 		items =
 [[	
-~red~1     ~yellow~glass bottle or potion
-~green~100   ~yellow~dirt max 100 for clay
+~red~1     ~yellow~| glass bottle or potion
+~green~100   ~yellow~| dirt max 100 for clay
 ]],
 		inventory =
 		{
@@ -1964,8 +1982,8 @@ length * width slabs
 		fuel = "R.width * R.length",
 		title = "08-Mine bedrock level",
 		items =
-[[~red~64 ~yellow~stone
-~green~1  ~yellow~bucket for lava refuelling]],
+[[~red~64    ~yellow~| stone
+~green~1     ~yellow~| bucket for lava refuelling]],
 		inventory =
 		{
 			{"stone", 64, true, ""},
@@ -1994,7 +2012,7 @@ length * width slabs
 		fuel = 250,
 		items =
 [[	
-~green~448 ~yellow~stone
+~green~448   ~yellow~| stone
 ]],
 		inventory =
 		{
@@ -2005,7 +2023,7 @@ length * width slabs
 	["placeRedstoneTorch"] =
 	{
 		call = placeRedstoneTorch,
-		title = "06-Put rs:torch next to track",
+		title = "06-Place trackside rs torch",
 		description = "Placing rs:torch next to track",
 		data =
 		{
@@ -2014,8 +2032,8 @@ length * width slabs
 		},
 		items =
 [[	
-~red~1 ~yellow~stone
-~red~1 ~yellow~redstone torch
+~red~1     ~yellow~| stone
+~red~1     ~yellow~| redstone torch
 ]],
 		inventory =
 		{
@@ -2031,8 +2049,8 @@ length * width slabs
 		description = "Planting tree farm",
 		items =
 [[	
-~red~16 ~yellow~dirt
-~green~16 ~yellow~saplings (single type only)
+~red~16    ~yellow~| dirt
+~green~16    ~yellow~| saplings (single type only)
 ]],
 		inventory =
 		{
@@ -2056,9 +2074,9 @@ length * width slabs
 		title = "07-QuickMine rectangle",
 		description = "Mining access rectangle",
 		items =
-[[~orange~64 ~yellow~stone
-~green~1  ~yellow~bucket for lava refuel
-~green~24 ~yellow~torches
+[[~orange~64    ~yellow~| stone
+~green~1     ~yellow~| bucket for lava refuel
+~green~24    ~yellow~| torches
 ]],
 		inventory =
 		{
@@ -2091,9 +2109,9 @@ length * width slabs
 		title = "06-QuickMine corridor system",
 		description = "QuickMine corridor: ~R.width~ x ~R.length~",
 		items =
-[[~orange~64 ~yellow~stone
-~green~1  ~yellow~bucket for lava refuel
-~green~24 ~yellow~torches
+[[~orange~64    ~yellow~| stone
+~green~1     ~yellow~| bucket for lava refuel
+~green~24    ~yellow~| torches
 ]],
 		inventory = 
 		{
@@ -2121,7 +2139,7 @@ length * width slabs
 		description = "Filling area with sand",
 		items =
 [[	
-~green~1024 sand or gravel
+~green~1024   ~yellow~| sand or gravel
 ]],
 		data = 
 		{
@@ -2144,7 +2162,7 @@ length * width slabs
 		description = "Undermining Dragon Towers",
 		items =
 [[	
-~green~84    ~yellow~cobble or deepslate
+~green~84    ~yellow~| cobble or deepslate
 ]],
 		inventory = 
 		{
@@ -2160,7 +2178,7 @@ length * width slabs
 	["updateLists"] =
 	{
 		call = updateLists,
-		title = "02-Update Network Storage Database",
+		title = "02-Update Network Database",
 		description = "Updating Network Storage Database"
 	},
 	
@@ -2169,7 +2187,7 @@ length * width slabs
 		call = upgradeFarmland,
 		title = "07-Upgrade MA (MOD) soil type",
 		description = "Upgrading MA (MOD) soil type",
-		items = "~orange~64 ~yellow~Mystical Agriculture essence",
+		items = "~orange~64    ~yellow~| Mystical Agriculture essence",
 		inventory =
 		{
 			{"essence", 95, false, ""}
