@@ -1,4 +1,4 @@
-local version = 20260111.0800
+local version = 20260112.1200
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -136,7 +136,7 @@ local function checkFileSystem()
 	
 	local oldFileList =
 	{	
-		"b.lua", "d.lua", "data.lua", "f.lua", "flint.lua", "go.lua", "l.lua", "lavaRefuel.lua", "p.lua", "r.lua", "u.lua", "x.lua"
+		"b.lua", "d.lua", "data.lua", "f.lua", "flint.lua", "go.lua", "l.lua", "lavaRefuel.lua", "p.lua", "r.lua", "u.lua", "updater.lua", "x.lua"
 	}
 	
 	local fileList = 
@@ -12220,12 +12220,12 @@ local function main()
 			local help =
 [[... = any following characters
 
-tk v...     = mc/ccTweaked versions
-tk log      = enable logging
-tk log d... = enable logging + debug
-tk find     = writes locate.txt 
-tk test     = runs test()
-tk farm     = runs manageFarm()
+tk3 v...     = mc/ccTweaked versions
+tk3 log      = enable logging
+tk3 log d... = enable logging + debug
+tk3 find     = writes locate.txt 
+tk3 test     = runs test()
+tk3 farm     = runs manageFarm()
 
 
 
@@ -12345,4 +12345,5 @@ Log:saveToLog("tk3.main() R values set: "..textutils.serialise(rValues, {compact
 end 
 
 _G.F = require("lib.data.taskInventory")	-- has to be placed after all function definitions
+-- Note checkFileSystem() runs BEFORE main()
 main()
