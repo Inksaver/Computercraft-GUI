@@ -1,4 +1,4 @@
-local version = 20260109.0800
+local version = 20260111.0800
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
