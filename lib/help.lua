@@ -1,4 +1,4 @@
-local version = 20251223.1700
+local version = 20260111.0800
 -- display help about selected task
 -- terminal size = 39 x 13
 --[[This line of text = 39 characters]]
@@ -13,33 +13,31 @@ mine at chosen level.
 ~blue~3.Bubble lift and ~cyan~safe drop to water.~magenta~  
 4.Faster version of ~white~33x33 mine pattern   
 using ~magenta~corridor and ~pink~rectangle functions.~brown~
-5.Mine bottom layer to bedrock (not worth
-the fuel and time)
+5.Mine to bedrock (inefficient)
 ~brown~6.Strip resources from abandoned mines.
 ]]
 help["2+0"] =
-[[~lime~FORESTRY:~brown~
-1.Fell Tree (can be used in Nether as well) for cutting any size tree / branches~lime~
+[[~brown~1.Fell Tree (or Nether stem) for cutting any size tree / branches~lime~
 2.Create a tree farm: 16 single or 4 double size (Dark oak or any type) suitable for turtle harvesting.
 ~brown~3.Fence or wall a rectangle keeping to contours.
-~green~4.Forest can be harvested and replanted.
-(Must be walled off)
-
+~green~4.Forest harvested and replanted.
+(Must be walled)
+~brown~5.Convert a legacy tree farm to
+network storage
 ]]
 help["3+0"] =
-[[~green~FARMING:~yellow~1.Modules built to fixed size
+[[~yellow~1.Modules built to fixed size
 and placed next to each other in linear
 or rectangular pattern.~lime~
 2.Whole farm is managed by a dedicated
 turtle, which must be equipped with a
 diamond hoe as well as pickaxe.
-Fuel obtained from a tree placed in the
-corner of each module.
-3.Double chests store produce and seeds.
-4.Modems can be used for Network storage
+~orange~Fuelled from a tree in each module.
+~brown~3.Double chests store produce / seeds.
+~magenta~4.Modems used for Network storage
 ]]
 help["4+0"] =
-[[~red~OBSIDIAN:~lightGray~ 1.Turtle can extract obsidian
+[[~lightGray~ 1.Turtle can extract obsidian
 from lava areas safely.~pink~
 2.Nether portals built or removed
 without needing diamond pickaxes.~orange~
@@ -47,35 +45,33 @@ without needing diamond pickaxes.~orange~
 undermined ready for deactivating.
 4.Destroy End world tower crystals.~red~
 5.Water trapped dragon killed~brown~
-6.End portal stations with trapdoor push
+6.End portal stations with trapdoor
 ]]
 help["5+0"] =
-[[~brown~PATHS, BRIDGES, CANALS:~white~
-1.Can be used in Nether and End.~lightGray~
+[[~white~1.Can be used in Nether and End.~lightGray~
 2.Build paths over air, water or lava
-(Optional roof for Nether use.)
+(Optional roof for added protection.)
 3.Tunnel through rock and place a floor
 at the same time.~blue~
 4.Build a water canal with towpath.~cyan~
 5.Build a super-fast ice canal.~brown~
 6.Platform over air, water, lava
 (Sinking version removed and replaced
-1 block lower each time)
+1 block lower each time to drain area)
 ]]
 help["6+0"] =
-[[~lightGray~SPAWNER FARMS:
-~brown~1.Create mob farms round
-existing spawners. ~cyan~Choice of bubble
-lift mob dropper or ~brown~deep trench
+[[~brown~1.Create mob farms round
+existing spawners.
+~cyan~Choice of bubble lift mob dropper
+or ~brown~direct turtle kill
 
- ~red~2.Special version for Blaze farms.
+~red~2.Special version for Blaze farms.
 Chamber underneath for turtle to auto-kill and harvest blazes
 
-3.Surround a trial spawner remotely so it does not react
+~orange~3.Surround a trial spawner remotely so it does not react
 ]]
 help["7+0"] =
-[[~orange~AREA CLEARING AND REFORMING:~lime~
-1.Clear a field including trees~magenta~
+[[~lime~1.Clear a field including trees~magenta~
 2.Clear rectangles.~pink~
 3.Clear single walls.~brown~
 4.Clear hollow and ~orange~solid structures.~brown~
@@ -83,12 +79,11 @@ help["7+0"] =
 6.Carve away side of a mountain.~lightBlue~
 7.Place or replace floors and ceilings
 8.Control turtle directly with commands 
-  eg U4F6
+  eg ~white~U4F6
 
 ]]
 help["8+0"] =
-[[~blue~WATER AND LAVA TOOLS:~white~
-1.Used to drain ocean monuments and
+[[~white~1.Used to drain ocean monuments and
 shipwrecks. Can also be used to make
 underwater base.
 ~blue~2.Water is cleared using sand dropping and recycling~cyan~
@@ -100,22 +95,19 @@ damaging structures.~lightBlue~
 (convert to source, sloping water)
 ]]
 help["9+0"] =
-[[~cyan~BUILDING, MINECART TOOLS:~lightGray~
-1.Build single walls
+[[~lightGray~1.Build single walls
 2.Build house walls
 ~gray~3.Pitched and gable roof styles
-~orange~4.Used to build diagonal uphill slope~brown~
+~orange~4.Build diagonal uphill slope~brown~
 and downhill slope for placing 45 degree rail tracks or stairs.~red~
 5.Placing Redstone torches under powered rails when above ground level (viaduct)
 
 ]]
 help["10+0"] =
-[[~yellow~MEASURING TOOLS:
-Used to measure
+[[~yellow~Used to measure
     ~red~1.Height
     ~purple~2.Depth
     ~magenta~3.Length
-	
     ~pink~4.Greatest depth of water
     ~yellow~5.Borehole to analyse rocks below
 
@@ -124,8 +116,7 @@ Used to measure
 ]]
 -- index elevated to 100 for sub-menus eg Measurement tools -> help.sub[101], 102, 103 = 
 help["11+0"] =
-[[~yellow~NETWORK TOOLS:
-1.Use a turtle next to a ~cyan~modem ~yellow~to locate ingredients and craft another item
+[[~yellow~1.Use a turtle next to a ~cyan~modem ~yellow~to locate ingredients and craft another item
 
 ~lime~2.Update lists of stored items so their location(s) are added to a database.
 
@@ -141,7 +132,7 @@ help["12+0"] =
 -- if mainindex > 9 then add additional digit eg 10 -> 101, 102, 103, etc (max 109): 11 -> 111, 112, 113 etc (max 119)
 --******************MINING***********************
 help["1+1"] = -- "createLadder": Ladder up/down
-[[~yellow~Place me on the ground at ~red~^~yellow~
+[[~yellow~Place turtle on the ground at ~red~^~yellow~
 The ~brown~ladder ~yellow~will start at this level
 and go up or down.
 
@@ -155,7 +146,7 @@ and go up or down.
 ]]
 
 help["1+2"] = -- "createStaircase": stairs up/down
-[[~lightGray~Place me on the ground at ~red~T~lime~ (Centre)
+[[~lightGray~Place turtle on the ground at ~red~T~lime~ (Centre)
 
 ~lightGray~| | | | | | | | * = Solid block
 ~lightGray~| |*|*|*|*|*| | ~blue~+ = Corner slab
@@ -201,69 +192,68 @@ If next to a ladder, place as below:
 ]]
 
 help["1+5"] = -- "createBubbleLift": single column bubble lift
-[[~magenta~Direction of travel = UP!
-~yellow~Place me on the ground. I will build a
-3 x 1 ~blue~water ~yellow~source and a single column
-bubble lift to the chosen height.
-If near a ladder, place left or right:
+[[~magenta~Top-down preferred.
+~yellow~Single water column above Soul Sand
+using kelp and a single water source
 
+~brown~If near a ladder, place left or right:
 ~lightGray~| | | | | |
 ~lightGray~| | |*| | | * = Ladder support block
 | |~blue~^~brown~|L|~blue~^~lightGray~| | ~brown~L = ladder
 ~lightGray~| | | | | | ~blue~^ = Turtle facing forward
 ~lightGray~| | | | | | ~blue~^ = Bubble column above
 
-]]
+~orange~Signs used at entrance]]
 
 help["1+6"] = -- "quickMineCorridor": quick corridor system
-[[~yellow~Place me as below:
+[[~yellow~Place turtle as below:
  1. On ~blue~floor   ~yellow~(feet height)
  2. On ~lime~ceiling ~yellow~(eye height)
 
-~lightGray~B|B|B|B|B|B|B    ~yellow~W I D T H
-~lightGray~B| | | | | |B               ~orange~L
-~lightGray~B| |B|B|B| |B               ~orange~E
-~lightGray~B| |B|B|B| |B               ~orange~N
-~lightGray~B| |B|B|B| |B               ~orange~G 
-~lightGray~B|~red~^~lightGray~| | | | |B  ~red~^~lightGray~ = Turtle   ~orange~T
-~lightGray~B|~cyan~P~lightGray~|B|B|B|B|B  ~cyan~P~lightGray~ = Player   ~orange~H
+~lightGray~*|*|*|*|*|*|*    ~yellow~W I D T H
+~lightGray~*| | | | | |*               ~orange~L
+~lightGray~*| |*|*|*| |*               ~orange~E
+~lightGray~*| |*|*|*| |*               ~orange~N
+~lightGray~*| |*|*|*| |*               ~orange~G 
+~lightGray~*|~red~^~lightGray~| | | | |*  ~red~^~lightGray~ = Turtle   ~orange~T
+~lightGray~*|~cyan~P~lightGray~|*|*|*|*|*  ~cyan~P~lightGray~ = Player   ~orange~H
 ]]
 
 help["1+7"] = -- "quickMine": quick mine
-[[~yellow~~yellow~Place me as below:
+[[~yellow~~yellow~Place turtle as below:
  1. On ~blue~floor   ~yellow~(feet height)
  2. On ~lime~ceiling ~yellow~(eye height)
-~lightGray~B|B|B|B|B|B|B 
-B| | | | | |B
-B| |B|B|B| |B
-B| |B|B|B| |B
-B| |~lime~^~lightGray~|B|B| |B
-B|~red~^~lightGray~|~magenta~^~lightGray~| | | |B ~white~^~lightGray~ = turtle
-B|~cyan~P~lightGray~|B|B|B|B|B ~cyan~P~lightGray~ = Player
+~lightGray~*|*|*|*|*|*|* 
+*| | | | | |*
+*| |*|*|*| |*
+*| |*|*|*| |*
+*| |~lime~^~lightGray~|*|*| |*
+*|~red~^~lightGray~|~magenta~^~lightGray~| | | |* ~white~^~lightGray~ = turtle
+*|~cyan~P~lightGray~|*|*|*|*|* ~cyan~P~lightGray~ = Player
 
 ]]
 
 help["1+8"] = -- "mineBedrockArea": mine all blocks to bedrock
-[[~yellow~Place me level -59 / 5 on the floor to
+[[~yellow~Place turtle level -59 on the floor to
 expose bedrock ~red~(slow and inefficient)
 
-~lightGray~| | | |B| |B|     ~yellow~W I D T H
-~lightGray~|B| | | | | |B               ~orange~L
-~lightGray~| | | |B|B| |                ~orange~E
-~lightGray~| | |B| | |B|                ~orange~N
-~lightGray~|B| | | |B| |                ~orange~G 
-~lightGray~| | | | | | |B               ~orange~T
-~lightGray~|~red~^~lightGray~| | | |B| |B  ~red~^~lightGray~ = Turtle   ~orange~H
+~lightGray~| | | |*| |*|     ~yellow~W I D T H
+~lightGray~|*| | | | | |*               ~orange~L
+~lightGray~| | | |*|*| |                ~orange~E
+~lightGray~| | |*| | |*|                ~orange~N
+~lightGray~|*| | | |*| |                ~orange~G 
+~lightGray~| | | | | | |*               ~orange~T
+~lightGray~|~red~^~lightGray~| | | |*| |*  ~red~^~lightGray~ = Turtle   ~orange~H
 
 ~yellow~Option to replace blocks available
 ]]
 
 help["1+9"] = -- "clearMineshaft": salvage mineshaft
-[[~yellow~Place me on the end wall of a disused
-mine in the centre block, 1 block above
-the floor.
+[[~yellow~Place turtle on the end wall of disused
+mineshaft, centre block, 1 above floor.
+
 Provide a ~cyan~diamond ~yellow~sword for
-harvesting string from spider webs~lightGray~
+harvesting string from spider webs
 
 ~gray~-------   - = Ceiling
 ~lightGray~| | | |
@@ -273,7 +263,7 @@ harvesting string from spider webs~lightGray~
 ]]
 --******************FORESTRY***********************
 help["2+1"] = -- "fellTree": Fell Tree
-[[~yellow~Place me as below.
+[[~yellow~Place turtle as below.
 ~brown~Chest ~yellow~ONLY required if ~blue~0 ~yellow~fuel
 
 Plan view:
@@ -299,7 +289,7 @@ help["2+2"] = -- "createTreefarm": Create treefarm
 ]]
 
 help["2+3"] = -- "plantTreefarm": Plant treefarm / Harvest treefarm
-[[~yellow~Place me on ground as below ~lightGray~^ ~magenta~^
+[[~yellow~Place turtle as below ~lightGray~^ ~magenta~^
 ~lime~|*|~blue~ | | | | | | | ~green~or |*|~blue~ | | ~brown~|D| |D| |
 ~lime~|*|~blue~ | | ~brown~|D|D|~blue~ | | ~green~or |*|~blue~ | | | | | | |
 ~lime~|*|~blue~ | | ~brown~|D|D|~blue~ | | ~green~or |*|~blue~ | | ~brown~|D| |D| |
@@ -314,7 +304,7 @@ help["2+3"] = -- "plantTreefarm": Plant treefarm / Harvest treefarm
 
 help["2+4"] = help["2+3"] 
 help["2+5"] = -- "createEnclosure":
-[[~yellow~Place me at ~red~^
+[[~yellow~Place turtle at ~red~^
 
 ~lightGray~|F|F|F|F|F|F|F| F = Fence or Wall
 ~lightGray~|F|~brown~B~lime~| | | |~brown~B~lightGray~|F| ~brown~B = Barrel (corners)
@@ -330,7 +320,7 @@ help["2+5"] = -- "createEnclosure":
 
 help["2+6"] = -- "clearAndReplantTrees" manage walled forest
 [[~yellow~A rectangular walled area of forest:
-Place me at ~red~^
+Place turtle at ~red~^
 
 ~lightGray~|F|F|F|F|F|F|F| F = Fence or wall
 ~lightGray~|F|~brown~B~lime~| | | |~brown~B~lightGray~|F| ~brown~B = Barrel (corners)
@@ -359,7 +349,7 @@ help["2+7"] = -- "convertTreefarm": Convert treefarm
 ]]
 --******************FARMING***********************
 help["3+1"] = -- "createFarm" Create modular crop farm
-[[~yellow~Place me on the ground as below ~red~^
+[[~yellow~Place turtle on the ground as below ~red~^
 
 ~lightGray~|*|~green~ | | |   ~lightGray~|*| ~green~| | ~lightGray~* = Wall
 ~lightGray~|*|~green~ | | |   ~lightGray~|*| ~green~| |
@@ -475,7 +465,7 @@ lower left corner, at border height:
 --"createStripMine", "undermineDragonTowers", "deactivateDragonTower",
 --"createDragonTrap", "attackMob","createPortalPlatform", "harvestShulkers"
 help["4+1"] = -- "lavaRefuel": lava Refuel
-[[~yellow~Place me next to lava lake 
+[[~yellow~Place turtle next to lava lake 
 Left or Right side
 Or single strip
 
@@ -488,7 +478,7 @@ Or single strip
 ]]
 
 help["4+2"] = -- "harvestObsidian": Harvest obsidian
-[[~yellow~Place me on any block on the left 
+[[~yellow~Place turtle on any block on the left 
 side facing the obsidian field.
 
 ~gray~|O|O|O|O|O| O = Obsidian
@@ -500,7 +490,7 @@ side facing the obsidian field.
 ]]
 
 help["4+3"] = -- "createPortal": build Nether portal
-[[~yellow~Place me on the ground as below ~red~> ~pink~^
+[[~yellow~Place turtle on the ground as below ~red~> ~pink~^
 ~yellow~Start ~red~> ~yellow~(facing right) or ~pink~^ ~yellow~ahead
   
 ~lightGray~| |~red~>~lightGray~|O|O|*| | |    |*|O|O|*| face view             
@@ -529,7 +519,7 @@ Netherite stripmine plan view
 ]]
 
 help["4+6"] = -- "undermineDragonTowers": Find dragon tower centres
-[[~yellow~Place me on the ground ~red~<~yellow~ facing ~red~West.
+[[~yellow~Place turtle on the ground ~red~<~yellow~ facing ~red~West.
 coordinates x = 0, z = 0
 ~lime~x
                  ~lightGray~N
@@ -598,8 +588,7 @@ help["4+10"] = -- "createPortalPlatform": build end portal staging
 	
 help["4+11"] = -- "harvestShulkers": Shulker harvest
 [[~blue~1) ~yellow~Place turtle <64 blocks from shulker
-   Directly above, below or at same level
-   
+Directly above, below or at same level
 ~lime~2) ~yellow~Place turtle in pit centre wall
 ~lightGray~            |*|*|*|*|*|
 ~lightGray~            |*| |~red~^~lightGray~| |*|
@@ -614,7 +603,7 @@ up, clear roof or walls and return.
 --"createPath", "createCorridor", "createWaterCanal",
 --"createIceCanal", "createPlatform", "createSinkingPlatform", "createBoatLift"
 help["5+1"] = --"createPath": Single path
-[[~yellow~Place me on the ground as below ~red~^
+[[~yellow~Place turtle on the ground as below ~red~^
 
 ~yellow~Start:~blue~  |-|-|-|    - = air/water
 ~orange~        |-|-|-|    - = lava
@@ -681,7 +670,19 @@ help["5+5"] = -- "createPlatform": Platform
 
 Blocks placed under the turtle
 ]]
-
+-- help["5+6"] = -- "createSinkingPlatform": 	
+-- [[~yellow~Turtle position ~red~> T ~gray~(~red~V ~gray~to enclose)
+-- ~yellow~Plan view                      ~gray~Start:~red~V
+-- ~blue~|~red~>~blue~| | | | | | ~yellow~to ~lightGray~|*|*|*|*|*|~red~V~lightGray~|~gray~ enclose
+                            -- ~gray~*  area
+-- ~yellow~Side view
+ -- ~red~T
+-- ~blue~| | | | | | | ~yellow~to ~lightGray~|*|*|*|*|*|*|
+-- ~blue~| | | | | | |    ~lightGray~|*|*|*|*|*|*|
+-- ~blue~| | | | | | |    ~lightGray~|*|*|*|*|*|*|
+-- ~yellow~|S|~blue~ | | |~yellow~S|S|    |S|~lightGray~*|*|*|~yellow~S|S|
+-- ~yellow~|S|S|S|S|S|S|    |S|S|S|S|S|S|
+-- ]]
 help["5+6"] = -- "createSinkingPlatform": Sinking platform
 [[~yellow~Place ~red~^~yellow~ above water.~lightGray~
 Builds a hollow box down into water
@@ -708,6 +709,19 @@ Start~lightGray~        |*|~blue~ | ~lightGray~|*| ~yellow~Finish
 |*|~blue~W|W~lightGray~|*|    |*|~blue~W|W~lightGray~|*|
 |*|~blue~ | ~lightGray~|*|    |*|~blue~ | ~lightGray~|*| ~yellow~Ice canal needs
 ~lightGray~|*|~blue~ | ~lightGray~|*|    |*|~blue~ | ~lightGray~|*| ~yellow~2x2 water source
+]]
+
+help["5+8"] = -- "createDiveColumn": series of underwated doors
+[[~yellow~Builds a series of open doors
+from the water bed to surface.
+
+~brown~Place turtle above water with max one
+block below if required.
+
+~orange~Depth will be measured when checkbox
+clicked.
+
+~red~Inventory will then be updated.
 ]]
 
 --******************MOB FARM TOOLS***********************
@@ -794,6 +808,20 @@ of player.
 ~red~Turtle embeds in wall with attack
 working
 ]]
+
+help["6+7"] = -- "attack"
+[[~yellow~Turtle placed close to mobs
+~orange~Attack can be all or any of:
+    - up
+    - forward
+    - down
+~cyan~Timed or continuous
+~yellow~For mob farms place outside entrance.
+Direction = forward. 
+
+~red~Blaze apawner ~yellow~under centre of floor
+Direction = up
+~lime~Stand close for XP!]]
 
 --******************AREA SHAPING***********************
 
@@ -912,7 +940,7 @@ Plan view      Side view
 ]]
 
 help["7+10"] = -- "createDirectedPath": Direct control
-[[~yellow~Place me anywhere!
+[[~yellow~Place turtle anywhere!
 Menu or direct command interface.
 
 ~lightGray~Commands:
@@ -931,12 +959,12 @@ direction + ~blue~number ~yellow~eg ~white~f2 ~yellow~= forward ~blue~2
 --"CREATELADDERTOWATER", "CONVERTWATER", "CREATESLOPINGWATER"
 help["8+1"] = -- "createSandWall"
 [[~blue~Drop sand or gravel wall
-~yellow~Place me on water/lava surface
+~yellow~Place turtle on water/lava surface
 ]]
 
 help["8+2"] = -- "clearSandWall"
 [[~blue~Clear sand wall
-~yellow~Place me on or near sand.
+~yellow~Place turtle on or near sand.
 ]]
 
 help["8+3"] = -- "sandFillArea"
@@ -977,21 +1005,7 @@ Plan view
 |*|*|*|*|*|*|*|*|  ~yellow~Width~blue~: ~yellow~6, ~orange~length~blue~:~orange~ 6
 ]]
 
-help["8+7"] = -- "createSinkingPlatform": 	
-[[~yellow~Turtle position ~red~> T ~gray~(~red~V ~gray~to enclose)
-~yellow~Plan view                      ~gray~Start:~red~V
-~blue~|~red~>~blue~| | | | | | ~yellow~to ~lightGray~|*|*|*|*|*|~red~V~lightGray~|~gray~ enclose
-                            ~gray~*  area
-~yellow~Side view
- ~red~T
-~blue~| | | | | | | ~yellow~to ~lightGray~|*|*|*|*|*|*|
-~blue~| | | | | | |    ~lightGray~|*|*|*|*|*|*|
-~blue~| | | | | | |    ~lightGray~|*|*|*|*|*|*|
-~yellow~|S|~blue~ | | |~yellow~S|S|    |S|~lightGray~*|*|*|~yellow~S|S|
-~yellow~|S|S|S|S|S|S|    |S|S|S|S|S|S|
-]]
-
-help["8+8"] = -- "oceanMonumentColumns": Ocean monument 4 corner pillars
+help["8+7"] = -- "oceanMonumentColumns": Ocean monument 4 corner pillars
 [[~lime~Rectangle at surface + corner posts
 ~yellow~Turtle placement  ~red~V~lime~ < ^ > ~yellow~over monument
 
@@ -1006,7 +1020,7 @@ help["8+8"] = -- "oceanMonumentColumns": Ocean monument 4 corner pillars
 ****************  blocks from edge
 ]]
 
-help["8+9"] = -- "clearWaterPlants": clear plants before sand draining
+help["8+8"] = -- "clearWaterPlants": clear plants before sand draining
 [[~yellow~Place ~red~T~yellow~urtle at water edge.
 Returns max ~blue~d~yellow~epth. ~yellow~Water ~green~p~yellow~lants~yellow~ removed
 
@@ -1020,7 +1034,7 @@ Returns max ~blue~d~yellow~epth. ~yellow~Water ~green~p~yellow~lants~yellow~ rem
 |*|*|*|*|*|*|*|*|*|*|*|*|*|*|
 ]]
 
-help["8+10"] = -- "createLadderToWater": Ladder to water/lava
+help["8+9"] = -- "createLadderToWater": Ladder to water/lava
 [[~yellow~Ladder to water / lava: Plan view
 
  ~blue~- ~red~- ~blue~- ~red~- ~blue~- ~red~- ~blue~-    ~blue~- ~red~- ~blue~- ~red~- ~blue~- ~red~- ~blue~-
@@ -1034,19 +1048,19 @@ help["8+10"] = -- "createLadderToWater": Ladder to water/lava
 ~brown~L ~lightGray~= Ladder
 ]]
 
-help["8+11"] = -- "floodArea": 
-[[~yellow~Place me on the left corner of the top
+help["8+10"] = -- "floodArea": 
+[[~yellow~Place turtle on the left corner of the top
 of retaining wall facing empty area
 ]]
 
-help["8+12"] =  -- "createSlopingWater" Create sloping water
-[[~yellow~Place me on the left corner of the top
+help["8+11"] =  -- "createSlopingWater" Create sloping water
+[[~yellow~Place turtle on the left corner of the top
 of retaining wall facing water.
 The source blocks are placed ahead to
 selected length
 ]]
 
-help["8+13"] = -- Ocean monument drain and remove 1 of 4 quarters
+help["8+12"] = -- Ocean monument drain and remove 1 of 4 quarters
 [[~yellow~Turtle positions ~red~> ^ < V
 ~green~|*|*|*|*|*~brown~|*|*|*|~red~V~brown~|*|
 ~green~|~red~>~green~|- - - - ~brown~- - - -|*|
@@ -1117,7 +1131,7 @@ Plan view        End view (width)
 ~yellow~  W i d t h     ~red~^ T ~lightGray~= Turtle
 ]]-- Build a pitched roof
 help["9+5"] =
-[[~yellow~Place me on last block before up/down
+[[~yellow~Place turtle on last block before up/down
 
 Build down            Build up~lightGray~
 
@@ -1130,8 +1144,8 @@ _____~red~T~lightGray~                        ___
 ~red~T~lightGray~ = Turtle on block, not above rail	
 ]] -- build down
 help["9+6"] = 
-[[~yellow~Place me on suspended railway stone
-Redstone torch will go below me
+[[~yellow~Place turtle on suspended railway stone
+Redstone torch will go below
 
 ~lightGray~_____
 ~lightGray~|*|*|\                           ~red~>~lightGray~|*|
@@ -1145,7 +1159,7 @@ On block or above rail, face up slope
 ]] -- Place redstone torch under block
 --Measurement tools
 help["10+1"] = 
-[[~yellow~Place me on floor.~lightGray~
+[[~yellow~Place turtle on floor.~lightGray~
             Measured Height:
 |~lightBlue~*~lightGray~|*|*|*|   ~lightBlue~7. Overhead obstruction
             ~cyan~7. ~red~NOT ~cyan~detect() ~gray~7. Change~lightGray~
@@ -1159,7 +1173,7 @@ help["10+1"] =
 ]] -- measure height
 help["10+2"] = 
 [[~yellow~Depth measurement
-Place me on the floor above pit / edge
+Place turtle on the floor above pit / edge
 
     ~red~T~lightGray~
 1|*|*|
