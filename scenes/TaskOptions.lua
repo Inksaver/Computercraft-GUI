@@ -1,4 +1,4 @@
-local version = 20260109.0800
+local version = 20260111.0800
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
 local Multilabel = require("lib.ui.MultiLabel")
