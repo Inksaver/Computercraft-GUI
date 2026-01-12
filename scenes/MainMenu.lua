@@ -1,4 +1,4 @@
-local version = 20260109.1700
+local version = 20260111.0800
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.MultiButton")
@@ -105,9 +105,9 @@ function S:new(sceneMgr)
 		{{"mbForestry",  "02-Forestry"}},
 		{{"mbFarming",   "03-Farming"}},
 		{{"mbObsidian",  "04-Obsidian, Nether & End"}},
-		{{"mbCanal",     "05-Canal, bridge + walkway"}},
+		{{"mbCanal",     "05-Canal, bridge & walkway"}},
 		{{"mbSpawner",   "06-Spawner farm tools"}},
-		{{"mbArea",      "07-Area shaping + clearing"}},
+		{{"mbArea",      "07-Area shaping & clearing"}},
 		{{"mbWater",     "08-Lava and Water"}},
 		{{"mbBuilding",  "09-Building and minecart"}},
 		{{"mbMeasuring", "10-Measuring tools"}},
@@ -277,7 +277,7 @@ function S:new(sceneMgr)
 		[m8[6]] = {colors.white, colors.blue}, 		-- Clear volume of water or lava
 		[m8[7]] = {colors.black, colors.white}, 	-- Ocean monument corner columns
 		[m8[8]] = {colors.black, colors.lime}, 		-- Clear water plants
-		[m8[9]] = {colors.black, colors.lightBlue},-- Ladder down to water/lava
+		[m8[9]] = {colors.black, colors.lightBlue}, -- Ladder down to water/lava
 		[m8[10]] = {colors.white, colors.blue}, 	-- Convert all water to source
 		[m8[11]] = {colors.white, colors.cyan} 		-- Create sloping water
 	}
@@ -849,7 +849,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 				elseif mb.selectedButtonName == self.m4[9] then -- "restart attack mode"
 					R.auto = true
 					R.length = 1
-					U.currentTask = "attackMob"
+					U.currentTask = "attack"
 				elseif mb.selectedButtonName == self.m4[10] then -- "Build portal ladder & platform"
 					U.currentTask = "createPortalPlatform"
 				elseif mb.selectedButtonName == self.m4[11] then -- "Shulker harvester"
@@ -963,21 +963,21 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 				elseif mb.selectedButtonName == self.m8[6] then -- drainWaterLava
 					R.data = "enclosed"
 					U.currentTask = "drainWaterLava"
-				elseif mb.selectedButtonName == self.m8[7] then -- createSinkingPlatform
-					U.currentTask = "createSinkingPlatform"
-				elseif mb.selectedButtonName == self.m8[8] then -- oceanMonumentColumns
+				--elseif mb.selectedButtonName == self.m8[7] then -- createSinkingPlatform
+					--U.currentTask = "createSinkingPlatform"
+				elseif mb.selectedButtonName == self.m8[7] then -- oceanMonumentColumns
 					R.useBlockType = "prismarine"
 					R.data = "oceanMonumentColumns"
 					R.length = 56
 					U.currentTask = "oceanMonumentColumns"
-				elseif mb.selectedButtonName == self.m8[9] then -- clearWaterPlants
+				elseif mb.selectedButtonName == self.m8[8] then -- clearWaterPlants
 					R.data = "clearWaterPlants"
 					U.currentTask = "clearWaterPlants"
-				elseif mb.selectedButtonName == self.m8[10] then -- createLadderToWater
+				elseif mb.selectedButtonName == self.m8[9] then -- createLadderToWater
 					U.currentTask = "createLadderToWater"
-				elseif mb.selectedButtonName == self.m8[11] then -- convertWater
+				elseif mb.selectedButtonName == self.m8[10] then -- convertWater
 					U.currentTask = "floodArea"
-				elseif mb.selectedButtonName == self.m8[12] then -- createSlopingWater
+				elseif mb.selectedButtonName == self.m8[11] then -- createSlopingWater
 					U.currentTask = "createSlopingWater"
 				end 
 			--elseif mb.name == self.subMenuList[self.mm[9]] then	-- "mbBuilding"
