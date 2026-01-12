@@ -1,4 +1,4 @@
-local version = 20260109.0800
+local version = 20260111.0800
 
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
@@ -213,7 +213,7 @@ function S:setup()
 			table.insert(tempInventory, v[3])
 			
 --Log:saveToLog("S:setup() useTable = false, self.inventory = "..textutils.serialise(self.inventory, {compact = true}))
-			if v[4] ~= "" then
+			if v[4] ~= "" and v[4] ~= nil then
 				tempDisplay[1] = tempDisplay[1].." (".. v[4]..")"	-- add comment onto item
 			end
 		end
