@@ -1,4 +1,4 @@
-local version = 20260111.0800
+local version = 20260114.1200
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.MultiButton")
@@ -656,7 +656,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					R.auto = true	-- stop at stronghold/trial chamber
 					U.currentTask = "createLadder"	
 				elseif mb.selectedButtonName == self.m1[2] then -- stairs
-					R.goDown = true
+					R.down = true
 					R.auto = true	-- stop at stronghold/trial chamber
 					U.currentTask = "createStaircase"
 				elseif mb.selectedButtonName == self.m1[3] then -- mine at this level
