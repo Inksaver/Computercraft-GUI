@@ -1,4 +1,4 @@
-local version = 20251231.1500
+local version = 20260113.1700
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as clsTurtle.lua, preferably in /lib folder
@@ -3539,13 +3539,18 @@ function T:harvestTree(direction)
 			end
 			self:up(1)
 		end
-		-- move up 1 more in case of acacia
-		self:up(1)  				-- move up
 		-- check for side branches
 		for i = 1, 4 do
 			lib.cutBranch()			-- if leaves cut them. If branch follow length and cut above at the same time
 			turtle.turnRight()		-- repeat above 4x
 		end
+		-- move up 1 more in case of acacia
+		self:up(1)
+		-- check for side branches
+		for i = 1, 4 do
+			lib.cutBranch()			-- if leaves cut them. If branch follow length and cut above at the same time
+			turtle.turnRight()		-- repeat above 4x
+		end		-- move up
 		while turtle.down() do end 
 	end
 	
