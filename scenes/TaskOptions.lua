@@ -1,4 +1,4 @@
-local version = 20260111.0800
+local version = 20260113.1700
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
 local Multilabel = require("lib.ui.MultiLabel")
@@ -112,13 +112,14 @@ function S:new(sceneMgr)
 	self.txtChanged 		= function(textbox) 	self:onTxtChanged(textbox) end
 	self.txtEnter 			= function(textbox) 	self:onTxtEnter(textbox) end
 	self.changeLabel		= function(key) 		self:calculateHeight(key) end
+	self.changeRoof 		= function(key) 		self:calculateRoof(key) end
 	self.changeR			= function(key, value) 	self:changeRValue(key, value) end
 	self.execute			= function(key, value) 	self:executeCall(key, value) end
 	self.changeFocus 		= true
 	self.textboxActive 		= false
 	
 	self.task = ""
-	self.group = nil
+	self.group = {}
 	self.associations = {}	-- assocaites a control with a property of R to be assigned a value eg R.up = true (R["up"] = true)
 	for _, controlName in ipairs(self.ctrls) do 
 		self.associations[controlName] = {required = false}	-- eg self.associations["chk1"] = {required = false}
@@ -164,7 +165,7 @@ Log:saveToLog("TaskOptions:setup:self.task = '"..self.task.."'")
 		self.controls[name]:setText("")				-- set the text to empty string
 		local tbl = data[name]						-- ["chk4"] = {text = "Go UP?", state = false, group = {"chk4", "chk5"}, required = true, r = "up"},
 		if tbl ~= nil then
---Log:saveToLog("TaskOptions:setup: tbl = "..textutils.serialise(tbl, {compact = true}))
+Log:saveToLog("TaskOptions:setup: tbl = "..textutils.serialise(tbl, {compact = true}))
 			if tbl["text"] ~= nil then					-- set text
 				--local ctrlType, index = self.controls[name]:getControlData()
 --Log:saveToLog("TaskOptions:setup: ctrlType = "..ctrlType..", index = "..index)
@@ -207,7 +208,8 @@ Log:saveToLog("TaskOptions:setup:self.task = '"..self.task.."'")
 				self.controls[name]:setChecked(tbl["state"])
 			end
 			if tbl["group"] ~= nil then					-- checkboxes only
-				self.group = tbl["group"]				-- eg group = {"chk4", "chk5"}
+				--self.group = tbl["group"]				-- eg group = {"chk4", "chk5"}
+				self.group[name] = tbl["group"]			-- eg group["chk1"] = {"chk4", "chk5"}
 			end
 			if tbl["required"] ~= nil then				-- checkboxes and textboxes
 				self.associations[name]["required"] = tbl["required"]	-- eg required = true,
@@ -260,6 +262,7 @@ function S:enter()
 	events:hook("onTxtChanged",		self.txtChanged)
 	events:hook("onTxtEnter",		self.txtEnter)
 	events:hook("calculateHeight", 	self.changeLabel)
+	events:hook("calculateRoof", 	self.changeRoof)
 	events:hook("changeRValue", 	self.changeR)
 	events:hook("executeCall", 		self.execute)
 	
@@ -277,6 +280,7 @@ function S:exit()
 	events:unhook("onTxtChanged", 	self.txtChanged)
 	events:unhook("onTxtEnter",		self.txtEnter)
 	events:unhook("calculateHeight",self.changeLabel)
+	events:unhook("calculateRoof",  self.changeRoof)
 	events:unhook("changeRValue", 	self.changeR)
 	events:unhook("executeCall", 	self.execute)
 --Log:saveToLog("TaskOptions:exit() end")
@@ -374,7 +378,22 @@ Log:saveToLog("TaskOptions:calculateHeight("..key.."): R.up = "..tostring(R.up).
 			end 
 		end
 	end
-	local text = text.."("..lowerLimit.." to ".. upperLimit..")"
+	--local text = text.."("..lowerLimit.." to ".. upperLimit..")"
+	text = text.."("..lowerLimit.." to ".. upperLimit..")"
+	self.labels[key]:setText(text)
+end
+
+function S:calculateRoof(key)
+	-- user types into text box "txt1". The entry in taskInventory.lua for txt1 is:
+	-- ["txt1"] = {text = "0", limits = {{1}, {256}}, r = "width", event = {"calculateRoof", "lbl3"}},
+	-- this sets the limits and calls this function using "lbl3" passed as the key: S:calculateRoof(lbl3)
+	-- key = "lbl3"
+	Log:saveToLog("TaskOptions:calculateRoof("..key..")")
+	local controlData = self.setupData[key]					-- ["lbl3"] = {text = "Roof height "},
+	-- get text from setup data, as label text may already have changed
+	-- roof height is 0.5 width
+	R.height = math.ceil(R.width / 2)
+	local text = tostring(controlData.text)..R.height	-- eg lbl3.text = "Roof height 4"
 	self.labels[key]:setText(text)
 end
 
@@ -625,12 +644,14 @@ function S:clearText(textbox)
 end
 
 function S:onChkChanged(checkbox)
-Log:saveToLog("TaskOptions: onChkChanged("..checkbox.name..") self.group = "..textutils.serialise(self.group, {compact = true}))
-	if self.group ~= nil then							-- eg group = {"chk4", "chk5"}
+	local name = checkbox:getName()
+	local group = self.group[name]
+	local state = checkbox:getChecked()				-- eg chk4 is checked
+--Log:saveToLog("TaskOptions: onChkChanged("..name..") self.group["..name.."] = "..textutils.serialise(group, {compact = true}))
+	
+	if group ~= nil then							-- eg group = {"chk4", "chk5"}
 		local inGroup = false
-		local state = checkbox:getChecked()				-- eg chk4 is checked
-		local name = checkbox:getName()
-		for _, checkboxName in ipairs(self.group) do	-- only proceed if this checkbox is a group member
+		for _, checkboxName in ipairs(group) do	-- only proceed if this checkbox is a group member
 			if checkboxName == name then
 				inGroup = true
 			end
@@ -638,8 +659,8 @@ Log:saveToLog("TaskOptions: onChkChanged("..checkbox.name..") self.group = "..te
 		
 		if inGroup then									-- only 1 checkbox in a group can be set
 			if state then return end					-- if clicking on a set checkbox ignore it
---Log:saveToLog("Checkbox group = "..textutils.serialise(self.group, {compact = true}))
-			for _, checkboxName in ipairs(self.group) do
+--Log:saveToLog("Checkbox group = "..textutils.serialise(group, {compact = true}))
+			for _, checkboxName in ipairs(group) do
 				if checkboxName ~= name then
 --Log:saveToLog("\ncheckboxName "..checkboxName.. ", = false")
 					self.checkboxes[checkboxName]:setChecked(false)	-- set all checkbox in group to false
@@ -652,13 +673,13 @@ Log:saveToLog("TaskOptions: onChkChanged("..checkbox.name..") self.group = "..te
 		self:changeData(checkbox)
 	else
 		checkbox.checked = not checkbox.checked
-Log:saveToLog("TaskOptions: onChkChanged() calling self:changeData()")
+--Log:saveToLog("TaskOptions: onChkChanged() calling self:changeData()")
 		self:changeData(checkbox)
 	end
 	local association = self.associations[checkbox.name]
 	if association ~= nil then
 		if association["event"] ~= nil then	-- eg event = {"calculateHeight", "lbl2"}
-			Log:saveToLog("association[event][1] = "..association["event"][1]..", [2] = "..association["event"][2]..", [3] = "..association["event"][3])
+Log:saveToLog("association[event][1] = "..association["event"][1]..", [2] = "..association["event"][2]..", [3] = "..association["event"][3])
 			events:invoke(association["event"][1], association["event"][2], association["event"][3])	-- eg invoke "calculateHeight", "lbl2"	or "execute", "findPortal"		
 		end
 	end
