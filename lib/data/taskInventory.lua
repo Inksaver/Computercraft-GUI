@@ -1,4 +1,4 @@
-local version = 20260111.0800
+local version = 20260115.1500
 -- ["lbl4"] = {text = "Text here", bg = colors.black, fg = colors.lime, alignH = "centre"},
 -- ["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
 -- ...state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, event = {"changeRValue", "inventoryKey", "1"}},
@@ -56,13 +56,10 @@ return
 		call = buildGableRoof,
 		title = "03-Build a gable end roof",
 		description = "Building gable end roof",
-		fuel = "R.height * R.length * 2) + ( R.height * R.width * 2)",
+		fuel = "( R.height * R.length * 2) + ( R.height * R.width * 2)",
 		items =
-[[~red~width*
-length*
-height~yellow~| stone, stairs or planks
-~orange~length
-+ 2   ~yellow~| slabs for ridge
+[[~red~w*l*h ~yellow~| stone, stairs or planks
+~orange~l + 2 ~yellow~| slabs for ridge
 ]],
 		inventory =
 		{
@@ -76,13 +73,15 @@ height~yellow~| stone, stairs or planks
 				{true, true, true},
 				{"Select block type", " for desired style", ""}
 			},
+			{"stone", "R.width * 4 + R.length", false, "For gable ends"},
 			{"slab", "R.length + 2", false, "Match slabs & roof blocks"}
 		},
 		data = 
 		{
-			["lbl1"] = {text = "Building width (1-256):"},
+			["lbl1"] = {text = "Gable end width (1-256):"},
 			["lbl2"] = {text = "Building length (1-256):"},
-			["txt1"] = {text = "0", limits = {{1}, {256}}, r = "width"},
+			["lbl3"] = {text = "Roof height "},
+			["txt1"] = {text = "0", limits = {{1}, {256}}, r = "width", event = {"calculateRoof", "lbl3"}},
 			["txt2"] = {text = "0", limits = {{1} , {256}}, r = "length"}
 		},
 	},
@@ -369,7 +368,7 @@ length~yellow~| dirt if resurfacing is required]],
 		data = 
 		{
 			["chk1"] = {text = {"Bottom","to top",""}, state = true, group = {"chk1", "chk2"}, r = "goUp"},
-			["chk2"] = {text = {"Top to", "bottom", ""}, state = false, r = "goDown"},
+			["chk2"] = {text = {"Top to", "bottom", ""}, state = false, group = {"chk1", "chk2"}, r = "goDown"},
 			["chk4"] = {text = {"Outside ?","forward 1", "first"}, state = true, r = "forward"},
 			["chk5"] = {text = {"Above ?","down 1", "first"}, state = false, r = "down"},
 			["lbl1"] = {text = "Structure length (1-256)"},
@@ -725,7 +724,7 @@ length~yellow~| dirt if resurfacing is required]],
 		data =
 		{
 			["chk1"] = {text = {"Simple", "path with", "no roof"}, state = true,  group = {"chk1", "chk2"}, r = {"subChoice", 1, 2}},
-			["chk2"] = {text = {"Covered", "path 2 ", "block high"}, 	state = false, group = {"chk1", "chk2"}, r = {"subChoice", 2, 1}},
+			["chk2"] = {text = {"Covered", "path 2 ", "block high"}, state = false, group = {"chk1", "chk2"}, r = {"subChoice", 2, 1}},
 			["chk4"] = {text = {"Type Cmd: ",
 								"eg F2L1   ",
 								"          "},  state = true, group = {"chk4", "chk5"}, r = {"data", "cmd", "menu"}},
@@ -1419,30 +1418,24 @@ length ~yellow~|
 	{
 		call = createStaircase,
 		title = "02-Stairs up or down",
-		fuel = "(math.abs( R.destinationLevel - R.startLevel ) * 16)",
+		fuel = "math.abs( R.upperLevel - R.lowerLevel ) * 4",
 		description = "Creating staircase $math.abs( R.destinationLevel - R.startLevel )$ blocks high",
 		items =
 [[~orange~2     ~yellow~| slabs per level
-      | or 2 stone per level -> crafted
-~red~6 * h ~yellow~| stone
-~red~1     ~yellow~| chest for crafting
+~red~h     ~yellow~| stone for centre
 ]],
 		inventory = 
 		{
-			--{"minecraft:torch", 24, false, ""},
-			{"minecraft:bucket", 1, false, "for fuel"},
 			{"slab", "math.abs( R.destinationLevel - R.startLevel ) * 2", false, ""},
-			{"minecraft:chest", 1, true, ""},	-- needed for crafting
-			{"stone", "math.abs( R.destinationLevel - R.startLevel ) * 4", true, ""}
-			--{"sign", 2, false, "wet entrance"}
+			{"stone", "math.abs( R.destinationLevel - R.startLevel )", true, "for centre column"}
 		},
 		data = 
 		{
 			["chk1"] = {text = "In Nether?", state = false, u = {"bedrock", 0, -64}},
 			["chk2"] = {text = "In Air?", state = false},
 			["chk3"] = {text = "Build Base?", state = false, r = {"data", "chamber", ""}},	-- use R.data and give value "chamber" if selected
-			["chk4"] = {text = "Go UP?", state = false, group = {"chk4", "chk5"}, required = true, r = "goUp"},
-			["chk5"] = {text = "Go DOWN?", state = true, group = {"chk4", "chk5"}, required = true, r = "goDown"},
+			["chk4"] = {text = "Go UP?", state = false, group = {"chk4", "chk5"}, required = true, r = "up"},
+			["chk5"] = {text = "Go DOWN?", state = true, group = {"chk4", "chk5"}, required = true, r = "down"},
 			["chk6"] = {text = {"Stop at","Stronghold","or Trial?"}, state = true, required = true, r = "auto"},
 			["lbl1"] = {text = "Current level (F3):", limits = {{"U.bedrock + 5"}, {"U.ceiling"}}},
 			["lbl2"] = {text = "Go to level:", limits = {{"U.bedrock + 5"} , {"startLevel", 2}}},
