@@ -1,4 +1,4 @@
-local version = 20260109.0800
+local version = 20260116.1200
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	This is meant to be used as a library for any of your programs.
@@ -423,8 +423,8 @@ local function menu(prompt, options, pp, altMenuPrompt)
 		end
 		pp.menuPrompt = colors.yellow
 		pp.allowModifier = false
-	else
-		assert(#options == #pp.itemColours, "Menu options (".. #options..") pp.itemColours (".. #pp.itemColours..") do not match")
+	--else
+		---assert(#options == #pp.itemColours, "Menu options (".. #options..") pp.itemColours (".. #pp.itemColours..") do not match")
 	end
 	prompt = lib.formatPrompt(prompt)
 	while choice == nil and modifier == "" do
