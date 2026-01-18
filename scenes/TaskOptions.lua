@@ -1,4 +1,4 @@
-local version = 20260113.1700
+local version = 20260117.0800
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
 local Multilabel = require("lib.ui.MultiLabel")
@@ -146,7 +146,7 @@ function S:setup()
 	}
 	]]
 	self.task = U.currentTask						-- eg  "Ladder up or down"
-Log:saveToLog("TaskOptions:setup:self.task = '"..self.task.."'")	
+--Log:saveToLog("TaskOptions:setup:self.task = '"..self.task.."'")	
 	local data = F[U.currentTask].data
 	for _, checkbox in pairs(self.checkboxes) do	-- disabling checkboxes = draw without check graphic
 		checkbox:enable(false)
@@ -165,7 +165,7 @@ Log:saveToLog("TaskOptions:setup:self.task = '"..self.task.."'")
 		self.controls[name]:setText("")				-- set the text to empty string
 		local tbl = data[name]						-- ["chk4"] = {text = "Go UP?", state = false, group = {"chk4", "chk5"}, required = true, r = "up"},
 		if tbl ~= nil then
-Log:saveToLog("TaskOptions:setup: tbl = "..textutils.serialise(tbl, {compact = true}))
+--Log:saveToLog("TaskOptions:setup: tbl = "..textutils.serialise(tbl, {compact = true}))
 			if tbl["text"] ~= nil then					-- set text
 				--local ctrlType, index = self.controls[name]:getControlData()
 --Log:saveToLog("TaskOptions:setup: ctrlType = "..ctrlType..", index = "..index)
