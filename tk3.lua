@@ -1,4 +1,4 @@
-local version = 20260115.1500
+local version = 20260117.0800
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -413,6 +413,19 @@ function utils.craftItem()
 		end
 	end
 	return {""}
+end
+
+function utils.createBasement(up, down, width, length)
+	-- start facing lower left
+	T:sortInventory(false)
+	T:dropItem("seeds", "forward")
+	T:dropItem("flint", "forward")
+	R.up = up
+	R.down = down
+	R.width = width
+	R.length = length
+	clearRectangle()	-- dig 10 x 10 x 2 area, return to starting position
+	-- add network cable, modems and chests
 end
 
 function utils.createStorage()
@@ -997,17 +1010,12 @@ function utils.towpathOnly()
 end
 
 function utils.waitForInput(message)
-	-- debugging. Pause script and asks user to continue
-	-- global dbug flag has to be set first
-	if dbug then 
-		if message ~= nil then
-			print(message)
-			_G.Log:saveToLog(message, false)
-		end
-		menu.colourPrint("Enter to continue...", colors.lightBlue)
-		--io.write("Press Enter to continue...")
-		return read()
+	-- Pause script and asks user to continue
+	if message ~= nil then
+		menu.colourPrint(message, colors.yellow)
+		Log:saveToLog("utils.waitForInput("..message..")", false)
 	end
+	menu.colourPrint("Enter to continue...", colors.lightBlue)
 end
 
 function utils.writeTraceTable(description, tbl)
@@ -1059,10 +1067,10 @@ function assessTreeFarm()
 		T:go("R1F1")
 		-- if in correct start, log below
 		blockType = T:getBlockType("down")
-		_G.Log:saveToLog("T:go(R1F1): blockType = "..blockType)
+Log:saveToLog("T:go(R1F1): blockType = "..blockType)
 		if blockType:find("log") ~= nil then
 			lib.getSaplingType(blockType)
-			T:go("R2F1R1")
+			T:go("B1L1")
 			return true
 		end
 		T:go("R2F1R1")
@@ -1090,8 +1098,8 @@ function assessTreeFarm()
 			R.logType = blockType					-- eg "minecraft:dark_oak_log"
 			R.useBlockType = name					-- eg "minecraft:oak_sapling"
 		end
-		utils.goBack(1)
-		turtle.turnLeft()
+		--utils.goBack(1)
+		--turtle.turnLeft()
 	end
 	
 	Log:saveToLog("assessTreeFarm() started")
@@ -4754,16 +4762,6 @@ function createFarmNetworkStorage(withStorage, removeLegacy)
 	-- primary plot and storage needs 1 modem, 1 barrel, 8 chests
 	local lib = {}
 	
-	function lib.createBasement(up, down, width, length)
-		-- start facing lower left
-		R.up = up
-		R.down = down
-		R.width = width
-		R.length = length
-		clearRectangle()	-- dig 10 x 10 x 2 area, return to starting position
-		-- add network cable, modems and chests
-	end
-	
 	function lib.placeNetwork(count, pattern)
 		for i = 1, count do
 			T:place("computercraft:cable", "up", true)
@@ -4809,8 +4807,9 @@ function createFarmNetworkStorage(withStorage, removeLegacy)
 		U.attachModem()
 		T:go("F1x2 R2C2 F1L1 F1D1")
 	end
+	
 	T:go("L1D3") -- move below crop field, face N
-	lib.createBasement(true, true, 10, 10)	-- ends facing N below water source
+	utils.createBasement(true, true, 10, 10)	-- ends facing N below water source
 	T:go("U1 F9R1 F1R2 C1R2 F8R1 F1R2 C1R2 F8R1 F1R2 C1R2 F8") -- facing W below water source
 	T:go("F1 R2C1 R1 F1L1 x0x2")	-- move to corner, face along front edge
 	for c = 1, 4 do
@@ -4829,37 +4828,19 @@ function createFarmNetworkStorage(withStorage, removeLegacy)
 		end
 	end
 	-- now in bottom left facing S
-	T:go("L2F1R1")	-- under modem/netwok cable facing in
-	for i = 1, 3 do
-		T:go("L1C1 R1C1 R1C1 L1D1")
-		T:place("computercraft:cable", "up", true)
-	end
-	T:go("C1L1 C1L1 C1L1 C1L1 D1L1")-- ready for clearing rectangle up/down
-	T:place("computercraft:cable", "up", true)
-	T:down(1)
-	T:place("computercraft:cable", "up", true)
-	lib.createBasement(true, true, 11, 11)
-	T:turnRight(1)
-	lib.placeNetwork(11, "F1")
-	T:go("R2F4 R1")
-	lib.placeNetwork(11, "F1")
-	T:go("L1F5 L1F9 R1D1 C1")	-- ready to make ladder column
-	for i = 1, 5 do
-		if i < 5 then
-			T:go("U1C1")
-		else
-			T:up(1)
-		end
-		T:place("ladder", "down")
-	end
 	if withStorage then
-		T:go("R1F4 R1F3 D1x2")
-		T:place("computercraft:cable", "down", true) --ready to build chest storage area
-		T:up(1)
-		utils.createStorage()
-		T:go("U1R1 F5R1 F5U1 C2U1 R2")	-- end on plot starting position, facing crops
+		T:go("L1F5L1")				-- under mid network cable run facing in
+		lib.placeNetwork(6, "D1")	-- build cable down under floor level
+		lib.placeNetwork(4, "F1x0")	-- continue under floor to chest area
+		T:go("F1U2")				-- 
+		T:place("computercraft:cable", "down", true)
+		T:go("U1")				-- 
+		T:place("computercraft:cable", "down", true)
+		T:go("U1")
+		utils.createStorage()		-- places modem and chests
+		T:go("L2F4 R1F5 L1F2 U3R2")	-- ends facing barrel
 	else
-		T:go("U1L1 F1U1 C2U1 L1")	-- end on plot starting position, facing crops
+		T:go("F1U2 R2")				-- ends facing barrel
 	end
 	
 	return "Farm converted to network storage"
@@ -4867,8 +4848,8 @@ end
 
 function createFarm()
 	-- R.data used for "new" or extension direction: "right" or "back"
-	-- R.networkFarm default false, user selected = true
-	R.earlyGame = not R.networkFarm	-- earlyGame true if NOT networkFarm
+	-- R.networkFarm = true. All farms will use network storage
+	-- R.goDown = true (build storage)	
 	
 	local lib = {}
 
@@ -4926,7 +4907,7 @@ function createFarm()
 	
 	local numPlots = 0
 	local storage, storageBackup = utils.setStorageOptions()	-- storage type(s) onboard eg "barrel", "barrel"
-	R.useBlockType = T:getMostItem("minecraft:dirt", true)
+	R.useBlockType = T:getMostItem("minecraft:dirt", true)		-- exclude dirt from choice
 	if R.data == "right" then				-- extendFarm called. Position should be facing crops
 		T:up(1)
 		utils.goBack(1)
@@ -4949,7 +4930,7 @@ function createFarm()
 	
 	-- design change: sapling placed 2 blocks above corner for ease of walking round
 	-- barrel on corner
-	-- if R.networkFarm then modems on each side N/E
+	-- modems on each side N/E
 	T:place("barrel", "down", false)
 
 	-- stage 2 place sapling
@@ -4958,19 +4939,11 @@ function createFarm()
 	T:up(1)
 	T:place("sapling", "down") -- plant sapling
 	T:go("F1D4")
-	if R.networkFarm then
-		T:place("modem", "down", false)
-		U.attachModem()
-		T:forward(1)
-		T:place(R.useBlockType, "down", false)
-	else
-		-- stage 3 place double barrel/chest if earlyGame
-		T:go("L1")
-		lib.placeStorage(storage, storageBackup)
-		T:go("R1F1L1")
-		lib.placeStorage(storage, storageBackup)
-		T:turnRight(1)
-	end
+	T:place("modem", "down", false)
+	U.attachModem()
+	T:forward(1)
+	T:place(R.useBlockType, "down", false)
+
 	if R.data == "right" then -- cobble wall exists so go forward to its end
 		T:forward(9)
 	else -- new farm or extend forward
@@ -4981,24 +4954,12 @@ function createFarm()
 	T:go("R1F1 R1x0 x2C2 F1D1", false, 0, false, R.useBlockType)-- turn round ready for first dirt col
 	lib.addWaterSource({"d","c","c","d"}, storage) -- water at top of farm
 	lib.placeDirt(9, false) 	-- place dirt back to start
-	if R.networkFarm then	-- water source next to modem
-		lib.addWaterSource({"c","c","d","d"}, storage)
-		-- T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock
-		T:go("U1F1L1")
-		T:place("modem", "down", false)
-		T:go("F1C2 L1F1 D1", false, 0, false, R.useBlockType)
-	else
-		lib.addWaterSource({"c","c","t","d"}, storage)  -- put barrel / chest in floor
-		T:go("U1F1R2")
-		if T:getBlockType("down"):find(storage) == nil and T:getBlockType("down"):find(storageBackup) == nil then
-			lib.placeStorage(storage, storageBackup)
-		end
-		T:go("R1F1L1")
-		if T:getBlockType("down"):find(storage) == nil and T:getBlockType("down"):find(storageBackup) == nil then
-			lib.placeStorage(storage, storageBackup)
-		end
-		T:go("F1D1")
-	end
+	-- water source next to modem
+	lib.addWaterSource({"c","c","d","d"}, storage)
+	-- T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock
+	T:go("U1F1L1")
+	T:place("modem", "down", false)
+	T:go("F1C2 L1F1 D1", false, 0, false, R.useBlockType)
 	lib.placeDirt(9, true)
 	local turn = "R"
 	for i = 1, 7 do
@@ -5031,14 +4992,12 @@ function createFarm()
 		end
 		T:go("L1F6 L1F1 L2")
 	end
-	if R.networkFarm then		-- network storage
-		U.attachModem()
-		T:go("R1F1D1R1")	-- over water source, facing E (crops)
-		if R.data == "new" then	-- primary plot
-			createFarmNetworkStorage(true)
-		else
-			createFarmNetworkStorage(false)
-		end
+	U.attachModem()
+	T:go("R1F1D1R1")	-- over water source, facing E (crops)
+	if R.data == "new" and R.goDown then	-- primary plot, user chose to add storage
+		createFarmNetworkStorage(true)		-- add networking and storage
+	else
+		createFarmNetworkStorage(false)		-- add networking, no storage
 	end
 	if R.data == "right" then
 		T:up(1)
@@ -5052,7 +5011,7 @@ end
 
 function createFarmExtension()
 	-- R.data = "right" or "back"
-	-- R.networkFarm = true or false
+	-- R.networkFarm = true
 	-- R.misc = true or false: true = melon or pumpkin
 	
 	checkFarmPosition()
@@ -7445,10 +7404,11 @@ function createTreefarm()
 	end
 	
 	function lib.clearBasement()
-		T:sortInventory(false)
-		T:dropItem("seeds", "forward")
-		T:dropItem("flint", "forward")
-		clearRectangle({width = 15, length = 15, up = true, down = true})
+		-- T:sortInventory(false)
+		-- T:dropItem("seeds", "forward")
+		-- T:dropItem("flint", "forward")
+		-- clearRectangle({width = 15, length = 15, up = true, down = true})
+		utils.createBasement(true, true, 15, 15)	-- end facing back at left corner, 1 block above floor/1 below ceiling
 		-- area has been cleared. starts facing back, 1 block above ground, 1 block below ceiling
 		T:go("R1U1")
 		for i = 1, 14 do	-- place cable into gutter beneath front of farm
@@ -7466,7 +7426,9 @@ function createTreefarm()
 	-- R.data = "new", "left", "right" or "back" to extend tree farm
 	-- R.data = "convert" or "convertStorage" for legacy farm
 	-- R.up = true if clear area
-	-- R.networkFarm to create storage area
+	-- R.goDown to create storage area
+	utils.waitForInput("IMPORTANT! follow me underneath\nto activate modems when prompted")
+	
 	if R.inventoryKey ~= "" then
 		R.data = R.inventoryKey
 	end
@@ -7481,11 +7443,8 @@ function createTreefarm()
 	end
 	-- R.data = "new", "left", "right", "back"
 	-- R.up = clear area
-	-- R.down = add storage: usually on new farm
-	local useModem = true
-	if T:getItemSlot("modem") == 0 then
-		useModem = false
-	end
+	-- R.goDown = add storage: usually on new farm
+
 	if R.data == "new" then -- new treeFarm, Start at current position
 		-- build 4 wall sections in 2 passes
 		T:down(1)
@@ -7495,11 +7454,7 @@ function createTreefarm()
 			lib.buildWallSection("--------------", R.useBlockType)	-- back/ right wall (14 blocks)
 			T:go("R1F1")
 		end
-		if useModem then
-			lib.buildWallSection("------c------", R.useBlockType)		-- front wall (14 blocks) c = network cable
-		else
-			lib.buildWallSection("-------------", R.useBlockType)		-- front wall (14 blocks)
-		end
+		lib.buildWallSection("------c------", R.useBlockType)		-- front wall (14 blocks) c = network cable
 		T:go("U1F1R1")
 		lib.buildWallSection("---------------", R.useBlockType)		-- left wall top (15 blocks)
 		T:go("R1F1")
@@ -7508,26 +7463,17 @@ function createTreefarm()
 			T:go("R1F1")
 		end
 		--lib.buildWallSection("-----lmb-----", R.useBlockType)	--front wall (14 blocks) log/modem/barrel
-		if useModem then
-			lib.buildWallSection("-----lmb", R.useBlockType)
-			utils.goBack(1)
-			U.attachModem()
-			T:forward(2)
-		else
-			lib.buildWallSection("-----lbb", R.useBlockType)
-			T:forward(1)
-		end
+		lib.buildWallSection("-----lmb", R.useBlockType)
+		utils.goBack(1)
+		U.attachModem()
+		T:forward(2)
 		lib.buildWallSection("-----", R.useBlockType)	
 		T:go("R1F1 D2") -- over 13 x 13 internal area
 	elseif R.data == "left" or R.data == "right" or R.data == "back" then
 		-- build 3 wall sections in 2 passes
 		if R.data == "left" then										-- should be on left corner of existing
 			T:go("L1F1 D1") 											-- move left 1 blocks, down 1: <-
-			if useModem then
-				lib.buildWallSection("------c-------", R.useBlockType)		-- front wall (14 blocks) c = network cable <-
-			else
-				lib.buildWallSection("--------------", R.useBlockType)		-- front wall (14 blocks)
-			end
+			lib.buildWallSection("------c-------", R.useBlockType)		-- front wall (14 blocks) c = network cable <-
 			T:go("R1F1")
 			lib.buildWallSection("--------------", R.useBlockType)		-- left wall (14 blocks) ^
 			T:go("R1F1")
@@ -7537,22 +7483,14 @@ function createTreefarm()
 			T:go("L1F1")
 			lib.buildWallSection("--------------", R.useBlockType)		-- left wall top (14 blocks) v
 			T:go("L1F1")
-			if useModem then
-				lib.buildWallSection("-----bm", R.useBlockType)			-- front wall (7 blocks) barrel/modem ->
-				U.attachModem()
-			else
-				lib.buildWallSection("-----bb", R.useBlockType)			-- front wall (7 blocks) barrel/barrel ->
-			end
+			lib.buildWallSection("-----bm", R.useBlockType)			-- front wall (7 blocks) barrel/modem ->
+			U.attachModem()
 			T:forward(1)
 			lib.buildWallSection("l-----", R.useBlockType)				-- front wall (5 blocks) log ->
 			T:go("R2F12 R1F1 D2") 										-- over 13 x 13 internal area lower left side
 		elseif R.data == "right" then									-- should be on right corner of existing
 			T:go("R1F1 D1") 											-- move right, forward, down 1
-			if useModem then
-				lib.buildWallSection("------c-------", R.useBlockType)	-- front wall (14 blocks) c = network cable
-			else
-				lib.buildWallSection("--------------", R.useBlockType)	-- front wall (14 blocks)
-			end
+			lib.buildWallSection("------c-------", R.useBlockType)	-- front wall (14 blocks) c = network cable
 			T:go("L1F1")
 			lib.buildWallSection("--------------", R.useBlockType)		-- right wall (14 blocks)
 			T:go("L1F1")
@@ -7562,59 +7500,50 @@ function createTreefarm()
 			T:go("R1F1")
 			lib.buildWallSection("--------------", R.useBlockType)		-- left wall top (14 blocks)
 			T:go("R1F1")
-			if useModem then
-				lib.buildWallSection("-----lmb", R.useBlockType)
-				utils.goBack(1)
-				U.attachModem()
-				T:forward(2)
-			else
-				lib.buildWallSection("-----lbb", R.useBlockType)
-				T:forward(1)
-			end
+			lib.buildWallSection("-----lmb", R.useBlockType)
+			utils.goBack(1)
+			U.attachModem()
+			T:forward(2)
 			lib.buildWallSection("-----", R.useBlockType)	
 			T:go("R1F1 D2") 											-- over 13 x 13 internal area
 		elseif R.data == "back" then									-- should be on left front corner of existing
-			if useModem then
-				T:go("R2F1 D4R2 F1") 										-- move forward 14 blocks, down 1
-				for i = 1, 15 do
-					T:place("cable", "up")
-					T:forward(1)
-				end
-				T:up(1)
-				if T:getBlockType("up") == R.useBlockType then				-- already a farm on left side
-					T:go("U2C2 U1C2 F13R1 F1D1", false, 0, false, R.useBlockType)
-					lib.buildWallSection("--------------", R.useBlockType)	-- back wall (14 blocks)
-					T:go("R1F1")
-				else
-					T:up(2)
-					lib.buildWallSection("--------------", R.useBlockType)	-- left wall (14 blocks)
-					T:go("R1F1")
-					lib.buildWallSection("--------------", R.useBlockType)	-- back wall (14 blocks)
-					T:go("R1F1")
-				end
-
-				lib.buildWallSection("-------------", R.useBlockType)		--right wall (13 blocks) no special blocks
-				T:go("U1R2")	-- turn round ready to add next layer
-				for i = 1, 2 do
-					lib.buildWallSection("--------------", R.useBlockType)	--right wall top (14 blocks) no special blocks
-					T:go("L1F1")
-				end
-				lib.buildWallSection("-------------", R.useBlockType)		-- left wall top (13 blocks) no special blocks
-				T:go("F1L1 F7x2")
-				T:go("D1x2")
-				T:place("cable", "down")
-				T:up(1)
-				T:place("modem", "down")
-				T:go("F1R2x2")
-				T:place("log", "down")
-				T:go("F2x2")
-				T:place("barrel", "down")
-				utils.goBack(1)
-				U.attachModem()
-				T:go("F6R1 F1D2")
-			else
-				return "Unable to build at back unless network components are used"
+			T:go("R2F1 D4R2 F1") 										-- move forward 14 blocks, down 1
+			for i = 1, 15 do
+				T:place("cable", "up")
+				T:forward(1)
 			end
+			T:up(1)
+			if T:getBlockType("up") == R.useBlockType then				-- already a farm on left side
+				T:go("U2C2 U1C2 F13R1 F1D1", false, 0, false, R.useBlockType)
+				lib.buildWallSection("--------------", R.useBlockType)	-- back wall (14 blocks)
+				T:go("R1F1")
+			else
+				T:up(2)
+				lib.buildWallSection("--------------", R.useBlockType)	-- left wall (14 blocks)
+				T:go("R1F1")
+				lib.buildWallSection("--------------", R.useBlockType)	-- back wall (14 blocks)
+				T:go("R1F1")
+			end
+
+			lib.buildWallSection("-------------", R.useBlockType)		--right wall (13 blocks) no special blocks
+			T:go("U1R2")	-- turn round ready to add next layer
+			for i = 1, 2 do
+				lib.buildWallSection("--------------", R.useBlockType)	--right wall top (14 blocks) no special blocks
+				T:go("L1F1")
+			end
+			lib.buildWallSection("-------------", R.useBlockType)		-- left wall top (13 blocks) no special blocks
+			T:go("F1L1 F7x2")
+			T:go("D1x2")
+			T:place("cable", "down")
+			T:up(1)
+			T:place("modem", "down")
+			T:go("F1R2x2")
+			T:place("log", "down")
+			T:go("F2x2")
+			T:place("barrel", "down")
+			utils.goBack(1)
+			U.attachModem()
+			T:go("F6R1 F1D2")
 		end
 	else -- convertStorage or convert
 		-- legacy farm had polished block on positions 4 / (10) from left corner
@@ -7637,50 +7566,47 @@ function createTreefarm()
 	if (R.data):find("convert") == nil then
 		lib.floodFarm()
 	end
-	lib.clearBasement() -- area has been cleared. ends right side facing right, just below ceiling
-
-	if R.data == "back" then
+	lib.clearBasement() 				-- area has been cleared. ends right side facing right, just below ceiling
+	
+	if R.data == "back" then			-- do not make exit for player
+		R.goDown = false				-- disable storage
 		T:go("R2F6 R1D1")
 	else
-		T:go("R2F6 L1F1 U4D5 R2F1") -- make exit for player. end mid floor/ceiling height, facing back, in centre
-	end
-	if R.down then
-	--if R.data == "new" or R.data == "convertStorage" then	-- put storage in this farm
-		for i = 1, 3 do
-			T:place("cable", "up")
-			T:forward(1)
+		--T:go("R2F6 L1F1 U4D5 R2F1") 	-- make exit for player. end mid floor/ceiling height, facing back, in centre
+		T:go("R2F6 L1F1 x2U4") 	-- make exit for player. end mid floor/ceiling height, facing back, in centre
+		for i = 1, 6 do
+			T:down(1)
+			T:place("ladder", "up")
 		end
+		T:back(1)
+		T:place("ladder", "forward")
+		T:go("U1R2")
+	end
+	for i = 1, 6 do
 		T:place("cable", "up")
-		--T:down(1)
+		T:forward(1)
+	end
+	if R.goDown or R.data == "convertStorage" then	-- build storage
 		utils.createStorage()	-- creates on ground, 1 below current
+		T:place("modem", "up")
 		T:go("F1R2")
 		T:place("cable", "forward")
-		T:go("R2")
-		for i = 1, 2 do
-			T:place("cable", "up")
-			T:forward(1)
-		end
+		T:go("U2")
 	else
-		for i = 1, 6 do
-			T:place("cable", "up")
-			T:forward(1)
-		end
-	end
-	if useModem then
 		T:place("modem", "up")
+		T:go("B1U2")
 	end
-	T:go("F1R2U2")
 	T:place("barrel", "down")
 	T:drop("down", "dirt", 64)-- override 'slot' with item string
 	T:up(1)
 	T:place("hopper", "down")
-	T:go("F1D1")
-	if useModem then
-		U.attachModem()
-	end
-	T:go("U1C2 U2F6 R2")
-
-	return {"Tree farm ready for planting"}
+	T:go("F2D2")
+	U.attachModem()
+	T:up(1)
+	T:place("cable", "down")
+	T:go("U1C2 U2F5 R2")
+	
+	return {"tree farm created"}
 end
 
 function createTrialCover()
@@ -11234,15 +11160,18 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 	end
 	
 	function lib.getSaplingInventory()
-		local saplings = {}
-		-- saplings.oak_sapling = 0
-		-- saplings.spruce_sapling = 0
-		-- saplings.birch_sapling = 0
-		-- saplings.jungle_sapling = 0
-		-- saplings.acacia_sapling = 0
-		-- saplings.dark_oak_sapling = 0
-		-- saplings.cherry_sapling = 0
-		-- saplings.mangrove_propagule = 0
+		local saplings =
+		{
+			["minecraft:oak_sapling"] = 0,
+			["minecraft:spruce_sapling"] = 0,
+			["minecraft:birch_sapling"] = 0,
+			["minecraft:jungle_sapling"] = 0,
+			["minecraft:acacia_sapling"] = 0,
+			["minecraft:dark_oak_sapling"] = 0,
+			["minecraft:pale_oak_sapling"] = 0,
+			["minecraft:cherry_sapling"] = 0,
+			["minecraft:mangrove_propagule"] = 0,
+		}
 
 		local firstChoice = ""
 		local firstCount = 0
@@ -11253,8 +11182,6 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 				if turtle.getItemCount(i) > 0 then
 					local data = turtle.getItemDetail(i)
 					if data.name:find("sapling") ~= nil then
-						--local name = data.name:sub(11) -- removes "minecraft:"
-						--saplings[name] = saplings[name] + data.count
 						if saplings[data.name] ~= nil then
 							saplings[data.name] = saplings[data.name] + data.count
 						else
@@ -11264,7 +11191,7 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 				end
 			end
 		elseif T:getItemSlot("propagule") > 0 then
-			saplings.mangrove_propagule = turtle.getItemCount(T:getItemSlot("propagule"))
+			saplings["minecraft:mangrove_propagule"] = turtle.getItemCount(T:getItemSlot("propagule"))
 		else	-- no saplings onBoard: ? automated networked farm
 			if R.networkFarm then
 				-- networked farms use 1 type of sapling indicated by log embedded to right of modem
@@ -11740,15 +11667,8 @@ function test()
 	-- allows testing any new functions.
 	-- use tk3 test
 	Log:saveToLog("test() started")
-	--local changed = U.compareR()
-	--Log:saveToLog("R = "..textutils.serialise(changed))
 	menu.clear()
-	-- In shaft, facing start direction, on lowest safe level
-	-- create a square space round shaft base, end facing original shaft, 1 space back
-	--T:go("C2 L1n1 R1n3 R1n2 R1n3 R1n1", false, 0, true)
-	--T:go("U1Q1 R1Q3 R1Q2 R1Q3 R1Q1 R1D1", false, 0, true)
-	Log:saveToLog("calling createDiveColumn()")
-	createDiveColumn()
+	-- insert code below
 	return {"function 'test' executed successfully"}
 end
 
