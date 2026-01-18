@@ -1,4 +1,4 @@
-local version = 20260114.1200
+local version = 20260116.1600
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.MultiButton")
@@ -755,9 +755,9 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 			--elseif mb.name == self.subMenuList[self.mm[3]] then	-- "mbFarming"
 			elseif U.subMenuName == self.mm[3][1][1] then		-- "mbFarming"
 				if mb.selectedButtonName == self.m3[1] then 	-- Create modular crop farm
-					R.networkFarm = false
+					R.networkFarm = true
 					R.data = "new"								-- if user selects network farm, storage will be placed
-					
+					R.goDown = true								-- build network storage below farm
 					U.currentTask = "createFarm"
 				elseif mb.selectedButtonName == self.m3[2] then -- Extend modular crop farm
 					F["assessFarm"].call()
