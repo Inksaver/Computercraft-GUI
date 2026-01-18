@@ -1,4 +1,4 @@
-local version = 20260109.0800
+local version = 20260117.0800
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as lib/TurtleUtils.lua
@@ -501,7 +501,7 @@ end
 function U.parseExpression(expression, calledFrom)
 	--[[ {"R.height * 6"} or "math.abs(R.height - R.currentLevel) / 3" ]]
 	if calledFrom == nil then calledFrom = "unknown" end
-Log:saveToLog("U.parseExpression(expression = "..expression..", called from "..calledFrom)
+--Log:saveToLog("U.parseExpression(expression = "..expression..", called from "..calledFrom)
 	local lib = {}
 	
 	function lib.parse(part, sum)
