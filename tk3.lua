@@ -1,4 +1,4 @@
-local version = 20260117.0800
+local version = 20260117.1700
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -1016,6 +1016,7 @@ function utils.waitForInput(message)
 		Log:saveToLog("utils.waitForInput("..message..")", false)
 	end
 	menu.colourPrint("Enter to continue...", colors.lightBlue)
+	read()
 end
 
 function utils.writeTraceTable(description, tbl)
@@ -1531,7 +1532,8 @@ function checkFarmPosition()
 	local discovered = ""
 	local success, storage, detected = false, "", 0
 	local blockType = T:getBlockType("down")
-	R.networkFarm = false
+	R.networkFarm = true	-- all farms now use network storage
+	R.ready = false
 --Log:saveToLog("Checking position "..blockType.. " down")
 	if blockType:find("water") ~= nil then -- over water, ? facing E (crops)
 		-- network: E = _modemmodem__, N = _modemmodem_, W = modemmodem__, S = modem__modem
@@ -1539,13 +1541,10 @@ function checkFarmPosition()
 		-- Legacy/earlyGame: E = _barrelbarrel_, N = barrelbarrel__, W = barrel__barrel, S = __barrelbarrel
 --Log:saveToLog("? over water = true")
 		for i = 1, 4 do
-			success, storage = utils.isStorage("forward")	-- true/false, chest, barrel, modem / ""
+			success, storage = utils.isStorage("forward")	-- true/false, chest, barrel, modem,  ""
 			local itemAhead = T:getBlockType("forward")
 			if success then
 				discovered = discovered .. storage
-				if storage == "modem" then
-					R.networkFarm = true
-				end
 			else
 				discovered = discovered .. "_"
 			end
@@ -1555,27 +1554,14 @@ function checkFarmPosition()
 			T:turnRight(1)
 		end
 --Log:saveToLog("Storage blocks found:"..discovered)
-		if R.networkFarm then
-			if discovered == "modemmodem__" then
-			   T:turnLeft(1)
-			elseif discovered == "modem__modem" then
-			   T:turnLeft(2)
-			elseif discovered == "__modemmodem" then
-			   T:turnRight(1)
-			end
-			R.ready = true
-		else
-			if discovered == "barrelbarrel__" or
-			   discovered == "barrelchest__" or
-			   discovered == "chestchest__" then
-			   T:turnLeft(1)
-			elseif discovered == "barrel__barrel" or discovered == "chest__chest" then
-			   T:turnLeft(2)
-			elseif discovered == "__barrelbarrel" or discovered == "__chestchest" then
-			   T:turnRight(1)
-			end
-			R.ready = true
+		if discovered == "modemmodem__" then
+		   T:turnLeft(1)
+		elseif discovered == "modem__modem" then
+		   T:turnLeft(2)
+		elseif discovered == "__modemmodem" then
+		   T:turnRight(1)
 		end
+		R.ready = true
 	end	-- else not over water
 	-- now facing crops, R.ready = true/false, R.networkFarm = true/false
 end
@@ -9565,21 +9551,7 @@ function manageFarm()
 		end
 		return chart
 	end
-	
-	function lib.checkEquipment(itemsRequired) --< table!
-		-- Check if items are equipped and return it to slot
-		-- assume {"left", "right"}
-		local slots = {0, 0}
-		local equipped = {"",""}
-		T:clear()
-		print("Checking equipment. Please wait...")
-		-- remove all equipment and store in inventory
-		equipped[1], slots[1] = T:removeEquipped("right")	-- get what is equipped on the right
-		equipped[2], slots[2] = T:removeEquipped("left")	-- get what is equipped on the left
-
-		return slots
-	end
-		
+			
 	function lib.crossFarm()
 		-- used with goHome to find starting point
 		local blockType = ""
@@ -9641,7 +9613,10 @@ function manageFarm()
 		if crop == "" then -- if no crop then ignore this farm
 			isFarmToRight, isFarmToFront = lib.checkFarmLocations()
 		else
-			lib.manageTree() -- refuel if required, else do nothing
+			local success, message = lib.manageTree() -- refuel if required, else do nothing
+			if not success then
+				return message, message
+			end
 			lib.getSeedsOrCrops(seed, crop)
 			isFarmToRight = lib.harvest(seed, crop)		-- harvest field, store crops
 			-- now at starting position of current plot
@@ -9688,42 +9663,38 @@ function manageFarm()
 		-- crop could be seeds, so return equivalent crop
 		local start = crop:find("_crop")
 		if start ~= nil then	-- only modded seeds have "crop"
-			return crop:sub(1, start).."seeds", crop
+			return crop, crop:sub(1, start).."seeds"
 		end
 		if crop:find("seeds") ~= nil then	-- asked to return crop from seed type
 			if crop:find("wheat") ~= nil then
-				return "minecraft:wheat_seeds", "minecraft:wheat"
+				return  "minecraft:wheat", "minecraft:wheat_seeds"
 			end
 			if crop:find("beetroot") ~= nil then
-				return "minecraft:beetroot_seeds", "minecraft:beetroot"
+				return "minecraft:beetroot", "minecraft:beetroot_seeds"
 			end
 		end
 		if crop:find("wheat") ~= nil then
-			return "minecraft:wheat_seeds", "minecraft:wheat"
+			return  "minecraft:wheat", "minecraft:wheat_seeds"
 		end
 		if crop:find("beetroot") ~= nil then
-			return "minecraft:beetroot_seeds", "minecraft:beetroot"
+			return  "minecraft:beetroot", "minecraft:beetroot_seeds"
 		end
 		if crop:find("carrot") ~= nil then
-			return "", "minecraft:carrot"
+			return "minecraft:carrot", ""
 		end
 		if crop:find("potato") ~= nil then
-			return "", "minecraft:potato"
+			return "minecraft:potato", ""
 		end
 		-- planted crops are plural, harvested singular: carrots / carrot, pototoes/ potato
-		return "", crop -- no seed for carrot / potato
+		return crop, "" -- no seed for carrot / potato
 	end
 
-	function lib.getEquipment(name)
-		--[[ if NOT networked, crafting table should already be present in inventory from storage below]]
-Log:saveToLog("==> lib.getEquipment("..name.."), R.netwokFarm = "..tostring(R.networkFarm))
-		local slot = 0
-		if R.networkFarm then
-			slot = U.getItemFromNetwork("barrel", name, 1)
-			if slot > 0 then					-- obtained from network
+	function lib.getItem(name)
+Log:saveToLog("==> lib.getItem("..name..")")
+		local slot = U.getItemFromNetwork("barrel", name, 1)
+		if slot > 0 then					-- obtained from network
 Log:saveToLog("    return slot = "..slot)
-				return slot
-			end
+			return slot
 		end
 		-- not found, slot = 0
 		slot = T:getItemSlot(name)				-- if item in inventory
@@ -9751,102 +9722,31 @@ Log:saveToLog("    return slot = "..slot)
 		return left, right
 	end
 	
-	function lib.getSeedsOrCrops(seed, crop)
-		-- turn to right to face modem or chest/barrel
-		T:turnRight(1)
+	function lib.getSeedsOrCrops(crop, seed)
 		-- get seeds or veg based on what is growing
 		if seed ~= "" then
-			local seedType, seedCount = lib.getSeeds("forward", seed) 	-- table: get 95 of beetroot / wheat / mysticalagriculture seeds
+			local seedType, seedCount = lib.getSeeds(seed) 	-- table: get 95 of beetroot / wheat / mysticalagriculture seeds
 			if seedCount == 0 then
 Log:saveToLog("No seeds available.", true)
 			end
 		else	-- seed  = ""
 			local veg, vegCount = "", 0
-			if R.networkFarm then
-				veg, vegCount = lib.getVeg("forward", crop)	-- gets any carrots / potatoes
-			else
-				T:turnRight(1)					-- face crop chests
-				veg, vegCount = lib.getVeg("forward", crop)	-- gets any carrots / potatoes
-				T:turnLeft(1)					-- face crops
-			end
+			veg, vegCount = lib.getVeg(crop)	-- gets any carrots / potatoes
 			if veg ~= "" then
 				crop = veg
 			end
 		end
-		T:turnLeft(1)	-- return to face crops
 	end
-	
-	function lib.getTool(tool, overStorage)
-		local toolSlot, message = 0, ""
-		local prompt = "Diamond Hoe required for planting!"
-		if tool == "minecraft:diamond_pickaxe" then
-			prompt = "Diamond Pickaxe required for tree!"
-		end
-		if R.networkFarm then	-- get hoe/pickaxe from storage
-			toolSlot = U.getItemFromNetwork("barrel", tool, 1)
-			if toolSlot == 0 then
-				if T:checkInventoryForItem({tool}, {1}, true, prompt) ~= nil then
-					toolSlot = T:getItemSlot(tool)
-				end
-			end
-		else	-- put crafting table into barrel in floor
-Log:saveToLog("/tlib.getTool() overStorage = "..tostring(overStorage))
-			if not overStorage then
-				T:go("L1F1")		-- over barrel
-			end
-			local isStorage, storageType = utils.isStorage("down")
-			if not isStorage then
-				message =
-[["Farm upgrade required:
-Previous designs had a crafting table
-next to the water source.
+					
+	function lib.getSaplings()
+		-- get a single sapling from network storage
+		U.wrapModem(false)
+		local slot, count = U.getItemFromNetwork("barrel", "sapling", 1)
 
- 1. Place a barrel or chest under the turtle
-	instead.
-	
- 2. Restart"
-]]
-				T:go("B1R1")		-- return to start position
-				return 0, message
-			end
-			-- must be storage below to get this far
-			while T:suck("down") do end							-- empty storage
-			toolSlot = T:getItemSlot(tool)						-- get slot if was originally in storage
-			if toolSlot == 0 then								-- not in storage below
-				-- ask player for diamond hoe
-				if T:checkInventoryForItem({tool}, {1}, true, prompt) ~= nil then
-					toolSlot = T:getItemSlot(tool)
-				end
-			end
-			if toolSlot == 0 then	-- player cancelled
-				T:go("B1R1")		-- return to start position
-				message = prompt
-			end
-		end
-		return toolSlot, message -- if NOT networked: still over barrel/chest unless hoe not found/supplied and exited tk3
-	end
-				
-	function lib.getSaplings(direction)
-		--[[ get a single sapling from the chest ]]
-		if direction == nil then
-			direction = "forward"
-		end
-		if R.networkFarm then
-			U.wrapModem(false)
-			U.getItemFromNetwork("barrel", "sapling", 1)
-			--lib.getItemFromNetworkBarrels("sapling", 1)
-		else
-			while T:suck(direction, 1) do end -- remove saplings/ seeds
-			T:dropItem("sapling", direction, 1) -- drop all but 1 saplings
-			if not T:dropItem("seeds", direction, 0) then-- drop all seeds
-				T:dropItem("seeds", "up", 0)
-			end
-		end
-		
-		return T:getItemSlot("sapling")
+		return slot
 	end
 	
-	function lib.getSeeds(direction, seed)
+	function lib.getSeeds(seed)
 		--[[ 
 			seed = name of growing crops seed or ""
 			turtle facing crops on networked, else facing storage
@@ -9858,52 +9758,20 @@ next to the water source.
 		end
 		local inventorySlot, seedCount = 0, 0
 Log:saveToLog("Collecting seeds from storage")
-		if R.networkFarm then
-			U.wrapModem(false)
-			inventorySlot, seedCount = U.getItemFromNetwork("chest", seed, 64)
-		else
-			while T:suck(direction, 1) do end -- remove saplings/ seeds
-			T:dropItem("sapling", direction, 0) -- drop all saplings
-			T:dropItem("seeds", direction, 64)	-- drop all but 64 of any seed type
-			seedCount = T:getItemCount(seed)	
-		end
+		U.wrapModem(false)
+		inventorySlot, seedCount = U.getItemFromNetwork("chest", seed, 64)
 		if seedCount > 0 then
 Log:saveToLog("planting " ..seed)
 		end
 		return seed, seedCount	-- could be: "", 0 or "minecraft:wheat_seeds", 64
 	end
 		
-	function lib.getVeg(direction, crop)
+	function lib.getVeg(crop)
 		-- assume only one type of crop per field
 		-- local item, itemName, shortName, slot = "", "","", 0
 		local inventorySlot, cropCount = 0, 0
-		
-		if R.networkFarm then
-			U.wrapModem(false)
-			inventorySlot, cropCount = U.getItemFromNetwork("chest", crop, 64)
-		else
-			if not R.mysticalAgriculture then
-				print("Collecting root crops from storage")
-				direction = direction or "forward"
-				while T:suck(direction, 1) do end 			-- remove carrots / potatoes / wheat / beetroot / essence
-				--item, itemName, shortName, slot = T:getFirstItem()
-				local found = false
-				if T:getItemSlot("potato") > 0 then
-					T:dropItem("potato", direction, 64)		-- drop all but 65 potato
-					found = true
-					crop = "minecraft:potato"
-				end
-				if T:getItemSlot("carrot") > 0 then
-					T:dropItem("carrot", direction, 64)		-- drop all but 64 carrots
-					found = true
-					crop = "minecraft:carrot"
-				end
-				if not found then
-					T:dropAll(direction)					-- drop everything back
-				end
-			end
-			cropCount = T:getItemCount(crop)
-		end
+		U.wrapModem(false)
+		inventorySlot, cropCount = U.getItemFromNetwork("chest", crop, 64)
 		
 		if cropCount > 0 then
 			print("planting " ..crop)
@@ -10006,42 +9874,12 @@ Log:saveToLog("planting " ..seed)
 	end
 	
 	function lib.gotoTree()
-		-- assume facing crops
-		if not R.networkFarm then
-			T:turnRight(1)							-- face storage
-		end
-Log:saveToLog("==> lib.gotoTree() Extracting saplings from storage")
-		lib.getSaplings("forward") 				-- gets one sapling only (if present)
-Log:saveToLog("    Moving to farm wall...")
-		if R.networkFarm then
-			T:turnRight(1)							-- face wall next to corner barrel
-		end
-		T:go("U1F1R1")								-- move on top of wall/storage. face tree direction
+Log:saveToLog("==> lib.gotoTree()")
+		T:go("R1U1 F1R1 U3")								-- move on top of wall/storage. face tree direction
 Log:saveToLog("    Finding tree..")
-		-- check if tree or dirt ahead
-		local treePosition = "down"					-- legacy position
-		local blockType = T:getBlockType("forward")
-		if blockType == "" then						-- air ahead. could be legacy with no sapling
-			turtle.forward()
-			if T:getBlockType("down") == "minecraft:dirt" then
-				turtle.back()						-- older design, return 
-			end
-		elseif blockType:find("log") == nil and blockType:find("sapling") == nil then	-- eg torch
-			treePosition = "up"
-		end
-		if treePosition == "up" then
-			T:up(3)
-		end
 		lib.harvestTree("forward") 				-- fell tree or plant sapling, ends facing tree / dirt / sapling. sticks already used for fuel. excess saplings placed
 		T:go("R1F1D1R1")							-- return to base, facing crops 
-		if R.networkFarm then
-			U.sendItemToNetworkStorage("barrel", "sapling", 64) --move saplings to any attached barrel
-		else
-			T:turnRight(1)							-- facing plot storage 
-Log:saveToLog("Dropping saplings into storage")
-			T:dropItem("sapling", "forward", 0)	-- drop all saplings forward into chest/barrel
-			T:turnLeft(1)
-		end
+		U.sendItemToNetworkStorage("barrel", "sapling", 64) --move saplings to any attached barrel
 		-- ends in field facing crops
 	end
 	
@@ -10165,17 +10003,14 @@ Log:saveToLog("Dropping saplings into storage")
 			turtle.select(logSlot)
 			turtle.refuel()
 		end
-		
-		logSlot = T:getItemSlot("log")
-
-		if turtle.getFuelLevel() < 1000 then
-Log:saveToLog("==> lib.manageTree() Fuel required: Running lib.gotoTree()")
-			lib.gotoTree() 														-- check for sapling or harvest tree, retuns to facing crops
-		end
-		
-		logSlot = T:getItemSlot("log")
-		if logSlot > 0 then														-- logs onboard, need to equip crafting table
-			lib.refuelWithLogs(logSlot)
+		if turtle.getFuelLevel() < 250 then
+Log:saveToLog("==> lib.manageTree() Fuel required: Extracting saplings from storage")
+			-- assume facing crops
+			if lib.getItem("sapling") > 0 then					-- gets one sapling only (if present)
+Log:saveToLog("    calling lib.gotoTree()")
+				lib.gotoTree()			-- check for sapling or harvest tree, retuns to facing crops
+				lib.refuelWithLogs(T:getItemSlot("log"))
+			end
 		end
 	end
 	
@@ -10214,7 +10049,7 @@ Log:saveToLog("Flower "..crop.." found")
 					end
 				end
 			end
-			seed, crop = lib.getCropSeed(crop)
+			crop, seed = lib.getCropSeed(crop)
 		end
 --Log:saveToLog("return isReady = "..tostring(isReady)..", crop = "..crop..", seed = "..seed..", status = "..status)
 		-- crop: "", "minecraft:carrots", "minecraft:beetroot", "minecraft:potatoes", "minecraft:wheat", "mysticalagriculture:*_crop"
@@ -10337,42 +10172,18 @@ Log:saveToLog("Flower "..crop.." found")
 	
 	function lib.refuelWithLogs(logSlot)
 		--[[ called after lib.manageTree and on startup ]]
+		if logslot == 0 then return end
 		local equippedLeft, equippedRight = lib.getEquipped()				-- "" or "minecraft:..." for each side
+		local craftSlot = T:getItemSlot("minecraft:crafting_table")			-- if crafting table in inventory
 		if equippedLeft ~= "minecraft:crafting_table" and equippedRight ~= "minecraft:crafting_table" then
-			local craftSlot = T:getItemSlot("minecraft:crafting_table")			-- if crafting table in inventory
-			if craftSlot == 0 and not R.networkFarm then						-- no crafter present
-				T:go("L1F1") 													-- move to buried storage chest/barrel
-				while T:suck("down") do end										-- empty storage for crafter
-				craftSlot = T:getItemSlot("minecraft:crafting_table")			-- if crafting table in inventory
-			end	
 			if craftSlot == 0 then												-- no crafter present
-				craftSlot = lib.getEquipment("minecraft:crafting_table") 		-- gets item or errors
+				craftSlot = lib.getItem("minecraft:crafting_table") 			-- gets item or errors
 			end
 			T:equip("right", "minecraft:crafting_table")						-- equip with crafting table
-		end
-		-- saplings already dropped, apples dumped, sticks used as fuel
-		-- assume positioned in front of crops if networked, or over buried storage
-		-- earlier versions used crafting table buried in the ground
-		-- newer versions have a barrel or chest embedded in the ground, containing the crafting table
-		-- networked version uses remote storage, turtle faces crops and has modem at back
-		-- equipment already configured
-		for i = 1, 16 do						-- drop anything except logs down into barrel/chest/pit
-			local slotItem = T:getSlotContains(i)
-			if slotItem ~= "" then
-				if slotItem:find("log") == nil then
-					if R.networkFarm then
-						U.sendItemToNetworkStorage("barrel", slotItem, 64)
-					else
-						T:drop("down", i)	-- into water if networked, buried chest otherwise
-					end
-				else
-					logSlot = i
-				end
-			end
+			U.sendItemToNetworkStorage("barrel", "minecraft:diamond_hoe", 1)
 		end
 		turtle.select(logSlot)
 		turtle.transferTo(1)
-Log:saveToLog("==> lib.refuelWithLogs(logSlot = "..logSlot..")")
 		turtle.craft()														-- craft logs to planks
 		logSlot = T:getItemSlot("planks")
 		while logSlot > 0 and turtle.getFuelLevel() < turtle.getFuelLimit() do
@@ -10383,96 +10194,29 @@ Log:saveToLog("==> lib.refuelWithLogs(logSlot = "..logSlot..")")
 		
 		T:unequip("right")													-- unequip crafting table
 		-- return crafting table
-		if R.networkFarm then
-Log:saveToLog("==> manageFarm() call --> U.sendItemToNetworkStorage('barrel', 'minecraft:crafting_table, 1")
-			U.sendItemToNetworkStorage("barrel", "minecraft:crafting_table", 1)
-			--lib.getEquipment("minecraft:diamond_hoe")
-			if not T:equip("right", "minecraft:diamond_hoe") then		-- ? equip hoe
-				lib.getEquipment("minecraft:diamond_hoe")				-- get hoe
-				T:equip("right", "minecraft:diamond_hoe")				-- equip hoe
-			end
-		else
-			while turtle.suckDown() do end									-- recover any dropped items if over storage
-			T:dropItem("minecraft:crafting_table", "down")
-			T:go("B1R1")													-- facing crops
+		U.sendItemToNetworkStorage("barrel", "minecraft:crafting_table", 1)
+		if not T:equip("right", "minecraft:diamond_hoe") then		-- ? equip hoe
+			lib.getItem("minecraft:diamond_hoe")				-- get hoe
+			T:equip("right", "minecraft:diamond_hoe")				-- equip hoe
 		end
 	end
 	
-	function lib.storeCraftingTable(overStorage)
-		-- turtle facing crops unless overStorage is true
-		if overStorage == nil then overStorage = false end
-		-- return crafting table
-Log:saveToLog("==> lib.storeCraftingTable(overStorage = "..tostring(overStorage)..")")
-		if R.networkFarm then
-
-			U.sendItemToNetworkStorage("barrel", "minecraft:crafting_table", 1)
-		else
-			if overStorage then
-				T:dropItem("minecraft:crafting_table", "down")
-				T:go("B1R1")
-			else
-				T:go("L1F1")
-				T:dropItem("minecraft:crafting_table", "down")
-				T:go("B1R1")
-			end
-		end
+	function lib.storeCraftingTable()
+		-- turtle facing crops 
+		U.sendItemToNetworkStorage("barrel", "minecraft:crafting_table", 1)
 	end
 	
-	function lib.storeCrops(overStorage)
-		-- turtle facing crops unless overStorage is true
-		if overStorage == nil then overStorage = false end
+	function lib.storeCrops()
 		-- place crops and seeds into chests. Starts facing crops
 		T:dropItem("apple", "up", 0) 									-- drop all apples
 		T:dropItem("poison", "up", 0) 									-- drop all poison potatoes
-		if R.networkFarm then
-			-- put "sapling", "diamond_hoe", "crafting" into barrels near farm, everything else into chest storage
-			-- U.emptyInventory(barrels, chests, sticksAsFuel, relist)
-			-- relist forces remappimg of chest and barrel contents to help locate correct storage location
-			U.emptyInventory({"sapling", "diamond_hoe", "crafting"}, {"all"}, true, true)
-		else
-			if overStorage then											-- already over buried barrel, facing back of farm
-				T:go("R2F1")											-- face seed storage
-			else
-				T:turnRight(1)											-- face seed storage
-			end
-			lib.storeSeeds("forward")
-			T:turnRight(1) 												-- face crop storage
-			if utils.isStorage(direction) then
-				T:dropAll(direction) 									-- drops everything including essences
-			end
-			if overStorage then
-				T:go("R1F1")											-- return to buried storage
-			else
-				T:turnRight(2) 											-- facing crops again
-			end
-		end
+		-- put "sapling", "diamond_hoe", "crafting" into barrels near farm, everything else into chest storage
+		-- U.emptyInventory(barrels, chests, sticksAsFuel, relist)
+		-- relist forces remappimg of chest and barrel contents to help locate correct storage location
+		U.emptyInventory({"sapling", "diamond_hoe", "crafting"}, {"all"}, true, true)
 		-- position remains as start of this function
 	end
 		
-	function lib.storeSeeds(direction, overStorage)
-		if R.networkFarm then return end								-- R.network has already had all crops stored by lib.storeCrops()
-		
-		direction = direction or "forward"
-		if overStorage == nil then overStorage = false end
-		
-		if utils.isStorage(direction) then -- chest exists
-			if T:getItemSlot("minecraft:wheat_seeds") > 0 then
-				if not T:dropItem("minecraft:wheat_seeds", direction, 0) then
-					T:dropItem("minecraft:wheat_seeds", "up", 0)
-				end -- drop all wheat seeds
-			elseif T:getItemSlot("minecraft:beetroot_seeds") > 0 then
-				if not T:dropItem("minecraft:beetroot_seeds", direction, 0) then-- drop all beetroot seeds
-					T:dropItem("minecraft:beetroot_seeds", "up", 0)
-				end
-			elseif T:getItemSlot("seeds") > 0 then				-- drop pumpkin seeds
-				if not T:dropItem("seeds", direction, 0) then	-- drop all other seeds as chest is full
-					T:dropItem("seeds", "up", 0)
-					-- or could print a message and wait for player to empty storage
-				end
-			end
-		end
-	end
-	
 	function lib.watchFarm()
 		--[[
 		check status of crops in front of turtle.
@@ -10480,7 +10224,7 @@ Log:saveToLog("==> lib.storeCraftingTable(overStorage = "..tostring(overStorage)
 		return farm(s) found in front or to the right
 		]]
 		--    bool,    string, string, integer
-		local isReady, crop,   seed,    status = lib.isCropReady("forward")		-- eg true, "minecraft:carrots", "7 / 7" or false, "", ""
+		local isReady, crop, seed, status = lib.isCropReady("forward")		-- eg true, "minecraft:carrots", "7 / 7" or false, "", ""
 		-- check state of crop in front. Harvest if ripe		
 		repeat
 			if not isReady then
@@ -10499,8 +10243,8 @@ Log:saveToLog("==> lib.storeCraftingTable(overStorage = "..tostring(overStorage)
 Log:saveToLog("Local crops ripe calling lib.manageTree()")
 		--seed, crop = lib.manageTree() -- "", "" or name of seed, crop
 		lib.manageTree() -- refuel if required, else do nothing
-		lib.getSeedsOrCrops(seed, crop)
-		return seed, crop
+		lib.getSeedsOrCrops(crop, seed)
+		return crop, seed
 	end
 	
 	--[[
@@ -10509,9 +10253,10 @@ Log:saveToLog("Local crops ripe calling lib.manageTree()")
 		farm already built, needs planting and/or harvesting
 		needs both pickaxe and hoe. crafting chest only used if tree is felled for fuel
 		may start in any position if chunk unloaded while running
+		All farms now use network storage
 	]]
 Log:saveToLog("manageFarm() calling checkFarmPosition()")
-	checkFarmPosition()											-- should be facing crops, placed above water source. R.ready, R.networkFarm is true/false
+	checkFarmPosition()											-- should be facing crops, placed above water source. R.ready, R.networkFarm is true
 	if not R.ready then											-- not in correct starting place
 		lib.goHome()
 		if not R.ready then 									-- try to find home
@@ -10525,10 +10270,8 @@ Log:saveToLog("manageFarm() calling checkFarmPosition()")
 			}
 		end
 	end
-	if R.networkFarm then
-		local message = U.wrapModem(true)							-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
-		if message ~= "" then return {message} end					-- return to main menu
-	end
+	local message = U.wrapModem(true)								-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+	if message ~= "" then return {message} end						-- return to main menu
 	local empty = T:isEmpty()
 	if not empty then												-- items still in turtle inventory
 		T:sortInventory(false)										-- sort inventory prior to unloading.
@@ -10543,39 +10286,35 @@ Log:saveToLog("manageFarm() calling checkFarmPosition()")
 	if logSlot == 0 and not empty then								-- no logs, so empty inventory
 		lib.storeCrops(false)										-- stores crops and seeds
 	end
-	T:unequip("right")												-- remove from right: should be hoe or crafter
 	if equippedLeft ~= "minecraft:diamond_pickaxe" then
 		T:unequip("left")											-- remove from left
 		if not T:equip("left", "minecraft:diamond_pickaxe") then	-- ? equip pickaxe. should always be present
-			lib.getEquipment("minecraft:diamond_pickaxe")			-- get pickaxe
+			lib.getItem("minecraft:diamond_pickaxe")				-- get pickaxe
 			T:equip("left", "minecraft:diamond_pickaxe")			-- equip pickaxe
 		end
 	end
 	local craftSlot = T:getItemSlot("minecraft:crafting_table")		-- if crafting table in inventory
 	-- turtle has pickaxe equipped. If fuel needed equip crafter, else hoe
 	-- if logs present, use as fuel, or fuelLevel < 1000
-	if turtle.getFuelLevel() < 1000 or logSlot > 0 then				-- equip axe and crafter
-		if craftSlot > 0 then										-- need to get crafting table
-			T:equip("right", "minecraft:crafting_table")			-- get crafting table
-		end
-		--lib.manageTree()											-- checks fuel level, harvests tree if required, then refuels with logs
-		-- if logSlot > 0 then
-			-- lib.refuelWithLogs(logSlot)								-- obtain and equip crafting table if not alrerady present
-		-- end
+	if logSlot > 0 then				-- equip axe and crafter		-- logs onboard, need to equip crafting table
+		lib.refuelWithLogs(logSlot)
 	else
 		-- store crafting table as not required
 		if craftSlot > 0 then
 			lib.storeCraftingTable(false)
 		end
-		if not T:equip("right", "minecraft:diamond_hoe") then		-- ? equip hoe
-			lib.getEquipment("minecraft:diamond_hoe")				-- get hoe
-			T:equip("right", "minecraft:diamond_hoe")				-- equip hoe
+		if equippedRight ~= "minecraft:diamond_hoe" then
+			if not T:equip("right", "minecraft:diamond_hoe") then		-- ? equip hoe
+				lib.getItem("minecraft:diamond_hoe")				-- get hoe
+				T:equip("right", "minecraft:diamond_hoe")				-- equip hoe
+			end
 		end
 	end														
 
 	local isFarmToRight, isFarmToFront = false, false
 	--local isReady, crop, seed, status
 	local isReady, crop, seed, status = lib.isCropReady("forward")
+Log:saveToLog("lib.isCropReady('forward'): isReady = "..tostring(isReady)..", crop = "..crop..", seed = "..seed..", status = "..status)
 	local watch = true	-- assume watching farm already planted
 	local planted = true
 	if crop == "" then	-- nothing has been planted
@@ -10588,8 +10327,8 @@ Log:saveToLog("Initial planting of "..crop, true)
 	end
 	while true do -- start infinite loop of watching crops, farming all modules
 		if watch and planted then -- planted true when farm first planted
-			seed, crop = lib.watchFarm() -- waits if required, returns seed / crop
-			planted = true
+			crop, seed = lib.watchFarm() -- waits if required, returns seed / crop
+			planted = true		
 		end
 Log:saveToLog("Beginning "..crop.. " management", true)
 		isFarmToRight, isFarmToFront = lib.harvest(seed, crop)	-- harvest plot a1 plots to right / front recorded
@@ -12128,10 +11867,6 @@ Enter to exit]]
 			Log:setUseLog(true)
 			doContinue = true
 			utils.waitForInput()
-			--if dbug then
-				--menu.colourPrint("Enter to continue...", colors.lightBlue)
-				--read()
-			--end
 		elseif args[1] == "farm" then
 			R.silent = true
 			R.data = "farm"
