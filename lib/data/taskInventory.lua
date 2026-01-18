@@ -1,4 +1,4 @@
-local version = 20260115.1500
+local version = 20260117.0800
 -- ["lbl4"] = {text = "Text here", bg = colors.black, fg = colors.lime, alignH = "centre"},
 -- ["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
 -- ...state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, event = {"changeRValue", "inventoryKey", "1"}},
@@ -830,31 +830,29 @@ length~yellow~| dirt if resurfacing is required]],
 		fuel = 300,
 		items =
 [[~red~64    ~yellow~| stone
-~red~128   ~yellow~| dirt
+~red~1     ~yellow~| dirt
 ~red~4     ~yellow~| water bucket
 ~red~1     ~yellow~| barrel
 ~red~1     ~yellow~| sapling ~lime~(spruce preferred)
-~green~8     ~yellow~| chests 5=early game,~cyan~ 8=Network
-~green~5     ~cyan~| ladder (if networked)
-~green~3     ~cyan~| full size wired modems
-~green~70    ~cyan~| Computercraft cable
+~green~<= 8  ~yellow~| chests if no storage
+~red~3     ~cyan~| full size wired modems
+~red~54    ~cyan~| Computercraft cable
 
 ]],
 		inventory =
 		{
 			{"stone", 64, true, ""},
-			{"dirt", 128, false, ""},
+			{"dirt", 1, false, "more if needed"},
 			{"water_bucket", 4, true, ""},
 			{"barrel", 1, true, ""},
 			{"sapling", 1, true, ""},
-			{"chest", 8, false, "5 if no network"},
-			{"ladder", 5, false, "Network only"},
-			{"wired_modem_full", 3, false, "Network only"},
-			{"computercraft:cable", 70, false, "Network only"},
+			{"chest", 8, false, "If adding storage"},
+			{"modem", 3, true, "3 if adding storage"},
+			{"computercraft:cable", 54, true, ""},
 		},
 		data =
 		{
-			["chk1"] = {text = {"Use", "network","storage"}, state = false, required = true, r = {"networkFarm"}},
+			["chk1"] = {text = {"Add", "network","storage"}, state = true, required = true, r = {"goDown"}},
 		}
 	},
 	
@@ -867,33 +865,28 @@ length~yellow~| dirt if resurfacing is required]],
 		fuel = 300,
 		items =
 [[~red~64    ~yellow~| stone
-~red~128   ~yellow~| dirt
+~red~1     ~yellow~| dirt
 ~red~4     ~yellow~| water bucket
 ~red~1     ~yellow~| barrel
-~green~5     ~yellow~| 5 chests if NO network else 0
 ~red~1     ~yellow~| sapling (spruce preferred)
-~green~5     ~yellow~| ladder (Network ONLY)
-~green~2     ~yellow~| full size wired modems
-~green~57    ~yellow~| Computercraft cable
+~red~2     ~yellow~| full size wired modems
+~red~44    ~yellow~| Computercraft cable
 ]],
 		inventory =
 		{
 			{"stone", 64, true, ""},
-			{"dirt", 128, false, ""},
+			{"dirt", 1, false, "more if needed"},
 			{"water_bucket", 4, true, ""},
 			{"barrel", 1, true, ""},
-			{"chest", 5, false, "if NO Network!"},
-			{"sapling", 1, true, ""},
-			{"ladder", 5, false, ""},
-			{"wired_modem_full", 2, false, ""},
-			{"computercraft:cable", 57, false, ""}
+			{"sapling", 1, true, "spruce best"},
+			{"modem", 2, true, ""},
+			{"computercraft:cable", 44, true, ""}
 		},
 		data =
 		{
-			["chk1"] = {text = {"Use", "network","storage"}, state = false, required = true, r = {"networkFarm"}},
-			["chk2"] = {text = {"To right", "of current","Farm"}, state = true, group = {"chk2", "chk3"}, required = true, r = {"data", "right", "back"}},
-			["chk3"] = {text = {"Behind", "current", "farm"}, state = false, group = {"chk2", "chk3"}, required = true, r = {"data", "back", "right"}},
-			["chk4"] = {text = {"For", "melon", "or pumpkin"}, state = false, required = true, r = {"misc"}},
+			["chk1"] = {text = {"To right", "of current","Farm"}, state = true, group = {"chk1", "chk2"}, required = true, r = {"data", "right", "back"}},
+			["chk2"] = {text = {"Behind", "current", "farm"}, state = false, group = {"chk1", "chk2"}, required = true, r = {"data", "back", "right"}},
+			["chk3"] = {text = {"For", "melon", "or pumpkin"}, state = false, required = true, r = {"misc"}},
 		}
 	},
 	
@@ -1422,7 +1415,7 @@ length ~yellow~|
 		description = "Creating staircase $math.abs( R.destinationLevel - R.startLevel )$ blocks high",
 		items =
 [[~orange~2     ~yellow~| slabs per level
-~red~h     ~yellow~| stone for centre
+~red~h     ~yellow~| stone for spine
 ]],
 		inventory = 
 		{
@@ -1508,9 +1501,11 @@ length ~yellow~|
 ~red~1     ~yellow~| hopper
 ~red~1     ~yellow~| log to indicate sapling type
 ~red~2     ~yellow~| barrels
-~red~8     ~yellow~| chests
-~red~3     ~yellow~| full wired modems
-~red~22-34 ~yellow~| computercraft cable
+~red~8     ~yellow~| chests if adding storage
+~red~2-3   ~yellow~| full wired modems + storage=3
+~red~21-34 ~yellow~| computercraft cable
+~green~6     ~yellow~| ladders
+~green~16    ~yellow~| dirt if none in area
 ]],
 		inventory =
 		{
@@ -1520,10 +1515,12 @@ length ~yellow~|
 				{"minecraft:water_bucket", 4, true, ""},
 				{"minecraft:hopper", 1, true, ""},
 				{"log", 1, true, "Log = sapling type"},
-				{"minecraft:barrel", 3, true, "2 if with modem"},
-				{"chest", 8, false, "Only if networked"},
-				{"wired_modem_full", 3, false, ""},
-				{"computercraft:cable", 24, false, ""}
+				{"minecraft:barrel", 2, true, ""},
+				{"chest", 8, false, "if adding storage"},
+				{"modem", 3, false, "2 if NOT adding storage"},
+				{"computercraft:cable", 21, false, ""},
+				{"ladder", 6, false, "access to basement"},
+				{"dirt", 16, false, "if none in this area"}
 			},
 			["back"] =
 			{
@@ -1531,9 +1528,10 @@ length ~yellow~|
 				{"minecraft:water_bucket", 4, true, ""},
 				{"minecraft:hopper", 1, true, ""},
 				{"log", 1, true, "Log = sapling type"},
-				{"minecraft:barrel", 3, true, "2 if with modem"},
-				{"wired_modem_full", 2, false, ""},
-				{"computercraft:cable", 34, false, ""}
+				{"minecraft:barrel", 2, true, ""},
+				{"modem", 3, false, "2 if NOT adding storage"},
+				{"computercraft:cable", 34, false, ""},
+				{"dirt", 16, false, "if none in this area"}
 			},
 			["left"] =
 			{
@@ -1541,9 +1539,11 @@ length ~yellow~|
 				{"minecraft:water_bucket", 4, true, ""},
 				{"minecraft:hopper", 1, true, ""},
 				{"log", 1, true, "Log = sapling type"},
-				{"minecraft:barrel", 3, true, "2 if with modem"},
-				{"wired_modem_full", 2, false, ""},
-				{"computercraft:cable", 22, false, ""}
+				{"minecraft:barrel", 2, true, ""},
+				{"modem", 3, false, "2 if NOT adding storage"},
+				{"computercraft:cable", 21, false, ""},
+				{"ladder", 6, false, "access to basement"},
+				{"dirt", 16, false, "if none in this area"}
 			},
 			["right"] =
 			{
@@ -1551,16 +1551,18 @@ length ~yellow~|
 				{"minecraft:water_bucket", 4, true, ""},
 				{"minecraft:hopper", 1, true, ""},
 				{"log", 1, true, "Log = sapling type"},
-				{"minecraft:barrel", 3, true, "2 if with modem"},
-				{"wired_modem_full", 2, false, ""},
-				{"computercraft:cable", 22, false, ""}
+				{"minecraft:barrel", 2, true, ""},
+				{"modem", 3, false, "2 if NOT adding storage"},
+				{"computercraft:cable", 21, false, ""},
+				{"ladder", 6, false, "access to basement"},
+				{"dirt", 16, false, "if none in this area"}
 			},
 		},
 		data = 
 		{
 			["chk1"] = {text = {"`red¬gray`New farm`lg¬gray`  ", "Start here", "(L corner)"} ,state = true,  group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "new", ""}},
 			["chk2"] = {text = {"`blue¬lg`Left `gray¬lg`side ", "of current","tree farm "}, state = false, group = {"chk1", "chk2",  "chk4", "chk5"}, r = {"inventoryKey", "left", ""}},
-			["chk3"] = {text = {"`lg¬gray`Include   ","`red¬gray`network`lg¬gray`   ", "storage   "},	state = false, r = "down"},
+			["chk3"] = {text = {"`lg¬gray`Include   ","`red¬gray`network`lg¬gray`   ", "storage   "},	state = false, r = "goDown"},
 			["chk4"] = {text = {"`brown¬lg`Behind`gray¬lg`    ", "current   ","tree farm "},	 	state = false, group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "back", ""}},
 			["chk5"] = {text = {"`green¬gray`Right `lg¬gray`side","of current","tree farm "}, state = false, group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "right", ""}},
 			["chk6"] = {text = {"`gray¬lg`Clear `brown¬lg`land","`gray¬lg`and `lime¬lg`trees ", "`gray¬lg`first     "},	state = false, r = "up"},
@@ -2104,12 +2106,12 @@ length ~yellow~|
 		items =
 [[~orange~64    ~yellow~| stone
 ~green~1     ~yellow~| bucket for lava refuel
-~green~24    ~yellow~| torches
+~green~8    ~yellow~| torches
 ]],
 		inventory = 
 		{
 			{"stone", "R.width * 2 + R.length * 2", false, ""},
-			{"minecraft:torch", "math.floor((( R.width * 2) + ( R.length * 2) / R.torchInterval ))", false, ""},
+			{"minecraft:torch", "math.ceil ( ( R.width + R.length ) * 2  / R.torchInterval )", false, ""},
 			{"minecraft:bucket", 1, false, ""}
 		},
 		data =
