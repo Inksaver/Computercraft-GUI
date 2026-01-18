@@ -1,4 +1,4 @@
-local version = 20260111.0800
+local version = 20260116.1600
 -- display help about selected task
 -- terminal size = 39 x 13
 --[[This line of text = 39 characters]]
@@ -6,7 +6,7 @@ local help = {}
 --help.main = {}
 --help.sub = {}
 help["1+0"] =
-[[~lightGray~MINING:~white~ can be used in any dimension.~brown~
+[[~white~Can be used in any dimension.~brown~
 1.Ladders and ~lightGray~stairs up/down    
 2.Create a pre-formatted 33 x 33 blocks  
 mine at chosen level.
@@ -37,7 +37,7 @@ diamond hoe as well as pickaxe.
 ~magenta~4.Modems used for Network storage
 ]]
 help["4+0"] =
-[[~lightGray~ 1.Turtle can extract obsidian
+[[~lightGray~1.Turtle can extract obsidian
 from lava areas safely.~pink~
 2.Nether portals built or removed
 without needing diamond pickaxes.~orange~
@@ -146,7 +146,7 @@ and go up or down.
 ]]
 
 help["1+2"] = -- "createStaircase": stairs up/down
-[[~lightGray~Place turtle on the ground at ~red~T~lime~ (Centre)
+[[~lightGray~Turtle on the ground at ~red~T~lime~ (Centre)
 
 ~lightGray~| | | | | | | | * = Solid block
 ~lightGray~| |*|*|*|*|*| | ~blue~+ = Corner slab
@@ -156,8 +156,8 @@ help["1+2"] = -- "createStaircase": stairs up/down
 ~lightGray~| |*|*|*|*|*| | ~cyan~^ = Up to north
 ~lightGray~| | | | | | | | ~red~T = Turtle at ~lime~centre
 
-~lightGray~Going ~blue~down~lightGray~ -> digs down first
-Wall up > Clear core down > Steps up
+~lightGray~If going ~blue~down~lightGray~ -> digs down first
+Spine up > Clear down > Steps up
 ]] 
 
 help["1+3"] = -- "createMine" Create mine at this level
