@@ -1,4 +1,4 @@
-local version = 20260119.1100
+local version = 20260119.2200
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -9323,28 +9323,20 @@ Log:saveToLog("harvestTreeFarm(): trees grown. Starting")
 		R.length = 7
 		R.up = true
 		R.down = true
-		clearRectangle()
+		local currentLogCount = clearRectangle(true)		-- amount of logs obtained by digUp
+Log:saveToLog("logs from digUp() first layer = "..currentLogCount, true)
 		T:go(start)											-- after clearing soil and first layer, move out
 		R.width = size
 		R.length = size
-		local height = 0
-		local pastLogCount = -1
-		local currentLogCount = lib.getLogCount()
-		local logCount = 0
-		--while currentLogCount ~= pastLogCount do
-		while currentLogCount - pastLogCount > 5 do			-- ony continue if at least 5 logs harvested last round
+		local height = 0		
+		while currentLogCount > 0 do							-- ony continue if at least 1 logs harvested last round
 			T:up(3)
 			height = height + 3
-			pastLogCount = currentLogCount 					-- 0 when loop starts
-			local logs = clearRectangle(true)				-- true = return logs dug from digUp() only
-Log:saveToLog("logs from digUp() = "..logs, true)
-			currentLogCount = logs			
+			currentLogCount = clearRectangle(true)				-- true = return logs dug from digUp() only
+Log:saveToLog("logs from digUp() height = "..height..", count = "..currentLogCount, true)			
 		end	
 		T:down(height + 1)
-		--T:go("R1F2 R1F2 R2")		-- on polished stone rect size 12
-		--T:go("R1F1 R1F3 R2")		-- on polished stone rect size 10
 		T:go(finish)
-
 		T:go("R1F3 L1")			-- on modem
 		--storageType, itemRequired, countRequired, toTurtleSlot, ignoreStock
 		U.getItemFromNetwork("barrel", "minecraft:stick", 64, nil, false)
@@ -9352,7 +9344,7 @@ Log:saveToLog("logs from digUp() = "..logs, true)
 		U.emptyInventory({"sapling", "propagule", "dirt", "crafting"}, {"all"}, true)
 	end
 	
-	return {}	-- if player initiated, stops here. If R.auto then returns to plantTreeFarm()
+	return {}	-- if player initiated, stops here. If R.auto then returns to plantTreeFarm() code
 end
 
 function lavaRefuel()
@@ -10910,7 +10902,6 @@ function plantTreefarm()
 	-- R.useBlockType = eg "minecraft:oak_sapling"
 	-- R.subChoice = 1,2,3 single, double, mangrove
 	-- R.networkFarm = true 
-	-- T:place(blockType, damageNo, leaveExisting, signText)
 	local lib = {}
 	
 	function lib.emptyInventory()
@@ -11123,7 +11114,6 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 	menu.clear()
 	menu.colourPrint("plantTreefarm starting: size "..R.subChoice, colors.lime)
 
-	--local message = U.loadStorageLists()	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
 	local message = U.wrapModem(true)	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
 	if message ~= "" then return {message} end
 	lib.emptyInventory()
@@ -11132,13 +11122,6 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 		lib.getMangroveSupplies()
 		lib.plantMangrove()
 	else
-		-- local saplings, firstChoice, secondChoice = lib.getSaplingInventory()
-		-- if firstChoice ~= "" then
-			-- print("first sapling: "..firstChoice .. " ("..saplings[firstChoice]..")")
-		-- end
-		-- if secondChoice ~= "" then
-			-- print("second sapling: "..secondChoice .. " ("..saplings[secondChoice]..")")
-		-- end
 		lib.getSaplings()
 		-- check type/size of farm
 		local message = ""
