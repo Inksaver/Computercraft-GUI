@@ -1,4 +1,4 @@
-local version = 20260116.1600
+local version = 20260117.1900
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.MultiButton")
@@ -702,32 +702,22 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					--U.executeTask = true
 				elseif mb.selectedButtonName == self.m2[3] then -- Plant tree farm
 --Log:saveToLog("Starting plantTreeFarm")
+					self.lblInfo:setText("Assessing tree farm...")
 					F["assessTreeFarm"].call() -- R.networkFarm or R.earlyGame are set here
 					if R.message ~= "" then
 						--return {R.message}	-- location error
 						U.currentTask = "earlyExit"
 						U.executeTask = true
 					end
-					if R.legacy then 
-						R.subChoice = 1	-- single trees
-						U.currentTask = "plantTreefarm"				-- uses network to get supplies
-						--U.executeTask = true						-- starts task immediately
+					if R.logType:find("mangrove") ~= nil then
+						R.subChoice = 3 -- mangrove
+					elseif R.logType:find("spruce") ~= nil or R.logType:find("dark_oak") ~= nil then
+						R.subChoice = 2	-- double trees
 					else
-						if R.networkFarm then
-							if R.logType:find("mangrove") ~= nil then
-								R.subChoice = 3 -- mangrove
-							elseif R.logType:find("spruce") ~= nil or R.logType:find("dark_oak") ~= nil then
-								R.subChoice = 2	-- double trees
-							else
-								R.subChoice = 1	-- single trees
-							end
-							U.currentTask = "plantTreefarm"				-- uses network to get supplies
-							U.executeTask = true						-- starts task immediately
-						elseif R.earlyGame then							-- no modem
-							R.subChoice = 2								-- default to 4 trees
-							U.currentTask = "plantTreefarm"				-- uses network to get supplies
-						end
+						R.subChoice = 1	-- single trees
 					end
+					U.currentTask = "plantTreefarm"				-- uses network to get supplies
+					U.executeTask = true						-- starts task immediately
 				elseif mb.selectedButtonName == self.m2[4] then -- Harvest tree farm
 					F["assessTreeFarm"].call() -- R.networkFarm or R.earlyGame are set here
 					if R.message ~= "" then
@@ -735,12 +725,8 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 						U.currentTask = "earlyExit"
 						U.executeTask = true
 					end
-					if R.networkFarm then
-						U.currentTask = "harvestTreeFarm"		-- uses network to get supplies
-						U.executeTask = true
-					elseif R.earlyGame then
-						U.currentTask = "harvestTreeFarm"		
-					end
+					U.currentTask = "harvestTreeFarm"		-- uses network to get supplies
+					U.executeTask = true
 				elseif mb.selectedButtonName == self.m2[5] then -- Fence or wall an enclosure
 					R.inventoryKey = "default"
 					U.currentTask = "createEnclosure"
