@@ -1,4 +1,4 @@
-local version = 20260117.1900
+local version = 20260117.2200
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.MultiButton")
@@ -904,6 +904,8 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 				if mb.selectedButtonName == self.m7[1] then 	-- "Clear field (inc trees)"
 					U.currentTask = "clearArea"
 				elseif mb.selectedButtonName == self.m7[2] then -- "Clear a rectangle (+ u/d opt)"
+					R.up = false
+					R.down = false
 					U.currentTask = "clearRectangle"
 				elseif mb.selectedButtonName == self.m7[3] then -- "Clear single wall up/down"
 					R.width = 1
