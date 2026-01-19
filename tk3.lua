@@ -1,4 +1,4 @@
-local version = 20260117.1700
+local version = 20260119.1100
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -960,6 +960,10 @@ function utils.printR()
 	read()
 end
 
+function utils.logRvalues()
+	Log:saveToLog("R values set = "..textutils.serialise(U.compareR(), {compact = true}))
+end
+
 function utils.setStorageOptions()
 	-- check inventory for storage type(s) onboard
 	local storage = ""
@@ -1060,11 +1064,15 @@ function assessFarm()
 end
 
 function assessTreeFarm()
-	-- R.networkFarm or R.earlyGame are set here
+	-- R.networkFarm = true
+	-- R.subChoice = 1: birch, oak (single dirt)
+	-- R.subChoice = 2: jungle, spruce, dark oak, pale oak (4 dirt)
+	-- R.subChoice = 3: mangrove (full dirt cover)
+	-- R.treeSize  = "single" or "double"
 	local lib = {}
 	R.message = ""
 	function lib.checkPosition()
-		-- will be on barrel or modem
+		-- should be on modem
 		T:go("R1F1")
 		-- if in correct start, log below
 		blockType = T:getBlockType("down")
@@ -1074,15 +1082,17 @@ Log:saveToLog("T:go(R1F1): blockType = "..blockType)
 			T:go("B1L1")
 			return true
 		end
-		T:go("R2F1R1")
+		T:go("B1L1")
 		return false
 	end
 		
 	function lib.getSaplingType(blockType)
+		R.subChoice = 1
+		R.treeSize = "single"
 		if blockType == "minecraft:mangrove_log" then
-			--R.logType = "mangrove"
 			R.logType = blockType
 			R.useBlockType ="minecraft:mangrove_propagule"
+			R.subChoice = 3
 		else
 			local parts = T:getNames(blockType)	-- eg {"minecraft", "dark", "oak", "log"}
 			local name = ""
@@ -1098,39 +1108,27 @@ Log:saveToLog("T:go(R1F1): blockType = "..blockType)
 			name = name.."_sapling"					-- eg "minecraft:dark_oak_sapling"
 			R.logType = blockType					-- eg "minecraft:dark_oak_log"
 			R.useBlockType = name					-- eg "minecraft:oak_sapling"
+			if name:find("spruce") ~= nil or name:find("jungle") ~= nil or name:find("dark_oak") ~= nil or name:find("pale_oak") ~= nil then
+				R.subChoice = 2
+				R.treeSize = "double"
+			end
 		end
-		--utils.goBack(1)
-		--turtle.turnLeft()
 	end
 	
 	Log:saveToLog("assessTreeFarm() started")
 	local blockType = T:getBlockType("down")
-	if blockType:find("polished") ~= nil then -- on legacy farm
-		R.legacy = true
-		R.treeFarmVersion = 1
+	if blockType:find("modem") == nil then
+		R.message = "Not on modem. Check position"
+		Log:saveToLog("Not on modem. Check position")
 		return
 	end
-	-- code from here only if NOT on polished stone
-	if blockType:find("modem") ~= nil then
-		R.networkFarm = true
-	end
-	if blockType:find("barrel") ~= nil then -- on version 2 farm without modem (early game) or in wrong place
-		R.earlyGame = true
-		return
-	end
-	if not R.networkFarm and not R.earlyGame then
-		R.message = "Not on modem, barrel or polished. Check position"
-		Log:saveToLog("Not on modem, barrel or polished. Check position")
-		return
-	end
-	
 	-- must be network farm so check position
 	if not lib.checkPosition() then
 		R.message = "Unable to find log for sapling type. Check position"
 		Log:saveToLog("Unable to find log for sapling type. Check position")
 	end
 	
-	return --R	-- sets R.networkFarm and R.useBlockType to sapling type
+	return	-- no values returned as R values are set above
 end
 
 function attack(direction)
@@ -1982,7 +1980,7 @@ function clearBuilding()
 	R.width, R.length, R.height
 	examples use a 5 x 5 x 7 cube
 	]]
-Log:saveToLog("R values set = "..textutils.serialise(U.compareR(), {compact = true}))
+utils.logRvalues()
 	local height = 1								-- current level of turtle
 	local cleared = false							-- flag for cleared floor/ceiling
 	R.silent = true
@@ -2596,42 +2594,63 @@ function clearPerimeter()
 	return {}
 end
 
-function clearRectangle()
-	--local function clearRectangle(width, length, up, down)
+function clearRectangle(withData)
+	if withData == nil then withData = false end	-- used in treeFarm to count logs
 	-- height = 0: one level, 1 = +up, 2 = +down, 3 = +up/down
+	local logsDug = 0						-- blocks dug up, forward, down
+	local itemCount = 0
 	local lib = {}
+	
 	function lib.UpDown(length)
 		for l = 1, length do
 			--T:go("x0x2F1x0x2")
 			turtle.digDown()				-- dig below
-			while turtle.digUp() do end		-- dig up including gravity blocks
+			itemCount = T:getTotalItemCount()
+			while turtle.digUp() do			-- dig up including gravity blocks
+				if T:getTotalItemCount() > itemCount then
+					logsDug = logsDug + 1
+				end
+			end		
 			while not turtle.forward() do	-- if no block in front, moves forward
 				turtle.dig()				-- block in front, so dig it
 			end
 			turtle.digDown()				-- now moved forward so dig down again
-			while turtle.digUp() do end		-- dig up again including gravity blocks
+			itemCount = T:getTotalItemCount()
+			while turtle.digUp() do			-- dig up including gravity blocks
+				if T:getTotalItemCount() > itemCount then
+					logsDug = logsDug + 1
+				end
+			end		
 		end
 	end
 	
 	function lib.Up(length)
 		for l = 1, length do
-			--T:go("x0F1x0")
-			while turtle.digUp() do end
+			itemCount = T:getTotalItemCount()
+			while turtle.digUp() do			-- dig up including gravity blocks
+				if T:getTotalItemCount() > itemCount then
+					logsDug = logsDug + 1
+				end
+			end		
 			while not turtle.forward() do	-- if no block in front, moves forward
 				turtle.dig()				-- block in front, so dig it
 			end
-			while turtle.digUp() do end
+			itemCount = T:getTotalItemCount()
+			while turtle.digUp() do			-- dig up including gravity blocks
+				if T:getTotalItemCount() > itemCount then
+					logsDug = logsDug + 1
+				end
+			end		
 		end
 	end
 	
 	function lib.Down(length)
 		for l = 1, length do
-			--T:go("x2F1x2")
-			turtle.digDown()
+			turtle.digDown()				-- dig below
 			while not turtle.forward() do	-- if no block in front, moves forward
 				turtle.dig()				-- block in front, so dig it
 			end
-			turtle.digDown()
+			turtle.digDown()				-- now moved forward so dig down again
 		end
 	end
 	
@@ -2706,7 +2725,11 @@ function clearRectangle()
 		end
 		T:go("R1F"..R.width - 1 .."R1", false, 0, false)
 	end
-	return {}
+	if withData then
+		return logsDug
+	else
+		return {}
+	end
 end
 
 function clearSandCube()
@@ -7273,6 +7296,7 @@ function createTreefarm()
 				T:place("modem", "down")
 			elseif block == "b" then
 				T:place("barrel", "down")
+				T:drop("down", "dirt", 64)	-- T:drop(direction, slot, amount): override number 'slot' with string 'dirt'
 			elseif block == "c" then
 				T:place("cable", "down")
 			else
@@ -7580,10 +7604,9 @@ function createTreefarm()
 		T:go("U2")
 	else
 		T:place("modem", "up")
-		T:go("B1U2")
+		T:go("F1U2R2")
 	end
 	T:place("barrel", "down")
-	T:drop("down", "dirt", 64)-- override 'slot' with item string
 	T:up(1)
 	T:place("hopper", "down")
 	T:go("F2D2")
@@ -8975,7 +8998,73 @@ function harvestTreeFarm()
 	function lib.waitForGrowth()
 		local pattern = R.treeSize	--"single","double"
 		local elapsed = 0
-		local facing = "left"
+		
+		if R.logType:find("mangrove") ~= nil then
+			pattern = "mangrove"
+			local ready = {}
+			ready.left = false
+			ready.top = false
+			ready.right = false
+			ready.bottom = false
+			local facings = {"left", "top", "right", "bottom"}
+			T:up(1)	-- go up from dirt to sapling level
+			while not ready.left or not ready.right or not ready.top or not ready.bottom do
+				for i = 1, 4 do
+					local blockType = T:getBlockType("forward")
+					if blockType:find("propagule") ==  nil then	-- either grown or deleted by roots
+						ready[facings[i]] = true
+					end
+					T:turnRight(1)
+				end
+				if ready.left and ready.right and ready.top and ready.bottom then
+					break
+				else
+					sleep(15)
+					elapsed = elapsed + 15
+					if  elapsed / 60 > 15 then	-- max 15 mins real time before farm is harvested
+						break
+					end
+				end
+				print("Waiting for mangrove growth "..elapsed / 60 .." minutes")
+				print("Left = "..tostring(ready.left)..
+					  ", top = "..tostring(ready.top)..
+					  ", right = "..tostring(ready.right)..
+					  ", bottom = "..tostring(ready.bottom))
+				
+			end
+			--T:go("L1D1")
+			T:turnLeft(1)	-- face front
+		else
+			while true do
+				T:up(1)	-- go up from dirt to sapling level
+				if (T:getBlockType("forward")):find("log") ~=  nil then
+					T:down(1)	-- drop below sapling to dirt level
+					return
+				end
+				T:clear()
+				print("Farm type: "..pattern)
+				print("Waiting for tree growth "..elapsed / 60 .." minutes")
+				print("Left grown = "..tostring(ready.left)..", right grown = "..tostring(ready.right))
+				sleep(15)
+				elapsed = elapsed + 15
+				if pattern == "single" and elapsed / 60 > 10 then	-- max 10 mins real time before farm is harvested
+					break
+				elseif pattern == "double" and elapsed / 60 > 15 then	-- max 15 mins real time before farm is harvested
+					break
+				end
+			end
+		end
+		if pattern == "mangrove" then 
+			T:go("D2F6 U1F1 R1F6 R1F1 U1")
+		end
+		-- ends facing dirt at base of first tree
+		-- no return needed, function exit so trees are grown
+	end
+	
+	function lib.waitForGrowthOLD()
+		local pattern = R.treeSize	--"single","double"
+		local elapsed = 0
+		--local facing = "left"
 		local ready = {}
 		ready.left = false
 		ready.top = false
@@ -9058,47 +9147,34 @@ function harvestTreeFarm()
 			end
 		end
 		-- growth complete
-		if pattern == "single" then
-			if facing == "right" then
-				T:turnRight(1)
-			else
-				T:turnLeft(1)
-			end
-			--T:go("F1R1 F3R1")			-- facing first dirt
-			T:go("F1R1 F1R1")			-- facing first dirt
-		elseif pattern == "double" then -- assume on right side
-			if facing == "right" then
-				T:go("R1F1 R1F4 R1")
-			else
-				T:go("L1F1 R1F2 R1")
-			end
-		elseif pattern == "mangrove" then 
+		-- if pattern == "single" then
+			-- if facing == "right" then
+				-- T:turnRight(1)
+			-- else
+				-- T:turnLeft(1)
+			-- end
+			-- --T:go("F1R1 F3R1")			-- facing first dirt
+			-- T:go("F1R1 F1R1")			-- facing first dirt
+		-- elseif pattern == "double" then -- assume on right side
+			-- if facing == "right" then
+				-- T:go("R1F1 R1F4 R1")
+			-- else
+				-- T:go("L1F1 R1F2 R1")
+			-- end
+		-- elseif pattern == "mangrove" then 
+			-- T:go("D2F6 U1F1 R1F6 R1F1 U1")
+		-- end
+		if pattern == "mangrove" then 
 			T:go("D2F6 U1F1 R1F6 R1F1 U1")
 		end
+		
 		-- ends facing dirt at base of first tree
 		-- no return needed, function exit so trees are grown
 	end
 	
-	function lib.watchFarm()
-		-- rotate to check if dirt on both sides
-		-- R.subChoice == 1: 16 single trees, 2 = 4 doubles
-		if R.logType:find("mangrove") == nil then
-			R.treeSize = "single"
-			T:turnRight(2)	-- if no dirt then on 4 x doubles
-			if T:getBlockType("forward") == "" then
-				R.treeSize = "double"
-			end
-			_G.Log:saveToLog("lib.watchFarm: R.treeSize set to '"..R.treeSize.."'")
-			T:turnLeft(2)	-- face lower left double dirt 
-		end
-		lib.waitForGrowth()
-		
-		--return R
-	end
-	
 	function lib.harvestSingle(direction, moves)
 		-- if direction == "up": starting inside tree on dirt at dirt level
-		_G.Log:saveToLog("lib.harvestSingle('"..direction.."', moves = "..moves)
+Log:saveToLog("lib.harvestSingle('"..direction.."', moves = "..moves)
 		if direction == "up" then
 			while turtle.detectUp() do
 				T:up(1)
@@ -9117,8 +9193,7 @@ function harvestTreeFarm()
 	end
 	
 	function lib.harvestSingleRow()
-		-- start next to tree/dirt
-		T:go("F1")
+		-- start under dirt of first tree
 		local moves = lib.harvestSingle("up", 0)
 		T:go("F2")
 		lib.harvestSingle("down", moves)
@@ -9148,95 +9223,77 @@ function harvestTreeFarm()
 		T:go("F1L1F1R1") -- move to left corner (N)
 	end
 		
-	--T:setUseLog(true, "treeFarmLog.txt", true)	-- T:setUseLog(use, filename, delete)
-	--dbug = true								-- set dbug flag
-	-- R.networkFarm or R.earlyGame are set in MainMenu scene after call to assessTreeFarm()
+	-- R.networkFarm is now default
 	menu.clear()
 	menu.colourPrint("Harvesting treefarm starting", colors.lime)
 	R.silent = true
-	-- if on modem, R.networkFarm has already been set
-	_G.Log:saveToLog("harvestTreeFarm() R.networkFarm = "..tostring(R.networkFarm))
-	_G.Log:saveToLog("harvestTreeFarm() R.earlyGame = "..tostring(R.earlyGame))
 
-	if R.networkFarm then
-		--local message = U.loadStorageLists()	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
-		local message = U.wrapModem(true)	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
-		if message ~= "" then return {message} end
-		U.emptyInventory({"sapling", "propagule", "dirt"}, {"all"}, true)
-		if turtle.getFuelLevel() < turtle.getFuelLimit() / 2 then
-			local turtleSlot, turtleCount = U.getItemFromNetwork("chest", "log", 16)
-			if turtleSlot > 0 then
-				if turtle.craft() then
-					turtle.refuel()
-					_G.Log:saveToLog("harvestTreeFarm() R.networkFarm = "..tostring(R.networkFarm))
-				end
+	--local message = U.loadStorageLists()	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+	local message = U.wrapModem(true)	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+	if message ~= "" then return {message} end
+	U.emptyInventory({"sapling", "propagule", "dirt"}, {"all"}, true)
+	if turtle.getFuelLevel() < turtle.getFuelLimit() / 2 then
+		local turtleSlot, turtleCount = U.getItemFromNetwork("chest", "log", 16)
+		if turtleSlot > 0 then
+			if turtle.craft() then
+				turtle.refuel()
 			end
 		end
-		if R.logType:find("mangrove") == nil then
-			T:go("F1D1")
-			T:place("dirt", "up")
-			T:go("F6x2U1L1")	-- move under dirt covering, clear roots from hopper, move level with dirt, face left
-		else
-			T:go("F4R1")				-- either in between 2 trees or in gap between double trees at dirt level
-			if turtle.detect() then		-- single trees, move between 1st and 2nd rows
-				T:go("R1F1 R1F2 R1F1 L1")
-			else	-- using double trees
-				T:go("R2F1")
-				if not turtle.detect() then
-					return {"Unable to determine position"}
-				end
-			end
-		end
-		lib.watchFarm()	-- wait for trees to grow, then start harvest
-	elseif R.earlyGame then
-		T:go("F4R1")				-- either in between 2 trees or in gap between double trees at dirt level
-		if turtle.detect() then		-- single trees, move between 1st and 2nd rows
+	end
+	if R.logType:find("mangrove") ~= nil then	-- mangrove
+		T:go("F1D1")
+		T:place("dirt", "up")
+		T:go("F6x2U1L1")				-- move under dirt covering, clear roots from hopper, move level with dirt, face left
+	else
+		T:go("F4L1")					-- either in between 2 trees or in gap between double trees at dirt level
+		if turtle.detect() then			-- single trees, move between 1st and 2nd rows
+			T:go("L1F1 R1F3 R1")		-- facing first dirt 4x4 grid, facing back
 			R.treeSize = "single"
-			T:go("R1F1 R1F3 R1")	-- facing dirt on first tree
-		else	-- using double trees
-			R.treeSize = "double"
-			T:go("R2F1")			-- facing right side of double dirt
-			if not turtle.detect() then
+		else							-- using double trees
+			T:go("F1")					-- next to dirt on first double tree group
+			if turtle.detect() then		-- dirt found
+				T:go("L1F1 R1F2 R1")	-- move to lower left corner of 2x2 dirt, facing back
+				R.treeSize = "double"
+			else
 				return {"Unable to determine position"}
 			end
 		end
-	else
-		--logType, startHeight = lib.initialise() -- possible ID tree type + move to correct position 1 above dirt
-		message = lib.initialise() 		-- possible ID tree type + move to correct position next to first dirt
-		if message ~= "" then
-			return{message}
-		end
 	end
-	_G.Log:saveToLog("R.networkFarm = "..tostring(R.networkFarm)..", logType = "..R.logType..", treeSize = "..R.treeSize)
+
+Log:saveToLog("harvestTreeFarm(): logType = "..R.logType..", treeSize = "..R.treeSize)
+	lib.waitForGrowth()
+Log:saveToLog("harvestTreeFarm(): trees grown. Starting")	
 	-- different clearing for different trees:
-	-- double spruce and jungle: staight up/down or small
+	-- mangrove clear solid cube including dirt placed over whole farm
+	-- spruce and jungle: double trees staight up/down
+	-- birch single up / down
+	-- acacia, cherry, oak,  pale_oak and dark_oak treat as solid cube
 	if R.logType:find("mangrove") ~= nil then
-		clearRectangle({width = 13, length = 13, up = true, down = true })
-		--T:go("U2F2 R1F2L1")
-		--clearSolid({width = 9, length = 9, height = 18, direction ="up"})
-		--T:go("D3R1 F4R1 F3R2")
+		R.width = 13
+		R.length = 13
+		R.up = true
+		R.down = true
+		clearRectangle()
 		T:go("U2F1 R1F1L1")
-		clearSolid({width = 11, length = 11, height = 21, direction ="up"})
+		R.width = 11
+		R.length = 11
+		R.height = 21
+		R.goUp = true
+		clearSolid()
 		T:go("D3R1 F5R1 F2R2")
 		U.emptyInventory({"sapling", "propagule", "dirt", "crafting"}, {"all"}, true)
 	elseif R.logType:find("birch") ~= nil or R.logType:find("spruce") ~= nil or R.logType:find("jungle") ~= nil then	-- use column harvest
 		if R.treeSize == "single" then
+			T:forward(1)
 			lib.harvestSingleRow() -- do 4 dirt/tree blocks on first col
-			--T:go("F1R1F2R1")
 			T:go("R1F2R1")	-- facing towards start on col 2
 			lib.harvestSingleRow()
-			--T:go("F1L1F2L1")
 			T:go("L1F2L1") -- facing towards back on col 3
 			lib.harvestSingleRow() -- facing towards start on col 4
-			--T:go("F1R1F2R1")
 			T:go("R1F2R1")
 			lib.harvestSingleRow()
-			if R.networkFarm then
-				T:go("F1R1 F3L1 F3R2")
-				U.emptyInventory({"sapling", "propagule", "dirt", "crafting"}, {"all"}, true)
-			else
-				T:go("F1R1 F6L1 F3R2")
-			end
+			T:go("F1R1 F3L1 F3R2")
+			U.emptyInventory({"sapling", "propagule", "dirt", "crafting"}, {"all"}, true)
 		else
 			lib.harvestDouble()
 			T:go("F3")
@@ -9245,39 +9302,13 @@ function harvestTreeFarm()
 			lib.harvestDouble()
 			T:go("R1F4")
 			lib.harvestDouble()
-			if R.networkFarm then
-				T:go("F1R1 F3L1 F3R2")
-				U.emptyInventory({"sapling", "propagule", "dirt", "crafting"}, {"all"}, true)
-			else
-				T:go("F1R1 F6L1 F3R2")
-			end
+			T:go("F1R1 F3L1 F3R2")
+			U.emptyInventory({"sapling", "propagule", "dirt", "crafting"}, {"all"}, true)
 		end
-	elseif  R.earlyGame then
-		-- current position on r of first double dirt
-		-- move to correct position
-		if R.treeSize == "single" then
-			lib.harvestSingleRow() 	-- do 4 dirt/tree blocks on first col
-			T:go("F1R1F2R1")		-- facing dirt towards start on col 2
-			lib.harvestSingleRow()
-			T:go("F1L1F2L1") 		-- facing dirt towards back on col 3
-			lib.harvestSingleRow() 	
-			T:go("F1R1F2R1")		-- facing towards start on col 4
-			lib.harvestSingleRow()		
-		else
-			T:go("L1F1R1F2R1")		-- move to left side of double dirt
-			lib.harvestDouble()
-			T:go("F3")
-			lib.harvestDouble()
-			T:go("R1F4")
-			lib.harvestDouble()
-			T:go("R1F4")
-			lib.harvestDouble()
-		end
-		T:go("F4R1F3R1")
-	else	-- R.logType not known - legacy
-		local size = 10
-		local start = "L1F1 L1F1 R2"
-		local finish = "R1F1 R1F3 R2"
+	else	-- acacia, cherry, oak,  pale_oak, dark_oak
+		local size = 11							-- default for oak,  pale_oak and dark_oak
+		local start = "L1F1 L1F1 R2"			-- default for oak,  pale_oak and dark_oak
+		local finish = "R1F1 R1F3 R2"			-- default for oak,  pale_oak and dark_oak
 		if R.logType:find("acacia") ~= nil then
 			size = 12
 			start = "L1F2 L1F2 R2"
@@ -9288,33 +9319,37 @@ function harvestTreeFarm()
 			finish = "R1F3 R1F1 R2"
 		end
 		T:go("U1F1")	-- into first log at base of tree
-		clearRectangle({width = 7, length = 7, up = true, down = true})
-		--T:go("L1F2 L1F2 R2")	-- rect size 12
-		--T:go("L1F1 L1F1 R2")	-- rect size 10
-		T:go(start)
+		R.width = 7
+		R.length = 7
+		R.up = true
+		R.down = true
+		clearRectangle()
+		T:go(start)											-- after clearing soil and first layer, move out
+		R.width = size
+		R.length = size
 		local height = 0
 		local pastLogCount = -1
 		local currentLogCount = lib.getLogCount()
+		local logCount = 0
 		--while currentLogCount ~= pastLogCount do
-		while currentLogCount - pastLogCount > 5 do	-- ony continue if at least 5 logs harvested last round
+		while currentLogCount - pastLogCount > 5 do			-- ony continue if at least 5 logs harvested last round
 			T:up(3)
 			height = height + 3
-			pastLogCount = currentLogCount -- 0 when loop starts
-			--clearRectangle({width = 12, length = 12, up = true, down = true})
-			clearRectangle({width = size, length = size, up = true, down = true})
-			currentLogCount = lib.getLogCount() -- eg 20 logs from first round
+			pastLogCount = currentLogCount 					-- 0 when loop starts
+			local logs = clearRectangle(true)				-- true = return logs dug from digUp() only
+Log:saveToLog("logs from digUp() = "..logs, true)
+			currentLogCount = logs			
 		end	
 		T:down(height + 1)
 		--T:go("R1F2 R1F2 R2")		-- on polished stone rect size 12
 		--T:go("R1F1 R1F3 R2")		-- on polished stone rect size 10
 		T:go(finish)
-		if R.networkFarm then
-			T:go("R1F3 L1")			-- on modem
-			--storageType, itemRequired, countRequired, toTurtleSlot, ignoreStock
-			U.getItemFromNetwork("barrel", "minecraft:stick", 64, nil, false)
-			U.getItemFromNetwork("barrel", "minecraft:apple", 64, nil, false)
-			U.emptyInventory({"sapling", "propagule", "dirt", "crafting"}, {"all"}, true)
-		end
+
+		T:go("R1F3 L1")			-- on modem
+		--storageType, itemRequired, countRequired, toTurtleSlot, ignoreStock
+		U.getItemFromNetwork("barrel", "minecraft:stick", 64, nil, false)
+		U.getItemFromNetwork("barrel", "minecraft:apple", 64, nil, false)
+		U.emptyInventory({"sapling", "propagule", "dirt", "crafting"}, {"all"}, true)
 	end
 	
 	return {}	-- if player initiated, stops here. If R.auto then returns to plantTreeFarm()
@@ -10870,21 +10905,13 @@ function placeRedstoneTorch()
 end
 
 function plantTreefarm()
-	-- already known R.networkFarm, R.subChoice (1 = singe, 2 = double)
+	-- F["assessTreeFarm"].call() already run
+	-- R.logType = eg "minecraft:dark_oak_log"
+	-- R.useBlockType = eg "minecraft:oak_sapling"
+	-- R.subChoice = 1,2,3 single, double, mangrove
+	-- R.networkFarm = true 
 	-- T:place(blockType, damageNo, leaveExisting, signText)
 	local lib = {}
-	
-	function lib.checkSaplings(firstChoice, secondChoice)
-		local saplingSlot, sapling, count = T:getSaplingSlot(firstChoice)
-		if count < 4  and secondChoice ~= "" then
-			saplingSlot, sapling, count = T:getSaplingSlot(secondChoice)
-		end
-		if count == 0 then
-			sapling = ""
-		end
-		
-		return sapling, count
-	end
 	
 	function lib.emptyInventory()
 		if not T:isEmpty() then
@@ -10898,81 +10925,8 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 		end
 	end
 	
-	function lib.getSaplingInventory()
-		local saplings =
-		{
-			["minecraft:oak_sapling"] = 0,
-			["minecraft:spruce_sapling"] = 0,
-			["minecraft:birch_sapling"] = 0,
-			["minecraft:jungle_sapling"] = 0,
-			["minecraft:acacia_sapling"] = 0,
-			["minecraft:dark_oak_sapling"] = 0,
-			["minecraft:pale_oak_sapling"] = 0,
-			["minecraft:cherry_sapling"] = 0,
-			["minecraft:mangrove_propagule"] = 0,
-		}
-
-		local firstChoice = ""
-		local firstCount = 0
-		local secondChoice  = ""
-		local secondCount = 0
-		if T:getItemSlot("sapling") > 0 then	-- are there any saplings present?
-			for i = 1, 16 do					-- make table of all sapling types
-				if turtle.getItemCount(i) > 0 then
-					local data = turtle.getItemDetail(i)
-					if data.name:find("sapling") ~= nil then
-						if saplings[data.name] ~= nil then
-							saplings[data.name] = saplings[data.name] + data.count
-						else
-							saplings[data.name] = data.count
-						end
-					end
-				end
-			end
-		elseif T:getItemSlot("propagule") > 0 then
-			saplings["minecraft:mangrove_propagule"] = turtle.getItemCount(T:getItemSlot("propagule"))
-		else	-- no saplings onBoard: ? automated networked farm
-			if R.networkFarm then
-				-- networked farms use 1 type of sapling indicated by log embedded to right of modem
-				-- discovered from assessTreeFarm() on manual Startup
-				if R.auto then	-- called here as NOT manual startup
-					assessTreeFarm()
-					if R.message ~= "" then
-						return {R.message}	-- location of turtle error
-					end
-				end
-				local turtleSlot, turtleCount = U.getItemFromNetwork("barrel", R.useBlockType, 16)
-				if turtleCount == 0 then	-- ask player for saplings
-					T:checkInventoryForItem({R.useBlockType}, {16}, true, "Saplings required for tree farm")
-				end
-				saplings[R.useBlockType] = saplings[R.useBlockType] + turtleCount
-				turtleSlot, turtleCount = U.getItemFromNetwork("barrel", "minecraft:dirt", 16)
-				if turtleCount == 0 then
-					turtleSlot, turtleCount = U.getItemFromNetwork("chest", "minecraft:dirt", 16)
-				end
-				if turtleCount == 0 then	-- ask player
-					T:checkInventoryForItem({"minecraft:dirt"}, {16}, true, "Dirt required for tree farm")
-				end
-				return saplings, R.useBlockType, R.useBlockType -- table, "minecraft:oak_sapling", "enchanted:rowan_sapling"
-			end
-		end
-		-- If network farm, will have already returned
-		for sapling, count in pairs(saplings) do
-			if count > firstCount then
-				firstCount = count
-				firstChoice = sapling
-			else
-				if count > secondCount then
-					secondCount = count
-					secondChoice = sapling
-				end
-			end
-		end
-		return saplings, firstChoice, secondChoice -- table, "minecraft:oak_sapling", "enchanted:rowan_sapling"
-	end
-	
 	function lib.createIsland(sapling, count, exit)
-		-- place 4 dirt with saplings on all 4 unless jungle
+		-- place 4 dirt with saplings on all 4
 		-- sapling count/type already checked
 		T:forward(2) -- assume starting outside planting area
 		for i = 1, 4 do
@@ -10983,10 +10937,6 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 		if count >= 4 then
 			for i = 1, 4 do
 				T:go("R1F1")
-				T:place(sapling, "down", false, "", true)
-			end
-		else
-			if sapling:find("dark") == nil and sapling ~= "" then
 				T:place(sapling, "down", false, "", true)
 			end
 		end
@@ -11006,8 +10956,8 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 		-- sapling count/type already checked
 		T:place("dirt", "down", false, "", true)
 		T:up(1)
-		if not T:place(sapling, "down", false, "", true) then -- try specific sapling
-			T:place("sapling", "down", false, "", true)		-- any available sapling
+		if not T:place(sapling, "down", false, "", true) then 	-- try specific sapling
+			T:place("sapling", "down", false, "", true)			-- any available sapling
 		end
 		if exit == "forward" then
 			T:go("F1D1")
@@ -11032,6 +10982,21 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 		turtleSlot, turtleCount = U.getItemFromNetwork("barrel", "minecraft:mangrove_propagule", 25)
 		if turtleCount == 0 then	-- ask player for saplings
 			T:checkInventoryForItem({"mangrove_propagule"}, {25}, true, "Mangrove propagules required")
+		end
+	end
+	
+	function lib.getSaplings()
+		-- getItemFromNetwork(storageType, itemRequired, countRequired, toTurtleSlot, ignoreStock)
+		local turtleSlot, turtleCount = U.getItemFromNetwork("barrel", "minecraft:dirt", 16, nil, true)
+		if turtleCount < 16 then
+			turtleSlot, turtleCount = U.getItemFromNetwork("chest", "minecraft:dirt", 16 - turtleCount, nil, true)
+			if turtleCount < 16 then	-- ask player for dirt
+				T:checkInventoryForItem({"dirt"}, {16 - turtleCount})
+			end
+		end
+		turtleSlot, turtleCount = U.getItemFromNetwork("barrel", R.useBlockType, 16)
+		if turtleCount == 0 then	-- ask player for saplings
+			T:checkInventoryForItem({R.useBlockType}, {16}, true, "saplings required")
 		end
 	end
 	
@@ -11082,13 +11047,10 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 	end
 	
 	function lib.plantSingle()
-		local sapling, count = lib.checkSaplings(firstChoice, secondChoice)
+		--local sapling, count = lib.checkSaplings(firstChoice, secondChoice)
+		local saplingSlot, name, count = T:getSaplingSlot(R.useBlockType)
 		if count >= 1 then
-			if R.networkFarm or R.earlyGame then
-				T:go("U1L1 F3R1 F4") -- outside first area
-			else
-				T:go("U1F4") -- outside first area
-			end
+			T:go("U1L1 F3R1 F4") -- outside first area
 			for i = 1, 3 do	-- column 1/4
 				lib.createSingle(sapling, "forward")
 				T:forward(1)
@@ -11117,15 +11079,11 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 				lib.createSingle(sapling, "forward")
 				T:forward(1)
 			end
-			if R.networkFarm or R.earlyGame then
-				T:go("R1F3 R1F2L1") -- in-between 2 trees
-				if R.auto then
-					harvestTreeFarm()
-				else
-					T:go("L1F4R2D1")
-				end
+			T:go("R1F3 R1F2L1") -- in-between 2 trees
+			if R.auto then
+				harvestTreeFarm()
 			else
-				T:go("R1F6 L1F2 R2D1")
+				T:go("L1F4R2D1")
 			end
 		else
 			return "No saplings to plant"
@@ -11136,34 +11094,25 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 	
 	function lib.plantDouble()
 		-- assume placed 4 blocks from start
-		local sapling, count = lib.checkSaplings(saplings, firstChoice, secondChoice)
-		
+		--local sapling, count = lib.checkSaplings(saplings, firstChoice, secondChoice)
+		local saplingSlot, sapling, count = T:getSaplingSlot(R.useBlockType)
 		if count >= 4 then
-			if R.networkFarm or R.earlyGame then
-				T:go("U1L1 F3R1 F3") -- outside first area
-			else
-				T:go("U1F3") -- outside first area
-			end
+			T:go("U1L1 F3R1 F3") -- outside first area
 			lib.createIsland(sapling, count, "forward")
-			sapling, count = lib.checkSaplings(firstChoice, secondChoice)
+			saplingSlot, sapling, count = T:getSaplingSlot(R.useBlockType)
 			T:go("F2")
 			lib.createIsland(sapling, count, "right")
-			sapling, count = lib.checkSaplings(firstChoice, secondChoice)
+			saplingSlot, sapling, count = T:getSaplingSlot(R.useBlockType)
 			T:go("F2")
 			lib.createIsland(sapling, count,  "right")
-			sapling, count = lib.checkSaplings(firstChoice, secondChoice)
+			saplingSlot, sapling, count = T:getSaplingSlot(R.useBlockType)
 			T:go("F2")
 			lib.createIsland(sapling, count, "forward")
-			
-			if R.networkFarm or R.earlyGame then
-				T:go("R1F4 R1F1 L1") 			-- on left side of double tree
-				if R.auto then
-					harvestTreeFarm()
-				else
-					T:go("L1F4 L1F1 L1D1")	-- back to start
-				end
+			T:go("R1F4 R1F1 L1") 			-- on left side of double tree
+			if R.auto then
+				harvestTreeFarm()
 			else
-				T:go("R1D1 F6L1 F3R2") -- outside first area
+				T:go("L1F4 L1F1 L1D1")	-- back to start
 			end
 		else
 			return "Insufficient saplings to plant"
@@ -11173,24 +11122,24 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 	
 	menu.clear()
 	menu.colourPrint("plantTreefarm starting: size "..R.subChoice, colors.lime)
-	if R.networkFarm then
-		--local message = U.loadStorageLists()	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
-		local message = U.wrapModem(true)	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
-		if message ~= "" then return {message} end
-		lib.emptyInventory()
-	end
-	if R.subChoice == 3 then	-- mangrove, R.networkFarm only 
+
+	--local message = U.loadStorageLists()	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+	local message = U.wrapModem(true)	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
+	if message ~= "" then return {message} end
+	lib.emptyInventory()
+
+	if R.subChoice == 3 then	-- mangrove
 		lib.getMangroveSupplies()
 		lib.plantMangrove()
 	else
-		local saplings, firstChoice, secondChoice = lib.getSaplingInventory()
-		if firstChoice ~= "" then
-			print("first sapling: "..firstChoice .. " ("..saplings[firstChoice]..")")
-		end
-		if secondChoice ~= "" then
-			print("second sapling: "..secondChoice .. " ("..saplings[secondChoice]..")")
-		end
-	
+		-- local saplings, firstChoice, secondChoice = lib.getSaplingInventory()
+		-- if firstChoice ~= "" then
+			-- print("first sapling: "..firstChoice .. " ("..saplings[firstChoice]..")")
+		-- end
+		-- if secondChoice ~= "" then
+			-- print("second sapling: "..secondChoice .. " ("..saplings[secondChoice]..")")
+		-- end
+		lib.getSaplings()
 		-- check type/size of farm
 		local message = ""
 		if R.subChoice == 1 then 			-- 16 single trees
@@ -11199,8 +11148,9 @@ Log:saveToLog("==> lib.emptyInventory() call --> U.sendItemToNetworkStorage('bar
 			message = lib.plantDouble()		-- "" or error about numbers 
 		end
 	end
-	if R.networkFarm then
-		lib.emptyInventory()
+	lib.emptyInventory()
+	if message == "" then					-- planted successfully
+		message = "Planted tree farm with "..R.useBlockType
 	end
 	return {message}
 end
@@ -11405,9 +11355,17 @@ end
 function test()
 	-- allows testing any new functions.
 	-- use tk3 test
-	Log:saveToLog("test() started")
+	Log:saveToLog("test() started", true)
 	menu.clear()
 	-- insert code below
+	R.width = 11
+	R.length = 11
+	R.up = true
+	R.down = true
+	Log:saveToLog("Calling clearRectangle() R.width = "..R.width..", R.length = "..R.length, true)
+	local logs = clearRectangle(true)
+	Log:saveToLog("logs from digUp = "..logs, true)
+	Log:saveToLog("test() completed", true)
 	return {"function 'test' executed successfully"}
 end
 
@@ -11925,9 +11883,7 @@ Enter to exit]]
 		if F[result[1]] ~= nil then
 			local task = result[1]		-- eg {"createMine"}
 			Log:saveToLog("tk3.main() task = "..task.."()")
---U.LogR()
-local rValues = U.compareR()
-Log:saveToLog("tk3.main() R values set: "..textutils.serialise(rValues, {compact = true}))
+utils.logRvalues()
 			result = F[task].call()		-- eg createMine()
 		end
 	end
