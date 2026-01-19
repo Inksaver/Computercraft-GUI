@@ -1,4 +1,4 @@
-local version = 20260117.0800
+local version = 20260119.1100
 -- ["lbl4"] = {text = "Text here", bg = colors.black, fg = colors.lime, alignH = "centre"},
 -- ["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
 -- ...state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, event = {"changeRValue", "inventoryKey", "1"}},
@@ -2039,6 +2039,7 @@ length ~yellow~|
 	
 	["plantTreefarm"] =
 	{
+		-- currently MainMenu.lua calls execute BEFORE data and inventory are used. 
 		call = plantTreefarm,
 		title = "03-Plant tree farm",
 		description = "Planting tree farm",
