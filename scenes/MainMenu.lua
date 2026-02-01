@@ -1,4 +1,4 @@
-local version = 20260117.2200
+local version = 20260121.0800
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.MultiButton")
@@ -172,7 +172,7 @@ function S:new(sceneMgr)
 	local m2Sizes = createSizes(m2, WIDTH - 6, 1)
 	local m2Buttons = createButtons(m2, true, nil)
 					
-	local m3 = {"createFarm", "createFarmExtension", "manageFarmSetup", "createFence", "createEnclosure", "convertFarm", "upgradeFarmland", "makeMud" }			
+	local m3 = {"createFarm", "createFarmExtension", "manageFarmSetup", "createFence", "createEnclosure", "convertFarm", "upgradeFarmland", "createClayfarm", "makeMud" }			
 	self.m3 = m3
 	local m3Styles = 
 	{
@@ -183,7 +183,8 @@ function S:new(sceneMgr)
 		[m3[5]] = {colors.white, colors.brown}, 	-- Build wall or fence enclosure
 		[m3[6]] = {colors.white, colors.gray}, 		-- Convert farm
 		[m3[7]] = {colors.black, colors.magenta}, 	-- Mystical Agriculture convert essence
-		[m3[8]] = {colors.black, colors.brown} 		-- Make mud or clay
+		[m3[8]] = {colors.white, colors.brown}, 	-- Create clay farm
+		[m3[9]] = {colors.black, colors.gray} 		-- Make mud or clay
 	}
 	local m3Sizes = createSizes(m3, WIDTH - 6, 1)
 	local m3Buttons = createButtons(m3, true)
@@ -592,6 +593,7 @@ Log:saveToLog("MainMenu:onMbClick:START: mb.name = "..mb.name..", U.subMenuName 
 				key = self.m12[index]
 			end
 Log:saveToLog("F[key] key =  "..tostring(key))
+			if key == nil then return end
 			local title = F[key].title
 			if mb.name == "mbItems" then
 --Log:saveToLog("item button key = "..key..", title = "..title)
@@ -599,30 +601,30 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					self.lblInfo:setText("No Items to display")
 				else
 					-- items can be changed from default here
-					if key == "createFarmExtension" then
-						F["assessFarm"].call()
-						if R.networkFarm then
-							F["createFarmExtension"].items =
-[[~red~64    ~yellow~stone
-~red~128   ~yellow~dirt
-~red~4     ~yellow~water bucket
-~red~1     ~yellow~barrel
-~red~1     ~yellow~sapling (spruce preferred)
-~green~5     ~yellow~ladder
-~green~2     ~yellow~full size wired modems
-~green~57    ~yellow~Computercraft cable
-]]
-						else
-							F["createFarmExtension"].items =
-[[~red~64    ~yellow~stone
-~red~128   ~yellow~dirt
-~red~4     ~yellow~water bucket
-~red~1     ~yellow~barrel
-~green~5     ~yellow~5 chests
-~red~1     ~yellow~sapling (spruce preferred)
-]]
-						end
-					end
+					-- if key == "createFarmExtension" then
+						-- F["assessFarm"].call()
+						-- if R.networkFarm then
+							-- F["createFarmExtension"].items =
+-- [[~red~64    ~yellow~stone
+-- ~red~128   ~yellow~dirt
+-- ~red~4     ~yellow~water bucket
+-- ~red~1     ~yellow~barrel
+-- ~red~1     ~yellow~sapling (spruce preferred)
+-- ~green~5     ~yellow~ladder
+-- ~green~2     ~yellow~full size wired modems
+-- ~green~57    ~yellow~Computercraft cable
+-- ]]
+						-- else
+							-- F["createFarmExtension"].items =
+-- [[~red~64    ~yellow~stone
+-- ~red~128   ~yellow~dirt
+-- ~red~4     ~yellow~water bucket
+-- ~red~1     ~yellow~barrel
+-- ~green~5     ~yellow~5 chests
+-- ~red~1     ~yellow~sapling (spruce preferred)
+-- ]]
+						-- end
+					-- end
 					self.sceneMgr:getSceneByName("Help"):setup(title, key, true)	-- using Help scene to display items
 					self.sceneMgr:switch("Help")
 				end
@@ -757,30 +759,30 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					}
 					]]
 					
-					F["createFarmExtension"].data["chk1"].state = R.networkFarm
-					if R.networkFarm then
-						F["createFarmExtension"].inventory =
-						{
-							{"stone", 64, true, ""},
-							{"dirt", 128, false, ""},
-							{"water_bucket", 4, true, ""},
-							{"barrel", 1, true, ""},
-							{"sapling", 1, true, ""},
-							{"ladder", 5, true, ""},
-							{"wired_modem_full", 2, true, ""},
-							{"computercraft:cable", 57, true, ""}
-						}
-					else
-						F["createFarmExtension"].inventory =
-						{
-							{"stone", 64, true, ""},
-							{"dirt", 128, false, ""},
-							{"water_bucket", 4, true, ""},
-							{"barrel", 1, true, ""},
-							{"chest", 5, true, ""},
-							{"sapling", 1, true, ""}
-						}
-					end
+					--F["createFarmExtension"].data["chk1"].state = R.networkFarm
+					-- if R.networkFarm then
+						-- F["createFarmExtension"].inventory =
+						-- {
+							-- {"stone", 64, true, ""},
+							-- {"dirt", 128, false, ""},
+							-- {"water_bucket", 4, true, ""},
+							-- {"barrel", 1, true, ""},
+							-- {"sapling", 1, true, ""},
+							-- {"ladder", 5, true, ""},
+							-- {"wired_modem_full", 2, true, ""},
+							-- {"computercraft:cable", 57, true, ""}
+						-- }
+					-- else
+						-- F["createFarmExtension"].inventory =
+						-- {
+							-- {"stone", 64, true, ""},
+							-- {"dirt", 128, false, ""},
+							-- {"water_bucket", 4, true, ""},
+							-- {"barrel", 1, true, ""},
+							-- {"chest", 5, true, ""},
+							-- {"sapling", 1, true, ""}
+						-- }
+					-- end
 					R.data = "right"							-- default value
 					U.currentTask = "createFarmExtension"
 				elseif mb.selectedButtonName == self.m3[3] then -- Manage farm:plant,harvest,convert
@@ -797,7 +799,9 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					U.currentTask = "convertFarm"
 				elseif mb.selectedButtonName == self.m3[7] then -- Mystical Agriculture soil upgrade
 					U.currentTask = "upgradeFarmland"
-				elseif mb.selectedButtonName == self.m3[8] then -- Make mud or clay
+				elseif mb.selectedButtonName == self.m3[8] then -- Create clay farm							
+					U.currentTask = "createClayfarm"
+				elseif mb.selectedButtonName == self.m3[9] then -- Make mud or clay
 					R.misc = true								-- make mud true
 					U.currentTask = "makeMud"
 				end 
@@ -989,9 +993,11 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 			-- "measureHeight", "measureDepth", "measureLength", "measureDeepest", "createBorehole"
 			elseif U.subMenuName == self.mm[10][1][1] then -- "mbMeasuring"
 				if mb.selectedButtonName == self.m10[1] then 	 -- "Measure height"
+					R.subChoice = 1
 					R.dimension = "height"
 					U.currentTask = "measureHeight"
 				elseif mb.selectedButtonName == self.m10[2] then -- "Measure depth"
+					R.subChoice = 1
 					R.dimension = "depth"
 					U.currentTask = "measureDepth"
 				elseif mb.selectedButtonName == self.m10[3] then -- "Measure length"
