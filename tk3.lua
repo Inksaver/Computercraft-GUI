@@ -1,4 +1,4 @@
-local version = 20260119.2200
+local version = 20260123.1200
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -46,6 +46,7 @@ Folder PATH listing from Windows cmd: tree /f /a |clip
 ]]
 
 args = {...} -- eg "farm", "tree"
+
 
 --[[
 Computercraft started with mc version 1.7.10 and went to 1.8.9
@@ -1440,10 +1441,11 @@ function buildStructure()
 			R.length = length
 		end
 	end
-	
-	T:go("U2F2")
-	while turtle.down() do end
-	T:go("R1F1R1")
+	if not R.silent then	-- NOT called from another function
+		T:go("U2F2")
+		while turtle.down() do end
+		T:go("R1F1R1")
+	end
 	
 	return {}
 end
@@ -4343,6 +4345,68 @@ Log:saveToLog("createBubbleColumn(): R.height = "..R.height, true)
 	return {"Bubble column completed "..drop.. " blocks"}
 end
 
+function createClayfarm()
+	
+	R.useBlockType = T:getMostItem("minecraft:dirt", true)		-- exclude dirt from choice
+	
+	local lib = {}
+	
+	function lib.waterSource()
+		--make 3 x 1 water source
+		T:go("L1F1 R1F1 R1")
+		T:go("C2F1 C2F1 C2F1 C2F1 C2")
+		T:go("R1F1 C2F1 R1")
+		T:go("C2F1 C2F1 C2F1 C2F1 C2")
+		T:go("R1F1 C2R1 F1")
+		T:go("D2 F1x0 F1x0 U2")
+		T:place("slab", "down")
+		T:back(2)
+		T:place("slab", "down")
+		T:go("F1D2 C1R2 C1U1 C2")
+		T:placeWater("forward")
+		T:turnRight(2)
+		T:placeWater("forward")
+		T:go("U1B1 L1")
+	end
+	
+	function lib.buildWall(length)
+		for i = 1, length do 
+			T:go("F1x0 x2C2", false, 0, false, R.useBlockType)
+		end
+	end
+	
+	-- starts behind SW corner
+	lib.waterSource()	-- ends at starting position
+	for i = 1, 4 do
+		lib.buildWall(11)
+		T:go("R1")
+	end
+	T:go("F1R1 F1L1 D2")						-- 2 blocks below surface grass / dirt
+	utils.createBasement(true, true, 10, 10)	-- remove 3 layers
+	T:down(2)
+	utils.createBasement(true, true, 10, 10)
+	T:up(1)
+	R.up = true
+	R.width = 10
+	R.length = 10
+	R.useBlockType = "slab"
+	createFloorCeiling()
+	T:down(1)
+	R.useBlockType = "minecraft:pointed_dripstone"
+	createFloorCeiling()
+	T:go("R2D1C2 F1x0C2 F1x0C2 F1x0C2 C1U1C1")
+	T:place("ladder","down")
+	T:go("U1C1")
+	T:place("ladder","down")
+	T:go("U1C1")
+	T:place("ladder","down")
+	T:go("U1C1")
+	T:place("ladder","down")
+	T:go("B1")
+	T:place("water", "forward")
+	T:go("U1R2")
+end
+
 function createCorridor()
 	--[[create a corridoor 2 blocks high, with floor and ceiling guaranteed
 	T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)]]
@@ -4819,38 +4883,57 @@ function createFarmNetworkStorage(withStorage, removeLegacy)
 	
 	T:go("L1D3") -- move below crop field, face N
 	utils.createBasement(true, true, 10, 10)	-- ends facing N below water source
-	T:go("U1 F9R1 F1R2 C1R2 F8R1 F1R2 C1R2 F8R1 F1R2 C1R2 F8") -- facing W below water source
-	T:go("F1 R2C1 R1 F1L1 x0x2")	-- move to corner, face along front edge
-	for c = 1, 4 do
-		if c == 1 then
-			lib.placeNetwork(12, "F1x0x2")
-		else
-			--lib.placeNetwork(11, "F1x0x2")
-			lib.placeNetwork(10, "F1x0x2")
-			T:go("L2 C1L2")
-		end
-		if c < 4 then
-			--T:go("L1F1 x0x2 L1C1R1")
-			T:go("L1F1 x0x2 L1C1 R1")	-- seal corner to stop water flowing down 
-			T:place("computercraft:cable", "up", true)
-			T:go("F1L2 C1L2")
-		end
-	end
-	-- now in bottom left facing S
+	T:go("U1 L1C1 L1C1")
+	T:go("B1C1 B8 R1C1 R1C1 L1")				-- move N backwards along W edge, end facing W on N edge
+	T:go("B1C1 B8 R1C1 R1C1 L1")
+	T:go("B1C1 B8 R1C1 R1C1 L1")
+	T:go("B1C1 R2F7 L1F1 R1F1x1 R2C1 B1L1") 	-- move to corner, face W along front edge
+	
+	T:place("computercraft:cable", "up")		-- in SW corner face W along front edge
+	T:go("F1R2 C1R2")
+	
+	lib.placeNetwork(10, "F1x0x2")
+	T:go("R1C1 L1F1")							-- in NW corner, facing N
+	T:place("computercraft:cable", "up")
+	T:go("R2C1 L1")								-- in NW corner, facing E
+	T:go("F1R2 C1R2 F1R2 C1R2")					-- in NW corner, facing E, 2 blocks further E
+	
+	lib.placeNetwork(9, "F1x0x2")
+	T:go("R1C1 L1F1")							-- in NE corner, facing E
+	T:place("computercraft:cable", "up")
+	T:go("R2C1 L1")								-- in NE corner, facing S
+	T:go("F1R2 C1R2 F1R2 C1R2")					-- in NE corner, facing S, 2 blocks further S
+	
+	lib.placeNetwork(9, "F1x0x2")
+	T:go("R1C1 L1F1")							-- in SE corner, facing S
+	T:place("computercraft:cable", "up")
+	T:go("R2C1 L1")								-- in SE corner, facing W
+	T:go("F1R2 C1R2 F1R2 C1R2")					-- in SE corner, facing W, 2 blocks further W
+	
+	lib.placeNetwork(9, "F1x0x2")
+	T:go("R1C1 L1F1")							-- in SE corner, facing S
+	T:place("computercraft:cable", "up")
+	T:go("R2C1")								-- under network in line with barrel, facing in
+	
 	if withStorage then
-		T:go("L1F5L1")				-- under mid network cable run facing in
-		lib.placeNetwork(6, "D1")	-- build cable down under floor level
-		lib.placeNetwork(4, "F1x0")	-- continue under floor to chest area
-		T:go("F1U2")				-- 
-		T:place("computercraft:cable", "down", true)
-		T:go("U1")				-- 
+		T:go("F2R2 C1R2 F3L1")					-- under mid network cable run facing in
+		lib.placeNetwork(6, "D1")				-- build cable down under floor level
+		lib.placeNetwork(6, "F1x0")				-- continue under floor to chest area
+		T:go("F1U2")
 		T:place("computercraft:cable", "down", true)
 		T:go("U1")
-		utils.createStorage()		-- places modem and chests
-		T:go("L2F4 R1F5 L1F2 U3R2")	-- ends facing barrel
+		T:place("computercraft:cable", "down", true)
+		T:go("U1")
+		utils.createStorage()					-- places modem and chests
+		T:go("L2F4 R1D1 F6L1 F2R1")				-- ends 4 below barrel, facing out
 	else
-		T:go("F1U2 R2")				-- ends facing barrel
+		T:go("R2F1 R1x1 D1x1 D1x1 L1")			-- ends 4 below barrel, facing out
 	end
+	for i = 1, 5 do
+		T:up(1)
+		T:place("ladder", "down")
+	end
+	T:go("R1F1 R1F2 D1")						-- now above water ready to plant new farm
 	
 	return "Farm converted to network storage"
 end
@@ -4859,10 +4942,11 @@ function createFarm()
 	-- R.data used for "new" or extension direction: "right" or "back"
 	-- R.networkFarm = true. All farms will use network storage
 	-- R.goDown = true (build storage)	
+	-- R.misc = true = pumpkin / melon
 	
 	local lib = {}
 
-	function lib.addWaterSource(pattern, storage)
+	function lib.addWaterSource(pattern)
 		-- pattern = {"d","c","c","d"} t = place crafting  instead of dirt
 		-- place(self, blockType, damageNo, direction, leaveExisting, signText)
 		T:go("D1x2C2", false, 0, false, R.useBlockType)
@@ -4870,16 +4954,15 @@ function createFarm()
 			T:dig("forward")
 			if pattern[i] == "d" then
 				T:place("dirt", "forward", false)
-			elseif pattern[i] == "t" then
-				--if not T:place("minecraft:crafting_table", "forward", false) then
-				if T:place(storage, "forward", false) then
-					if T:dropItem("crafting", "forward", 0) then
-						print("Crafting table -> buried storage")
-					end
-				else
-					T:place("dirt", "forward", false) -- dirt if no storage available
-				end
-			else
+			-- elseif pattern[i] == "t" then
+				-- if T:place(storage, "forward", false) then
+					-- if T:dropItem("crafting", "forward", 0) then
+						-- print("Crafting table -> buried storage")
+					-- end
+				-- else
+					-- T:place("dirt", "forward", false) -- dirt if no storage available
+				-- end
+			elseif pattern[i] == "c" then
 				T:place(R.useBlockType, "forward", false)
 			end
 			T:turnRight(1)
@@ -4957,14 +5040,15 @@ function createFarm()
 		T:forward(9)
 	else -- new farm or extend forward
 		for i = 1, 9 do -- complete left wall to end of farm
-			T:go("F1 x0x2C 2", false, 0, false, R.useBlockType)
+			T:go("F1 x0x2 C2", false, 0, false, R.useBlockType)
 		end
 	end
+	-- T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 	T:go("R1F1 R1x0 x2C2 F1D1", false, 0, false, R.useBlockType)-- turn round ready for first dirt col
-	lib.addWaterSource({"d","c","c","d"}, storage) -- water at top of farm
+	lib.addWaterSource({"d","c","c","d"}) -- water at top of farm
 	lib.placeDirt(9, false) 	-- place dirt back to start
 	-- water source next to modem
-	lib.addWaterSource({"c","c","d","d"}, storage)
+	lib.addWaterSource({"c","c","d","d"})
 	-- T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock
 	T:go("U1F1L1")
 	T:place("modem", "down", false)
@@ -4981,14 +5065,14 @@ function createFarm()
 		end
 	end
 	T:go("F1U1x0C2"..turn.."1F1"..turn.."1x0x2C2F1D1", false, 0, false, R.useBlockType)
-	lib.addWaterSource({"d","c","c","d"}, storage)	-- bottom right
+	lib.addWaterSource({"d","c","c","d"})	-- bottom right
 	lib.placeDirt(9, false)
-	lib.addWaterSource({"c","c","d","d"}, storage)	-- top right, facing away from plot
+	lib.addWaterSource({"c","c","d","d"})	-- top right, facing away from plot
 	T:go("F1U1 R1C2 x0F1 x0x2 C2R1", false, 0, false, R.useBlockType)
 	for i = 1, 11 do	-- build right wall from top of plot to bottom
 		T:go("F1x0x2C2", false, 0, false, R.useBlockType)
 	end
-	T:go("R1F10")				-- ends on top of front storage/ modem facing tree
+	T:go("R1F10")				-- ends on top of front modem facing tree
 	if R.misc then
 		-- add solid blocks for melon or pumpkin farm
 		T:go("R1F5 R1")
@@ -5008,13 +5092,13 @@ function createFarm()
 	else
 		createFarmNetworkStorage(false)		-- add networking, no storage
 	end
-	if R.data == "right" then
-		T:up(1)
-		utils.goBack(numPlots * 11)
-		T:down(1)
-	elseif R.data == "back" then
-		T:go("R1U1F".. numPlots * 11 .."D1L1")
-	end
+	-- if R.data == "right" then
+		-- T:up(1)
+		-- utils.goBack(numPlots * 11)
+		-- T:down(1)
+	-- elseif R.data == "back" then
+		-- T:go("R1U1F".. numPlots * 11 .."D1L1")
+	-- end
 	return {"Modular farm completed"}
 end
 
@@ -5548,54 +5632,147 @@ end
 
 function createMine()
 	-- go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
-	T:clear()	
-	T:go("m32U1R2M16", true, 8, true) 		-- mine ground level, go up, reverse and mine ceiling to mid-point
-	T:go("U2D2") 							-- create space for chest
-	if not T:place("minecraft:chest", "up", false) then
-		T:place("minecraft:barrel", "up", false)
-	end
-	T:emptyTrash("up")
-	T:go("D1R1m16U1R2M16", true, 8, true) 	-- mine floor/ceiling of right side branch
-	T:emptyTrash("up")
-	T:go("D1m16U1R2M16", true, 8, true) 	-- mine floor/ceiling of left side branch
-	T:emptyTrash("up")
-	T:go("L1M15F1R1D1", true, 8, true) 		-- mine ceiling of entry corridor, turn right
-	T:go("F1x0 F1x0 n14 R1n32 R1n32 R1n32 R1n14 F1x0 F1U1", true, 8, true)-- mine floor of 36 x 36 square corridor
-	T:go("R1F16R2") 						-- return to centre
-	T:emptyTrash("up")
-	T:go("F16R1") 							-- return to entry shaft
-	T:go("F2Q14R1Q32R1Q32R1Q32R1Q14F2R1", true, 8, true) --mine ceiling of 36x36 square corridor. return to entry shaft + 1
-	T:go("F16R2") --return to centre
-	T:emptyTrash("up")
-	-- get rid of any remaining torches
-	while T:getItemSlot("minecraft:torch") > 0 do
-		turtle.select(T:getItemSlot("minecraft:torch"))
-		turtle.dropUp()
-	end
-	T:go("F16R1F1R1") --return to shaft + 1
-	for i = 1, 8 do
-		T:go("N32L1F1L1", true, 8, true)
-		T:go("N16L1F"..(i * 2).."R2", true, 8, true)
-		T:emptyTrash("up")
-		if i < 8 then
-			T:go("F"..(i * 2).."L1N16R1F1R1", true, 8, true)
-		else
-			T:go("F"..(i * 2).."L1N16L1", true, 8, true)
+	-- "M" mine block above and/or fill void
+	-- "m" mine block below and/or fill void
+	-- "N" mine block above and/or fill void + mine block below if valuable: 1 block high ceiling area
+	-- "n" mine block below and/or fill void + check left side
+	local lib = {}
+	
+	function lib.ceiling(length, useTorch)
+		-- excavates a length and places block above
+		for i = 1, length do
+			if useTorch and (i == 1 or i == 17 or i == length) then
+				T:place("torch", "down", true)
+			end
+			if i < length then
+				T:go("C0F1", false, 0, true)
+			else
+				T:go("C0", false, 0, true)
+			end
 		end
 	end
-	T:go("F17L1") -- close gap in wall, return to ladder + 1
-	for i = 1, 8 do
-		T:go("N32R1F1R1", true, 8, true)
-		T:go("N16R1F"..(i * 2).."R2", true, 8, true)
-		T:emptyTrash("up")
-		if i < 8 then
-			T:go("F"..(i * 2).."R1N16L1F1L1", true, 8, true)
-		else
-			T:go("F"..(i * 2).."R1N16R1", true, 8, true)
+	
+	function lib.clearArea()
+		local outward = true
+		for i = 1, 13 do
+			T:go("N28", false, 0, true)
+			if i < 13 then
+				if outward then
+					T:go("L1F1L1", false, 0, true)
+				else
+					T:go("R1F1R1", false, 0, true)
+				end
+				outward = not outward 
+			end
 		end
 	end
-	T:go("F16R1")
-	T:clear()
+	
+	function lib.wall(length, clearUp)
+		-- excavates a length and places block below
+		for i = 1, length do
+			if clearUp then						-- used along floor to make a corridor
+				T:go("x0C2", false, 0, true)	-- used along top of wall to place below and clear a passage
+			else
+				T:go("C2", false, 0, true)
+			end
+			if i < length then
+				T:forward(1)
+			end
+		end
+	end
+	
+	function lib.fillWall(length)
+		for i = 1, length do
+			if i < length then
+				T:go("B1C1", false, 0, true)
+			end
+		end
+		T:go("R1")
+	end
+	
+	function lib.placeStorage()
+		T:go("U2D2") 							-- create space for chest
+		if not T:place("minecraft:chest", "up", false) then
+			T:place("minecraft:barrel", "up", false)
+		end
+	end
+	
+	function lib.prepareArea()
+		T:go("V14 L1 V14 R1F2R1", false, 0, true)
+		T:go("V14 L1 V14 L1 V14 L1", false, 0, true)
+		T:go("V14 F2 V14 L1 V14 L1", false, 0, true)
+		T:go("F1L1 F1R1", false, 0, true)
+	end
+	
+	lib.wall(33, true)						-- mine ground level
+	T:go("U1R2") 							-- go up, reverse
+	lib.ceiling(17, false)					-- mine ceiling to mid-point
+	T:go("D1R1")
+	lib.wall(17, true)						-- mine ground level
+	T:go("U1R2") 							-- go up, reverse
+	lib.ceiling(33, false)					-- mine ceiling
+	T:go("D1R2") 							-- go down, reverse
+	lib.wall(17, true)						-- mine ground level
+	T:go("L1U1")
+	lib.placeStorage()
+	T:emptyTrash("up")
+	T:place("torch", "down", true)
+	T:go("F16R1D1") 						-- return to start, turn right, down to floor
+	
+	if R.inNether then
+		-- construct solid wall round whole 35 x 35 area first
+		lib.wall(17, true)					-- move from centre area to SE corner
+		T:go("F1L1 F1R2 U1")				-- ready for outer wall at ceiling level
+		for i = 1, 3 do
+			lib.wall(35, false)
+			T:go("R1")
+		end
+		lib.wall(16, false)
+		T:go("F4")
+		lib.wall(16, false)
+		T:go("L1C1")						-- face backwards
+		for i = 1, 3 do
+			lib.fillWall(35)
+		end
+		lib.fillWall(17)
+		T:go("R1F3L2")
+		lib.fillWall(15)
+		T:go("R2F1 R2C1 R2D1")				-- on floor ready for inner corridor
+		for i = 1, 4 do
+			lib.wall(33, true)				-- make sure floor is solid
+			T:go("R1")
+		end
+		T:up(1)
+		for i = 1, 4 do
+			lib.ceiling(33, true)			-- make sure ceiling is solid
+			T:go("R1")
+		end
+		T:go("R1F16L1")
+	else
+		-- sides not checked for water or lava
+		-- start on floor level
+		lib.wall(17, true)				-- make sure floor is solid
+		T:go("R1")
+		for i = 1, 3 do
+			lib.wall(33, true)				-- make sure floor is solid
+			T:go("R1")
+		end
+		lib.wall(17, true)				-- make sure floor is solid
+		T:go("R1U1")
+	end
+	lib.ceiling(16, false)					 -- return to centre
+	T:go("F1R2")
+	T:place("torch", "down", true)
+	T:emptyTrash("up")
+	T:go("F16 R1F1 R1F1") --return to shaft + 1
+	lib.prepareArea()
+	lib.clearArea()	-- ends NW corner
+	T:go("R1F13 R1F14 L1F1")
+	T:emptyTrash("up")
+	T:go("B1L1 F15 R1 F2R1")
+	lib.prepareArea()
+	lib.clearArea()	-- ends SE corner
+	T:go("F1R1 F13L1")
 	return{"Mining operation complete"}
 end
 
@@ -9061,117 +9238,6 @@ function harvestTreeFarm()
 		-- no return needed, function exit so trees are grown
 	end
 	
-	function lib.waitForGrowthOLD()
-		local pattern = R.treeSize	--"single","double"
-		local elapsed = 0
-		--local facing = "left"
-		local ready = {}
-		ready.left = false
-		ready.top = false
-		ready.right = false
-		ready.bottom = false
-		if R.logType:find("mangrove") ~= nil then
-			pattern = "mangrove"
-			local facings = {"left", "top", "right", "bottom"}
-			T:up(1)	-- go up from dirt to sapling level
-			while not ready.left or not ready.right or not ready.top or not ready.bottom do
-				for i = 1, 4 do
-					local blockType = T:getBlockType("forward")
-					if blockType:find("propagule") ==  nil then	-- either grown or deleted by roots
-						ready[facings[i]] = true
-					end
-					T:turnRight(1)
-				end
-				if ready.left and ready.right and ready.top and ready.bottom then
-					break
-				else
-					sleep(15)
-					elapsed = elapsed + 15
-					if  elapsed / 60 > 15 then	-- max 15 mins real time before farm is harvested
-						break
-					end
-				end
-				print("Waiting for mangrove growth "..elapsed / 60 .." minutes")
-				print("Left = "..tostring(ready.left)..
-					  ", top = "..tostring(ready.top)..
-					  ", right = "..tostring(ready.right)..
-					  ", bottom = "..tostring(ready.bottom))
-				
-			end
-			--T:go("L1D1")
-			T:turnLeft(1)	-- face front
-		else
-			while not ready.left or not ready.right do
-				T:up(1)	-- go up from dirt to sapling level
-				local blockType = T:getBlockType("forward")
-				if blockType:find("log") ~=  nil then
-					ready[facing] = true
-				end
-				if pattern == "single" then
-					--alternate between 2 trees, starts facing left
-					T:turnRight(2)
-					if facing == "left" then
-						facing = "right"
-					elseif facing == "right" then
-						facing = "left"
-					end
-					blockType = T:getBlockType("forward")
-					if blockType:find("log") ~=  nil then
-						ready[facing] = true
-					end
-					T:down(1)	-- drop below sapling to dirt level
-				elseif pattern == "double" then
-					if ready.left and facing == "left" then-- tree on left now grown. check right
-						T:go("R2F2")
-						facing = "right"
-					end
-					blockType = T:getBlockType("forward")
-					if blockType:find("log") ~=  nil then
-						ready[facing] = true
-					end
-					T:down(1)	-- drop below sapling to dirt level
-				end
-				T:clear()
-				print("Farm type: "..pattern)
-				print("Waiting for tree growth "..elapsed / 60 .." minutes")
-				print("Left grown = "..tostring(ready.left)..", right grown = "..tostring(ready.right))
-				if not ready.left or not ready.right then
-					sleep(15)
-					elapsed = elapsed + 15
-					if pattern == "single" and elapsed / 60 > 10 then	-- max 10 mins real time before farm is harvested
-						break
-					elseif pattern == "double" and elapsed / 60 > 15 then	-- max 15 mins real time before farm is harvested
-						break
-					end
-				end
-			end
-		end
-		-- growth complete
-		-- if pattern == "single" then
-			-- if facing == "right" then
-				-- T:turnRight(1)
-			-- else
-				-- T:turnLeft(1)
-			-- end
-			-- --T:go("F1R1 F3R1")			-- facing first dirt
-			-- T:go("F1R1 F1R1")			-- facing first dirt
-		-- elseif pattern == "double" then -- assume on right side
-			-- if facing == "right" then
-				-- T:go("R1F1 R1F4 R1")
-			-- else
-				-- T:go("L1F1 R1F2 R1")
-			-- end
-		-- elseif pattern == "mangrove" then 
-			-- T:go("D2F6 U1F1 R1F6 R1F1 U1")
-		-- end
-		if pattern == "mangrove" then 
-			T:go("D2F6 U1F1 R1F6 R1F1 U1")
-		end
-		
-		-- ends facing dirt at base of first tree
-		-- no return needed, function exit so trees are grown
-	end
-	
 	function lib.harvestSingle(direction, moves)
 		-- if direction == "up": starting inside tree on dirt at dirt level
 Log:saveToLog("lib.harvestSingle('"..direction.."', moves = "..moves)
@@ -9323,9 +9389,9 @@ Log:saveToLog("harvestTreeFarm(): trees grown. Starting")
 		R.length = 7
 		R.up = true
 		R.down = true
-		local currentLogCount = clearRectangle(true)		-- amount of logs obtained by digUp
+		local currentLogCount = clearRectangle(true)			-- amount of logs obtained by digUp
 Log:saveToLog("logs from digUp() first layer = "..currentLogCount, true)
-		T:go(start)											-- after clearing soil and first layer, move out
+		T:go(start)												-- after clearing soil and first layer, move out
 		R.width = size
 		R.length = size
 		local height = 0		
@@ -9335,6 +9401,10 @@ Log:saveToLog("logs from digUp() first layer = "..currentLogCount, true)
 			currentLogCount = clearRectangle(true)				-- true = return logs dug from digUp() only
 Log:saveToLog("logs from digUp() height = "..height..", count = "..currentLogCount, true)			
 		end	
+		T:up(3)													-- one additional layer
+		height = height + 3
+		currentLogCount = clearRectangle(true)					-- true = return logs dug from digUp() only
+		Log:saveToLog("logs from final digUp() height = "..height..", count = "..currentLogCount, true)			
 		T:down(height + 1)
 		T:go(finish)
 		T:go("R1F3 L1")			-- on modem
@@ -9925,7 +9995,7 @@ Log:saveToLog("    Finding tree..")
 		local width = 9
 		local length = 10
 		local toRight = true
-		if crop:find("pumpkin") ~= nil or crop:find("melon") ~= nil then
+		if crop:find("pumpkin") ~= nil or crop:find("melon") ~= nil or seed:find("pumpkin") ~= nil or seed:find("melon") ~= nil then
 			for w = 1, width do
 				lib.replant(seed, crop)	-- check and replant crop below
 				T:forward(1)
@@ -9945,11 +10015,13 @@ Log:saveToLog("    Finding tree..")
 				lib.replant(seed, crop)									-- check and replant crop below
 				T:forward(1)
 			end
+			lib.replant(seed, crop)
 			T:go("R1F3R1")												-- move over solid blocks
 			for w = 1, width do
 				lib.replant(seed, crop)									-- check and replant crop below
 				T:forward(1)
 			end
+			lib.replant(seed, crop)
 			T:go("L1F1L1")												-- over third row of stems
 			T:go("x2F1 x2F1 x2F1 x2F1 x2F1 x2F1 x2F1 x2F1 x2F1 x2")		-- harvest third row
 			T:go("R1F1R1")
@@ -10575,7 +10647,13 @@ function measure()
 			turtle.down()
 		end
 	elseif R.dimension == "depth" then	-- depth
-		T:go("F1R2D1") -- go off the edge and face cliff/pit wall
+		-- check if already over air
+		local moved = false
+		if turtle.detectDown() then
+			T:forward(1)
+			moved = true
+		end
+		T:go("R2D1") -- go off the edge and face cliff/pit wall
 		blocks = blocks + 1
 		if R.subChoice == 1 then		-- obstruction water / lava below
 			local move = true
@@ -10622,10 +10700,13 @@ function measure()
 				end
 			end
 		end
-		for i = 1, blocks do
+		for i = 1, blocks - 1 do
 			turtle.up()
 		end
-		T:go("F1R2")
+		if moved then
+			T:go("F1")
+		end
+		T:go("R2")
 	elseif R.dimension == "length" then	-- length
 Log:saveToLog("R.dimension == "..R.dimension..", R.subChoice  = "..R.subChoice)
 		if R.subChoice == 1 then		-- obstruction ahead
@@ -11336,19 +11417,22 @@ function sandFillArea()
 end
 
 function test()
+	-- go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 	-- allows testing any new functions.
 	-- use tk3 test
 	Log:saveToLog("test() started", true)
 	menu.clear()
 	-- insert code below
-	R.width = 11
-	R.length = 11
-	R.up = true
-	R.down = true
-	Log:saveToLog("Calling clearRectangle() R.width = "..R.width..", R.length = "..R.length, true)
-	local logs = clearRectangle(true)
-	Log:saveToLog("logs from digUp = "..logs, true)
-	Log:saveToLog("test() completed", true)
+	-- QuickMine      V# take block above if valuable, fill void above, fill void below
+	lib.prepareArea()
+	lib.clearArea()	-- ends NW corner
+	T:go("R1F13 R1F14 L1F1")
+	T:emptyTrash("up")
+	T:go("B1L1 F15 R1 F2R1")
+	lib.prepareArea()
+	lib.clearArea()	-- ends SE corner
+	T:go("F1R1 F13L1")
+	-- T:clear()
 	return {"function 'test' executed successfully"}
 end
 
