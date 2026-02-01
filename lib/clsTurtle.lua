@@ -1,4 +1,4 @@
-local version = 20260113.1700
+local version = 20260123.1200
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as clsTurtle.lua, preferably in /lib folder
@@ -1261,23 +1261,15 @@ function T:dig(direction, bypass, slot, side)
 	return success
 end
 
-function T:digGravityBlock(direction)
-	-- local Dig = turtle.dig
-	-- if direction == "up" then
-		-- Dig = turtle.digUp
-	-- elseif direction == "down" then
-		-- Dig = turtle.digDown
-	-- end
-	local blockType = self:getBlockType(direction)
-	--turtle.select(1)
+function T:digGravityBlock(direction, blockType)
+	if blockType == nil then
+		blockType = self:getBlockType(direction)
+	end
 	if blockType:find("sand") ~= nil or blockType:find("gravel") ~= nil then
-		--Dig()
 		return self:dig(direction, false)
-		--return true
 	else
 		return false
 	end
-
 end
 
 function T:digValuable(direction)
@@ -1421,7 +1413,7 @@ function T:dumpRefuse(direction, keepCobbleStacks)
 	for i = 1, 16 do
 		local blockType, slotCount,  blockModifier = self:getSlotContains(i)
 		
-		if blockType:find("cobble") ~= nil or blockType:find("netherrack") then
+		if blockType:find("cobble") ~= nil or blockType:find("netherrack") ~= nil then
 			if cobbleCount > keepCobbleStacks then
 				turtle.select(i)
 				Drop()
@@ -2860,13 +2852,15 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 		elseif move == "C" then
 			-- fillVoid(self, direction, tblPreferredBlock, leaveExisting)
 			local fill = false
+			local dir = direction[modifier + 1]
 			if leaveExisting then -- leave alone if non-gravity
-				if self:detect(direction[modifier + 1]) then -- solid block ahead, not air, water or lava
-					local blockType = self:getBlockType("forward")
+				if self:detect(dir) then -- solid block ahead, not air, water or lava
+					local blockType = self:getBlockType(dir)
 					if not self:isStone(blockType) and blockType ~= "minecraft:ladder" and blockType ~= "minecraft:deepslate" then
 					--if self:digValuable(direction[modifier + 1]) then
 						fill = true
-					elseif self:digGravityBlock(direction[modifier + 1]) then -- sand or gravel
+					end
+					if self:digGravityBlock(dir, blockType) then -- sand or gravel
 						fill = true
 					end
 				else	-- air, water or lava ahead
@@ -2876,7 +2870,7 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 				fill = true
 			end
 			if fill then
-				self:fillVoid(direction[modifier + 1], preferredBlock, false)
+				self:fillVoid(dir, preferredBlock, false)
 			end
 		elseif move == "d" then -- down and place while not detect
 			if modifier == 1 then
