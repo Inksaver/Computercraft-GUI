@@ -1,4 +1,4 @@
-local version = 20260119.1100
+local version = 20260123.1200
 -- ["lbl4"] = {text = "Text here", bg = colors.black, fg = colors.lime, alignH = "centre"},
 -- ["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
 -- ...state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, event = {"changeRValue", "inventoryKey", "1"}},
@@ -670,6 +670,27 @@ length~yellow~| dirt if resurfacing is required]],
 		}
 	},
 	
+	["createClayfarm"] =
+	{
+		call = createClayfarm,
+		title = "08-Create clay farm",
+		description = "Farm for mud and clay",
+		fuel = 300,
+		items =
+[[~red~2     ~yellow~| water bucket
+~red~64    ~yellow~| stone
+~red~102   ~yellow~| slabs
+~red~100   ~yellow~| pointed dripstone 
+]],
+		inventory =
+		{
+			{"water_bucket", 2, true, ""},
+			{"stone", 64, true, ""},
+			{"slab", 102, true, ""},
+			{"pointed_dripstone", 100, true, ""},
+		},
+	},
+	
 	["createCorridor"] =
 	{
 		call = createCorridor,
@@ -694,6 +715,7 @@ length~yellow~| dirt if resurfacing is required]],
 			{"minecraft:torch", "math.ceil( R.length / R.torchInterval )", false, ""}
 		}
 	},
+	
 	["createDiveColumn"] =
 	{
 		call = createDiveColumn,
@@ -837,7 +859,8 @@ length~yellow~| dirt if resurfacing is required]],
 ~green~<= 8  ~yellow~| chests if no storage
 ~red~3     ~cyan~| full size wired modems
 ~red~54    ~cyan~| Computercraft cable
-
+~red~44    ~yellow~| Computercraft cable
+~green~5     ~yellow~| ladders
 ]],
 		inventory =
 		{
@@ -849,6 +872,7 @@ length~yellow~| dirt if resurfacing is required]],
 			{"chest", 8, false, "If adding storage"},
 			{"modem", 3, true, "3 if adding storage"},
 			{"computercraft:cable", 54, true, ""},
+			{"ladder", 5, false, "access to basement"},
 		},
 		data =
 		{
@@ -864,23 +888,25 @@ length~yellow~| dirt if resurfacing is required]],
 		description = "Extending modular crop farm",
 		fuel = 300,
 		items =
-[[~red~64    ~yellow~| stone
+[[~red~54-74 ~yellow~| stone 74 for pumpkin
 ~red~1     ~yellow~| dirt
 ~red~4     ~yellow~| water bucket
 ~red~1     ~yellow~| barrel
 ~red~1     ~yellow~| sapling (spruce preferred)
 ~red~2     ~yellow~| full size wired modems
 ~red~44    ~yellow~| Computercraft cable
+~green~5     ~yellow~| ladders
 ]],
 		inventory =
 		{
-			{"stone", 64, true, ""},
+			{"stone", 74, true, "NOT pumpkin/melon = 54"},
 			{"dirt", 1, false, "more if needed"},
 			{"water_bucket", 4, true, ""},
 			{"barrel", 1, true, ""},
 			{"sapling", 1, true, "spruce best"},
 			{"modem", 2, true, ""},
-			{"computercraft:cable", 44, true, ""}
+			{"computercraft:cable", 44, true, ""},
+			{"ladder", 5, false, "access to basement"},
 		},
 		data =
 		{
@@ -944,7 +970,7 @@ length~yellow~| dirt if resurfacing is required]],
 		},
 		data = 
 		{
-			["chk1"] = {text = "In Nether?", state = false, u = {"bedrock", 0, -64}},
+			["chk1"] = {text = "In Nether?", state = false, u = {"bedrock", 0, -64}, r = "inNether"},
 			["chk2"] = {text = "In Air?", state = false},
 			["chk3"] = {text = "Build Base?", state = false, r = {"data", "chamber", ""}},	-- use R.data and give value "chamber" if selected
 			--["chk4"] = {text = "Go UP?", state = false, group = {"chk4", "chk5"}, required = true, r = "goUp"},
@@ -969,16 +995,22 @@ length~yellow~| dirt if resurfacing is required]],
 [[
 ~red~64    ~yellow~| stone
 ~red~1     ~yellow~| chest or barrel
-~green~24    ~yellow~| torch
+~green~9    ~yellow~| torch
 ~green~1     ~yellow~| bucket
 ]],
 		inventory =
 		{
-			{"minecraft:torch", 24, false, ""},
+			{"minecraft:torch", 9, false, ""},
 			{"minecraft:bucket", 1, false, ""},
 			{"stone", 64, true, ""},
-			--{"minecraft:chest", 1, true, ""}
 			{{"chest", "barrel"}, {1, 1}, {true, true}, {"", ""}}
+		},
+		data = 
+		{
+			["chk1"] = {text = "In Nether?", state = false, u = {"bedrock", 0, -64}, r = "inNether"},
+			["lbl1"] = {text = "Width set to 33"},
+			["lbl2"] = {text = "Length set to 33"},
+			["lbl3"] = {text = "Torch spacing fixed pattern"},
 		}
 	},
 	
@@ -1875,7 +1907,7 @@ length ~yellow~|
 	["makeMud"] =
 	{
 		call = makeMud,
-		title = "08-Make Mud / Clay",
+		title = "09-Make Mud / Clay",
 		description = "Making mud or clay",
 		fuel = 120,
 		items =
@@ -1896,6 +1928,7 @@ length ~yellow~|
 			["txt1"] = {text = "0", limits = {{1}, {960}}, r = "size"},
 		}
 	},
+	
 	["manageFarmSetup"] =
 	{
 		call = manageFarmSetup,
