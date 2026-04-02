@@ -18,6 +18,17 @@ For example to select a checkbox, type it's index number displayed next to it an
 
 Use the 'b' key to emulate the 'Back' button, 'q' for 'Quit', 'n' for 'Next', 'c' to clear the keyboard input buffer
 
+Use installer.lua or start the lua prompt and use these lines individually
+
+url = "https://raw.githubusercontent.com/Inksaver/Minecraft-Toolkit/refs/heads/main/updater.lua"
+response, message = http.get(url)
+data = response.readAll()
+response.close()
+f = fs.open("updater.lua", "w")
+f.write(data)
+f.close()
+
+Exit lua and run updater.lua
 
 
 
