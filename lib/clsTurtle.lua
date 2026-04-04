@@ -1,4 +1,4 @@
-local version = 20260123.1200
+local version = 20260403.1000
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as clsTurtle.lua, preferably in /lib folder
@@ -2022,18 +2022,22 @@ function T:getEmptySlotCount()
 	return emptySlots
 end 
 
-function T:getEquipped()
+function T:getEquipped(right, left)
 	-- returns tool equipped on chosen side "left" or "right"
-	local dataLeft = turtle.getEquippedLeft()
-	local dataRight = turtle.getEquippedRight()
+	-- valid from version 1.101.6
 	local itemLeft = ""
 	local itemRight = ""
-	
-	if dataLeft ~= nil then
-		itemLeft = dataLeft.name
-	end
-	if dataRight ~= nil then
-		itemRight = dataRight.name
+	if _G.ccMajorVersion > 1.101 or _G.ccMajorVersion == 1.101 and _G.ccMinorVersion >= 6 then
+		local dataLeft = turtle.getEquippedLeft()
+		local dataRight = turtle.getEquippedRight()
+		if dataLeft ~= nil then
+			itemLeft = dataLeft.name
+		end
+		if dataRight ~= nil then
+			itemRight = dataRight.name
+		end
+	else
+		itemRight, itemLeft, _ = self:setEquipment(right, left)
 	end
 
 	return itemLeft, itemRight	-- "", "" if nothing equipped; "minecraft:diamond_pickaxe", "minecraft:crafting_table"
@@ -2856,7 +2860,7 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 			if leaveExisting then -- leave alone if non-gravity
 				if self:detect(dir) then -- solid block ahead, not air, water or lava
 					local blockType = self:getBlockType(dir)
-					if not self:isStone(blockType) and blockType ~= "minecraft:ladder" and blockType ~= "minecraft:deepslate" then
+					if not self:isStone(blockType) and blockType ~= "minecraft:ladder" and blockType ~= "minecraft:deepslate" and blockType ~= "minecraft:torch" then
 					--if self:digValuable(direction[modifier + 1]) then
 						fill = true
 					end
@@ -3886,6 +3890,7 @@ function T:place(blockType, direction, leaveExisting, signText, doNotAttack)
 	else
 		local existingBlock = self:getBlockType(direction)
 		if leaveExisting then -- do not remove existing block unless sand gravel water or lava
+			doContinue = false
 			if self:detect(direction) then -- not water or lava
 				if existingBlock:find("sand") ~= nil or existingBlock:find("gravel") ~= nil then --leave anything except sand/gravel	
 					doContinue = true
@@ -4094,97 +4099,103 @@ function T:selectPlaceItem(item)
 	return false
 end
 
-function T:setEquipment()
+function T:setEquipment(right, left)
 	-- if contains a crafting table, puts it on the right. Any other tool on the left
+	if right == nil then
+		right = "minecraft:crafting_table"
+	end
+	if left == nil then
+		left = "minecraft:diamond_pickaxe"
+	end
+	
+	local lib = {}
+	
+	function lib.getEmptySlot()
+		local emptySlot = self:getFirstEmptySlot()			-- first empty slot
+		if emptySlot == 0 then -- all slots full
+			turtle.select(16)
+			turtle.drop()
+			emptySlot = 16
+		end
+		return emptySlot
+	end
+	
+	function lib.checkSide(side, slot)
+		local equipped = ""
+		turtle.select(slot)
+		if side == "right" then
+			if turtle.equipRight() then 					-- remove tool on the right
+				equipped = self:getSlotContains(slot) 		-- contains name of tool from right side
+				if equipped == right then
+					turtle.equipRight()						-- return crafting table to correct position
+				end
+			end
+		elseif side == "left" then
+			if turtle.equipLeft() then 						-- remove tool on the left
+				equipped = self:getSlotContains(slot) 		-- contains name of tool from right side
+				if equipped == left then
+					turtle.equipLeft()						-- return pickaxe to correct position
+				end
+			end
+		end
+		return equipped										-- returns "" or tool name
+	end
+	
+	
 	self:clear()
 	print("Setting up equipment...")
-	local emptySlotR = self:getFirstEmptySlot() -- first empty slot
-	if emptySlotR == 0 then -- all slots full
-		turtle.select(16)
-		turtle.drop()
-		emptySlotR = 16
-	end
-	local emptySlotL = 0 -- used later
-	local eqRight = "" 
-	local eqLeft = ""
+	
 	local equippedRight = "" 
 	local equippedLeft = ""
-	local count = 0
-	local pickaxeSlot, total = self:getItemSlot("minecraft:diamond_pickaxe")
-	local swordSlot, total = self:getItemSlot("minecraft:diamond_sword")
-	local hoeSlot, total = self:getItemSlot("minecraft:diamond_hoe")
-	local craftTableSlot, total = self:getItemSlot("minecraft:crafting_table")
-	if emptySlotR > 0 then -- empty slot found
-		turtle.select(emptySlotR)
-		if turtle.equipRight() then -- remove tool on the right
-			eqRight, count = self:getSlotContains(emptySlotR) -- eqRight contains name of tool from right side
-			if eqRight == "minecraft:crafting_table" then
-				craftTableSlot = emptySlotR
-				eqRight = "" 
-			elseif eqRight == "minecraft:diamond_pickaxe" then
-				pickaxeSlot = emptySlotR
-				eqRight = "" 
-			elseif eqRight == "minecraft:diamond_sword" then
-				swordSlot = emptySlotR
-				eqRight = "" 
-			elseif eqRight == "minecraft:diamond_hoe" then
-				hoeSlot = emptySlotR
-				eqRight = "" 
-			end -- eqRight 
-			emptySlotL = self:getFirstEmptySlot() -- get next empty slot
-			if emptySlotL == 0 then -- all slots full
-				if emptySlotR ~= 15 then
-					turtle.select(15)
-					turtle.drop()
-					emptySlotL = 15
-				else
-					turtle.select(16)
-					turtle.drop()
-					emptySlotL = 16
-				end
-			end
-		else -- nothing equipped on right side
-			emptySlotL = emptySlotR
-		end
-		if emptySlotL > 0 then -- empty slot found
-			turtle.select(emptySlotL)
-			if turtle.equipLeft() then -- remove tool on the left
-				eqLeft, count = self:getSlotContains(emptySlotL) -- eqLeft contains name of tool from left side
-				if eqLeft == "minecraft:diamond_pickaxe" then
-					pickaxeSlot = emptySlotL
-					eqLeft = "" 
-				elseif eqLeft == "minecraft:diamond_sword" then
-					swordSlot = emptySlotL
-					eqLeft = ""
-				elseif eqLeft == "minecraft:diamond_hoe" then
-					hoeSlot = emptySlotL
-					eqLeft = ""
-				elseif eqLeft == "minecraft:crafting_table" then
-					craftTableSlot = emptySlotL
-					eqLeft = ""
-				end
-			end
-		end
-		if pickaxeSlot > 0 then
-			turtle.select(pickaxeSlot)
-			turtle.equipLeft()
-			equippedLeft = "minecraft:diamond_pickaxe"	
-			self.equippedLeft = "minecraft:diamond_pickaxe"
-		end
-		if craftTableSlot > 0 then
-			turtle.select(craftTableSlot)
+	local inInventory = ""
+	local itemSlot = 0
+	local emptySlot = lib.getEmptySlot()					-- first empty slot
+
+	equippedRight = lib.checkSide("right", emptySlot)		-- should return "" or crafting table
+	if equippedRight == "" then								-- no crafting table. Could be in inventory
+		itemSlot = self:getItemSlot(right)
+		if itemSlot > 0 then
+			turtle.select(itemSlot)
 			turtle.equipRight()
-			equippedRight = "minecraft:crafting_table"
-			self.equippedRight = "minecraft:crafting_table"
+			equippedRight = right
 		end
-		inInventory = ""
-		if swordSlot > 0 then
-			inInventory = "minecraft:diamond_sword"
-		elseif hoeSlot > 0 then
-			inInventory = "minecraft:diamond_hoe"
+	elseif equippedRight ~= right then						-- different tool was equipped
+		emptySlot = lib.getEmptySlot()						-- first empty slot
+	end
+	-- if right item required (usually crafting table) was originally on the right it will have been replaced
+	equippedLeft = lib.checkSide("left", emptySlot)
+	if equippedLeft == "" then								-- no pickaxe. Could be in inventory
+		itemSlot = self:getItemSlot(left)
+		if itemSlot > 0 then
+			turtle.select(itemSlot)
+			turtle.equipLeft()
+			equippedLeft = left
 		end
 	end
-	-- any tools equipped except diamond_pickaxe and crafting_table have been removed to inventory
+	-- if left item required (usually pickaxe) was originally on the left it will have been replaced
+	-- check if correct item in each side
+	if equippedRight ~= right then							-- item required not equipped. check inventory
+		itemSlot = self:getItemSlot(right)
+		if itemSlot > 0 then
+			turtle.select(itemSlot)
+			turtle.equipRight()
+			equippedRight = right
+		else
+			inInventory = equippedRight
+		end
+	end
+	if equippedLeft ~= left then							-- item required not equipped. check inventory
+		itemSlot = self:getItemSlot(left)
+		if itemSlot > 0 then
+			turtle.select(itemSlot)
+			turtle.equipLeft()
+			equippedLeft = left
+		else
+			inInventory = inInventory..","..equippedLeft
+		end
+	end
+		
+	-- any tools equipped except right (?diamond_pickaxe) and left (?crafting_table) have been removed to inventory
 	return equippedRight, equippedLeft, inInventory
 end
 
