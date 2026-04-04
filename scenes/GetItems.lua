@@ -1,4 +1,4 @@
-local version = 20260111.0800
+local version = 20260403.1000
 
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
@@ -57,6 +57,7 @@ function S:new(sceneMgr)
 	self.em:add(self.lblInfo, 		"lblInfo")
 
 	self.btnClick = function(button) self:onBtnClick(button) end
+	self.itemLeft, self.itemRight = T:getEquipped()	-- add turtle tools to the inventory
 end
 
 function S:setup()
@@ -300,19 +301,19 @@ function S:checkInventory()
 	end
 	
 	local tInventory = T:getInventoryItems() 	-- create table of blocktypes and quantities
-	local itemLeft, itemRight = T:getEquipped()	-- add diamond tools to the inventory
-	if itemLeft:find("diamond") ~= nil then
-		if tInventory[itemLeft] == nil then
-			tInventory[itemLeft] = 1
+	--local itemLeft, itemRight = T:getEquipped()	-- add diamond tools to the inventory
+	if self.itemLeft:find("diamond") ~= nil then
+		if tInventory[self.itemLeft] == nil then
+			tInventory[self.itemLeft] = 1
 		else
-			tInventory[itemLeft] = tInventory[itemLeft] + 1
+			tInventory[self.itemLeft] = tInventory[self.itemLeft] + 1
 		end
 	end
-	if itemRight:find("diamond") ~= nil then
-		if tInventory[itemRight] == nil then
-			tInventory[itemRight] = 1
+	if self.itemRight:find("diamond") ~= nil then
+		if tInventory[self.itemRight] == nil then
+			tInventory[self.itemRight] = 1
 		else
-			tInventory[itemRight] = tInventory[itemRight] + 1
+			tInventory[self.itemRight] = tInventory[self.itemRight] + 1
 		end
 	end
 --Log:saveToLog("GetItems:S:checkInventory():T:getInventoryItems() = "..textutils.serialise(tInventory, {compact = true}))
