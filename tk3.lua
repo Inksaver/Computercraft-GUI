@@ -1,4 +1,4 @@
-local version = 20260123.1200
+local version = 20260402.1600
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -59,8 +59,7 @@ local dbug = true -- debug is reserved word
 local netherBedrock = 0
 local deletesWater = false
 local brick = "minecraft:nether_brick" -- pre 1.16+ name
-local ccMajorVersion = _HOST:sub(15, _HOST:find("Minecraft") - 2) --eg ComputerCraft 1.93.0 (Minecraft 1.15.2)
-local ccMinorVersion = 0
+
 
 local function checkFileSystem()
 	local oldurl = "https://raw.githubusercontent.com/Inksaver/Minecraft-Toolkit/main/"
@@ -241,18 +240,21 @@ Chunk borders F3+G or:
 math.floor(x / 16) * 16 add 16 for each border. same for z
 ]]
 
-
-if tonumber(ccMajorVersion) == nil then -- 1.93.0 NAN
-	--ccMajorVersion = ccMajorVersion:sub(1, ccMajorVersion:find(".", 3, true) - 1)
-	local parts = U.split(ccMajorVersion, ".")
-	ccMajorVersion = parts[1]
+local ccMajor = _HOST:sub(15, _HOST:find("Minecraft") - 2) --eg ComputerCraft 1.93.0 (Minecraft 1.15.2)
+_G.ccMinorVersion = 0
+if tonumber(ccMajor) == nil then -- 1.93.0 NAN
+	--ccMajor = ccMajor:sub(1, ccMajor:find(".", 3, true) - 1)
+	local parts = U.split(ccMajor, ".")
+	ccMajor = parts[1]
 	if parts[2] ~= nil then
-		ccMajorVersion = ccMajorVersion.."."..parts[2]
+		ccMajor = ccMajor.."."..parts[2]
 	end
-	ccMajorVersion = tonumber(ccMajorVersion)
+	_G.ccMajorVersion = tonumber(ccMajor)
 	if parts[3] ~= nil then
-		ccMinorVersion = tonumber(parts[3])
+		_G.ccMinorVersion = tonumber(parts[3])
 	end
+else
+	_G.ccMajorVersion = tonumber(ccMajor)
 end
 
 local mcMajorVersion = _HOST:sub(_HOST:find("Minecraft") + 10, _HOST:find("\)") - 1) -- eg 1.18 or 1.20 -> 1.18, 1.20
@@ -5667,7 +5669,7 @@ function createMine()
 		end
 	end
 	
-	function lib.wall(length, clearUp)
+	function lib.floor(length, clearUp)
 		-- excavates a length and places block below
 		for i = 1, length do
 			if clearUp then						-- used along floor to make a corridor
@@ -5692,8 +5694,8 @@ function createMine()
 	
 	function lib.placeStorage()
 		T:go("U2D2") 							-- create space for chest
-		if not T:place("minecraft:chest", "up", false) then
-			T:place("minecraft:barrel", "up", false)
+		if not T:place("chest", "up", false) then
+			T:place("barrel", "up", false)
 		end
 	end
 	
@@ -5704,15 +5706,22 @@ function createMine()
 		T:go("F1L1 F1R1", false, 0, true)
 	end
 	
-	lib.wall(33, true)						-- mine ground level
+	function lib.torch()
+		T:go("C2U1", false, 0, true)
+		T:place("torch", "down", true)
+		T:go("C0F1 C0D1", false, 0, true)
+	end
+	
+	lib.floor(33, true)						-- mine ground level
 	T:go("U1R2") 							-- go up, reverse
-	lib.ceiling(17, false)					-- mine ceiling to mid-point
-	T:go("D1R1")
-	lib.wall(17, true)						-- mine ground level
+	lib.ceiling(17, true)					-- mine ceiling to mid-point
+	T:go("D1R1")							-- face side branch on left
+	lib.floor(17, true)						-- mine ground level
 	T:go("U1R2") 							-- go up, reverse
-	lib.ceiling(33, false)					-- mine ceiling
-	T:go("D1R2") 							-- go down, reverse
-	lib.wall(17, true)						-- mine ground level
+	lib.ceiling(33, true)					-- mine ceiling
+	T:go("R2D1")							-- floor level
+	lib.torch()
+	lib.floor(16, true)						-- mine ground level
 	T:go("L1U1")
 	lib.placeStorage()
 	T:emptyTrash("up")
@@ -5721,15 +5730,15 @@ function createMine()
 	
 	if R.inNether then
 		-- construct solid wall round whole 35 x 35 area first
-		lib.wall(17, true)					-- move from centre area to SE corner
+		lib.floor(17, true)					-- move from centre area to SE corner
 		T:go("F1L1 F1R2 U1")				-- ready for outer wall at ceiling level
 		for i = 1, 3 do
-			lib.wall(35, false)
+			lib.floor(35, false)
 			T:go("R1")
 		end
-		lib.wall(16, false)
+		lib.floor(16, false)
 		T:go("F4")
-		lib.wall(16, false)
+		lib.floor(16, false)
 		T:go("L1C1")						-- face backwards
 		for i = 1, 3 do
 			lib.fillWall(35)
@@ -5739,7 +5748,7 @@ function createMine()
 		lib.fillWall(15)
 		T:go("R2F1 R2C1 R2D1")				-- on floor ready for inner corridor
 		for i = 1, 4 do
-			lib.wall(33, true)				-- make sure floor is solid
+			lib.floor(33, true)				-- make sure floor is solid
 			T:go("R1")
 		end
 		T:up(1)
@@ -5751,16 +5760,28 @@ function createMine()
 	else
 		-- sides not checked for water or lava
 		-- start on floor level
-		lib.wall(17, true)				-- make sure floor is solid
+		lib.torch()
+		lib.floor(16, true)					-- make sure floor is solid
 		T:go("R1")
 		for i = 1, 3 do
-			lib.wall(33, true)				-- make sure floor is solid
+			lib.torch()
+			lib.floor(32, true)				-- make sure floor is solid
 			T:go("R1")
 		end
-		lib.wall(17, true)				-- make sure floor is solid
-		T:go("R1U1")
+		lib.torch()
+		lib.floor(16, true)					-- back to ladder area
+		lib.torch()							-- to left of ladder
+		T:go("U1")
+		lib.ceiling(16, false)				-- make sure ceiling is solid
+		T:go("R1")
+		for i = 1, 3 do
+			lib.ceiling(33, true)				-- make sure floor is solid
+			T:go("R1")
+		end
+		lib.ceiling(17, true)
+		T:go("R1")
 	end
-	lib.ceiling(16, false)					 -- return to centre
+	lib.ceiling(16, false)					-- return to centre
 	T:go("F1R2")
 	T:place("torch", "down", true)
 	T:emptyTrash("up")
