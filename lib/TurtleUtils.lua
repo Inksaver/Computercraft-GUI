@@ -1,4 +1,4 @@
-local version = 20260117.0800
+local version = 20260407.1200
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as lib/TurtleUtils.lua
@@ -1384,7 +1384,9 @@ function U.sendItemToNetworkStorage(storageType, itemToSend, amountToSend, fromS
 		end
 		--U.moveItemsFromTurtle(turtleName, toInventoryName, fromTurtleSlot, quantity, toSlot)
 Log:saveToLog("U.moveItemsFromTurtle(turtleName = "..U.turtleName..", storageToUse = "..tostring(storageToUse)..", slot = "..tostring(turtleSlot)..", slotCount = "..tostring(slotCount)..")")
-		U.moveItemsFromTurtle(storageToUse, turtleSlot, slotCount)
+		if storageToUse ~= nil then
+			U.moveItemsFromTurtle(storageToUse, turtleSlot, slotCount)
+		end
 	end
 	
 	function lib.findEmptyStorage(peripheralNames, itemName, itemsPerSlot, itemCount)
