@@ -1,4 +1,4 @@
-local version = 20260403.1000
+local version = 20260407.2300
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as clsTurtle.lua, preferably in /lib folder
@@ -1650,10 +1650,11 @@ function T:fillVoid(direction, tblPreferredBlock, leaveExisting, allowSlab)
 	local slot = 0
 	local placeBlock = ""
 	--check if vegetation and remove
-	if self:isSeaweed(direction) then
+	local isSeaweed, blockType = self:isSeaweed(direction)
+	if isSeaweed then
 		Dig()
 	end
-	if self:isGravityBlock(direction) then
+	if self:isGravityBlock(direction, blockType) then
 		Dig()
 	end
 	
@@ -2860,12 +2861,14 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 			if leaveExisting then -- leave alone if non-gravity
 				if self:detect(dir) then -- solid block ahead, not air, water or lava
 					local blockType = self:getBlockType(dir)
-					if not self:isStone(blockType) and blockType ~= "minecraft:ladder" and blockType ~= "minecraft:deepslate" and blockType ~= "minecraft:torch" then
-					--if self:digValuable(direction[modifier + 1]) then
-						fill = true
-					end
-					if self:digGravityBlock(dir, blockType) then -- sand or gravel
-						fill = true
+					if blockType ~= "minecraft:bedrock" then
+						if not self:isStone(blockType) and blockType ~= "minecraft:ladder" and blockType ~= "minecraft:deepslate" and blockType ~= "minecraft:torch" then
+						--if self:digValuable(direction[modifier + 1]) then
+							fill = true
+						end
+						if self:digGravityBlock(dir, blockType) then -- sand or gravel
+							fill = true
+						end
 					end
 				else	-- air, water or lava ahead
 					fill = true
@@ -3320,7 +3323,7 @@ function T:harvestTree(direction)
 	end
 	
 	local singleTypes ="minecraft:birch_log, minecraft:acacia_log, minecraft:cherry_log, minecraft:warped_stem"
-	local dualTypes = "minecraft:spruce_log, minecraft:jungle_log, minecraft:crimson_stem"
+	local dualTypes = "minecraft:spruce_log, minecraft:jungle_log, minecraft:crimson_stem, biomesoplenty:redwood_log"
 	local doubleTypes = "minecraft:dark_oak_log, minecraft:pale_oak_log"
 	local logType = ""
 	local double, onLeft  = false, true -- default position in double tree
@@ -3569,6 +3572,8 @@ function T:harvestTree(direction)
 		lib.doubleOak(onLeft)
 	elseif logType == "minecraft:mangrove_log" or logType == "minecraft:mangrove_roots"then
 		lib.mangrove()
+	else
+		lib.dual(double, onLeft)
 	end
 
 	-- check for logs below in case felling started above ground
@@ -3714,28 +3719,30 @@ end
 function T:isSeaweed(direction)
 	--[[ look for seaweed in specified direction ]]
 	local Detect = turtle.detect
-	local blockName
+	local blockType = ""
 	if direction == "up" then
 		Detect = turtle.detectUp
 	elseif direction == "down" then
 		Detect = turtle.detectDown
 	end
 	if Detect() then
-		blockName = self:getBlockType(direction)
+		blockType = self:getBlockType(direction)
 	end
-	if self:isVegetation(blockName) then
-		return true
+	if self:isVegetation(blockType) then
+		return true, blockType	-- returns true, blockType
 	end
-	return false
+	return false, blockType		-- returns false, "" or blockType
 end
 
-function T:isGravityBlock(direction)
+function T:isGravityBlock(direction, blockType)
 	--[[ look for sand, gravel, concrete powder ]]
-	local blockName = self:getBlockType(direction)
-	if blockName:find("sand") ~= nil or blockName:find("gravel") ~= nil then
-		return true
+	if blockType == nil then
+		blockType = self:getBlockType(direction)
 	end
-	return false
+	if blockType:find("sand") ~= nil or blockType:find("gravel") ~= nil then
+		return true, blockType
+	end
+	return false, blockType
 end
 
 function T:isEmpty()
@@ -4233,7 +4240,8 @@ function T:sortInventory(useChest)
 		until not success or message ~= nil
 		--while self:suck(chestDirection) do end -- remove everything
 	end
-	
+	self:clear()
+	print("Sorting inventory...")
 	local chestSlot = 0
 	if useChest then
 		chestSlot = self:getItemSlot("minecraft:chest") --get the slot number containing a chest
@@ -4305,6 +4313,7 @@ function T:sortInventory(useChest)
 		end
 	end
 	turtle.select(1)
+	self:clear()
 end
 
 function T:sortInventory2()
