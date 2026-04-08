@@ -1,4 +1,4 @@
-local version = 20260402.1600
+local version = 20260407.2300
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -4880,42 +4880,39 @@ function createFarmNetworkStorage(withStorage, removeLegacy)
 		while turtle.suckDown() do end
 		T:place("modem", "down")
 		U.attachModem()
+		T:clear()
 		T:go("F1x2 R2C2 F1L1 F1D1")
 	end
 	
 	T:go("L1D3") -- move below crop field, face N
-	utils.createBasement(true, true, 10, 10)	-- ends facing N below water source
+	utils.createBasement(true, true, 10, 10)	-- ends facing N 1 block below water source
+	-- Close all leaking water sources
 	T:go("U1 L1C1 L1C1")
 	T:go("B1C1 B8 R1C1 R1C1 L1")				-- move N backwards along W edge, end facing W on N edge
 	T:go("B1C1 B8 R1C1 R1C1 L1")
 	T:go("B1C1 B8 R1C1 R1C1 L1")
 	T:go("B1C1 R2F7 L1F1 R1F1x1 R2C1 B1L1") 	-- move to corner, face W along front edge
+	-- 1 block below barrel, facing N. If farm to left, will be cable above
 	
-	T:place("computercraft:cable", "up")		-- in SW corner face W along front edge
-	T:go("F1R2 C1R2")
-	
-	lib.placeNetwork(10, "F1x0x2")
-	T:go("R1C1 L1F1")							-- in NW corner, facing N
-	T:place("computercraft:cable", "up")
-	T:go("R2C1 L1")								-- in NW corner, facing E
-	T:go("F1R2 C1R2 F1R2 C1R2")					-- in NW corner, facing E, 2 blocks further E
-	
+	T:place("computercraft:cable", "up")		-- cable placed under barrel
+	T:go("F1R2 C1x0")							-- block placed under cable, block above removed
+	T:place("computercraft:cable", "up")		-- cable placed up
+	T:go("B1C1 R2")								-- 
 	lib.placeNetwork(9, "F1x0x2")
-	T:go("R1C1 L1F1")							-- in NE corner, facing E
-	T:place("computercraft:cable", "up")
-	T:go("R2C1 L1")								-- in NE corner, facing S
-	T:go("F1R2 C1R2 F1R2 C1R2")					-- in NE corner, facing S, 2 blocks further S
 	
-	lib.placeNetwork(9, "F1x0x2")
+	for i = 1, 3 do
+		T:go("R1C1 L1F1")							-- in NW corner, facing N
+		T:place("computercraft:cable", "up")
+		T:go("R2C1 L1")								-- 1 block below NW corner, facing E
+		T:go("F1x0 F1x0 R2 F1C1")						-- in NW corner, facing E, 2 blocks further E
+		T:place("computercraft:cable", "up")
+		T:go("B1C1 R2")									-- in NW corner, facing E, 2 blocks further E
+		lib.placeNetwork(9, "F1x0x2") 
+	end
+		
 	T:go("R1C1 L1F1")							-- in SE corner, facing S
 	T:place("computercraft:cable", "up")
-	T:go("R2C1 L1")								-- in SE corner, facing W
-	T:go("F1R2 C1R2 F1R2 C1R2")					-- in SE corner, facing W, 2 blocks further W
-	
-	lib.placeNetwork(9, "F1x0x2")
-	T:go("R1C1 L1F1")							-- in SE corner, facing S
-	T:place("computercraft:cable", "up")
-	T:go("R2C1")								-- under network in line with barrel, facing in
+	T:go("R2C1")								-- under network under barrel, facing E side
 	
 	if withStorage then
 		T:go("F2R2 C1R2 F3L1")					-- under mid network cable run facing in
@@ -4927,17 +4924,23 @@ function createFarmNetworkStorage(withStorage, removeLegacy)
 		T:place("computercraft:cable", "down", true)
 		T:go("U1")
 		utils.createStorage()					-- places modem and chests
-		T:go("L2F4 R1D1 F6L1 F2R1")				-- ends 4 below barrel, facing out
+		-- R.data used for "new" or extension direction: "right" or "back"
+		if R.data == "new" then
+			T:go("L2F5 R1D1 F5L1 F2L1")			-- ends 4 below south edge, 1 block south S, facing E
+		end
 	else
-		T:go("R2F1 R1x1 D1x1 D1x1 L1")			-- ends 4 below barrel, facing out
+		if R.data == "new" then
+			T:go("R1F1 R2C1 R1D2")				-- ends 4 below south edge, 1 block south S, facing E
+		end
 	end
-	for i = 1, 5 do
-		T:up(1)
-		T:place("ladder", "down")
+	if R.data == "new" then
+		for i = 1, 5 do
+			T:go("C1U1")
+			T:place("ladder", "down")
+		end
 	end
-	T:go("R1F1 R1F2 D1")						-- now above water ready to plant new farm
 	
-	return "Farm converted to network storage"
+	return "Farm created with networking"
 end
 
 function createFarm()
@@ -5088,6 +5091,7 @@ function createFarm()
 		T:go("L1F6 L1F1 L2")
 	end
 	U.attachModem()
+	T:clear()
 	T:go("R1F1D1R1")	-- over water source, facing E (crops)
 	if R.data == "new" and R.goDown then	-- primary plot, user chose to add storage
 		createFarmNetworkStorage(true)		-- add networking and storage
@@ -9827,17 +9831,21 @@ Log:saveToLog("    return slot = "..slot)
 	end
 
 	function lib.getEquipped()
-		local left, right = "",""
-		local data = turtle.getEquippedLeft()
-		if data ~= nil then
-			left = data.name
-		end
-		data = turtle.getEquippedRight()
-		if data ~= nil then
-			right = data.name
-		end
+		return T:getEquipped("minecraft:crafting_table", "minecraft:diamond_pickaxe")
+	
+	
+	
+		-- local left, right = "",""
+		-- local data = turtle.getEquippedLeft()
+		-- if data ~= nil then
+			-- left = data.name
+		-- end
+		-- data = turtle.getEquippedRight()
+		-- if data ~= nil then
+			-- right = data.name
+		-- end
 		
-		return left, right
+		-- return left, right
 	end
 	
 	function lib.getSeedsOrCrops(crop, seed)
@@ -10163,9 +10171,13 @@ Log:saveToLog("Flower "..crop.." found")
 				elseif data.name:find("attached") ~= nil then	-- pumpkin / melon does not have state.age
 					isReady = true
 				else			-- all other crops inc Mystical Agriculture
-					status = data.state.age.." / 7"
-					if data.state.age == 7 then
+					if data.state.age == nil then
 						isReady = true
+					else
+						status = data.state.age.." / 7"
+						if data.state.age == 7 then
+							isReady = true
+						end
 					end
 				end
 			end
@@ -10259,8 +10271,12 @@ Log:saveToLog("Flower "..crop.." found")
 --Log:saveToLog("lib.plantCrop(seed = "..seed..", crop = "..crop)
 		local success = false
 		-- place(blockType, direction, leaveExisting, signText, doNotAttack)
-		if seed == "" then	-- must be a crop
-			success = T:place(crop, direction, true, "", true)
+		if seed == "" then			-- must be a crop or bare soil
+			if crop == "" then		-- crop planted
+				return false
+			else
+				success = T:place(crop, direction, true, "", true)
+			end
 			--success = T:place(crop, direction, false, "", true)
 --Log:saveToLog("Seed = "..seed..". Placing "..crop..": success = "..tostring(success))
 		else
@@ -10443,6 +10459,11 @@ Log:saveToLog("lib.isCropReady('forward'): isReady = "..tostring(isReady)..", cr
 Log:saveToLog("Initial planting of "..crop, true)
 			isFarmToRight, isFarmToFront = lib.harvest(seed, crop)	-- harvest plot a1 plots to right / front recorded	
 			return {"Initial crops planted. Re-start to manage this farm"}
+		elseif crop == "" and seed == "" then	-- request till soil only
+			watch = false
+			planted = false
+			lib.harvest(seed, crop)
+			return {"soil tilled ready for growing"}
 		end
 	end
 	while true do -- start infinite loop of watching crops, farming all modules
@@ -11444,16 +11465,7 @@ function test()
 	Log:saveToLog("test() started", true)
 	menu.clear()
 	-- insert code below
-	-- QuickMine      V# take block above if valuable, fill void above, fill void below
-	lib.prepareArea()
-	lib.clearArea()	-- ends NW corner
-	T:go("R1F13 R1F14 L1F1")
-	T:emptyTrash("up")
-	T:go("B1L1 F15 R1 F2R1")
-	lib.prepareArea()
-	lib.clearArea()	-- ends SE corner
-	T:go("F1R1 F13L1")
-	-- T:clear()
+
 	return {"function 'test' executed successfully"}
 end
 
