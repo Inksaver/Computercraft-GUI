@@ -1,4 +1,4 @@
-local version = 20260407.2300
+local version = 20260422.1230
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -1565,6 +1565,11 @@ function checkFarmPosition()
 		end
 		R.ready = true
 	end	-- else not over water
+	if R.ready then
+		Log:saveToLog("checkFarmPosition() complete. Ready to go", true)
+	else
+		Log:saveToLog("checkFarmPosition() NOT ready", true)
+	end
 	-- now facing crops, R.ready = true/false, R.networkFarm = true/false
 end
 
@@ -2157,7 +2162,7 @@ function clearMineshaft()
 	function lib.checkEquipment()
 		menu.colourPrint("Checking Equipment", colors.red)
 		local axeSide, swordSide = "", ""
-		local itemLeft, itemRight = T:getEquipped()
+		local itemLeft, itemRight = T:getEquipped("both")
 		if itemLeft == "minecraft:diamond_pickaxe" then 
 			axeSide = "left"
 		elseif itemRight == "minecraft:diamond_pickaxe" then 
@@ -4938,6 +4943,8 @@ function createFarmNetworkStorage(withStorage, removeLegacy)
 			T:go("C1U1")
 			T:place("ladder", "down")
 		end
+	else
+		T:go("D1C0 D1")
 	end
 	
 	return "Farm created with networking"
@@ -9697,77 +9704,42 @@ function manageFarm()
 		end
 		return blockType -- either barrel, chest, modem or cobble
 	end
-	
-	function lib.farmAll(isFarmToRight, isFarmToFront)
-		local plotCountR = 0		-- plot a1 harvested
-		local plotCountF = 0		-- plot a1 harvested
-		if isFarmToRight then
-			while isFarmToRight do	-- do all plots on this axis
-				isFarmToRight = lib.farmToRight() -- plot harvested and back to plot origin
-				plotCountR = plotCountR + 1
-			end
-			lib.goToLeft(plotCountR)
+			
+	function lib.checkFarmToRight()
+		-- check existence of farms to right and front
+		local isFarmToRight = false
+		T:go("U1F10")						-- go to right side of this farm
+		if utils.isStorage("down") then
+			isFarmToRight = true
 		end
-		if isFarmToFront then
-			while isFarmToFront do	-- do all plots on this axis
-				plotCountR = 0				-- reset
-				isFarmToRight, isFarmToFront = lib.farmInFront()
-				if isFarmToRight then
-					while isFarmToRight do	-- do all plots on this axis
-						isFarmToRight = lib.farmToRight() -- plot harvested and back to plot origin
-						plotCountR = plotCountR + 1
-					end
-					lib.goToLeft(plotCountR)	-- return home and continue with front
-				end
-				plotCountF = plotCountF + 1
-			end
-			lib.goToFront(plotCountF)
-		end
-	end
-	
-	function lib.farmInFront()
-		--[[ facing crops on first farm. move to next farm in front ]]
-		T:go("U1L1 F11D1 R1")						-- on next farm, facing crops
-		--local seed, crop = lib.manageTree()		-- refuel, gather seeds or other crops
-		local isFarmToRight, isFarmToFront = false, false
-		local isReady, crop, seed, status = lib.isCropReady("forward")		-- eg true, "minecraft:carrots", "7 / 7" or false, "", ""
-		--isFarmToRight = lib.harvest(seed, crop)		-- harvest field, store crops
-		if crop == "" then -- if no crop then ignore this farm
-			isFarmToRight, isFarmToFront = lib.checkFarmLocations()
-		else
-			local success, message = lib.manageTree() -- refuel if required, else do nothing
-			if not success then
-				return message, message
-			end
-			lib.getSeedsOrCrops(seed, crop)
-			isFarmToRight = lib.harvest(seed, crop)		-- harvest field, store crops
-			-- now at starting position of current plot
-		end
-		
-		return isFarmToRight, isFarmToFront
+		T:go("B10D1")						-- return to default position
+		return isFarmToRight
 	end
 	
 	function lib.checkFarmLocations()
+		-- check existence of farms to right and front
 		local isFarmToRight, isFarmToFront = false, false
 		T:go("U1F10")						-- right side of this farm
 		if utils.isStorage("down") then
 			isFarmToRight = true
 		end
-		T:go("R2F10 R1F10")					-- front of this farm
+		T:go("B10 L1F10")					-- front of this farm
 		if utils.isStorage("down") then
 			isFarmToFront = true
 		end
-		T:go("R2F10 D1L1")					-- starting position
+		T:go("B10 D1R1")					-- starting position
 		
 		return isFarmToRight, isFarmToFront
 	end
 	
-	function lib.farmToRight()
+	function lib.farmToRight(plotCountR)
 		--[[ facing crops on first farm. move to next farm on right side ]]
-		T:go("U1F11 D1")													-- on next farm, facing crops
+		if plotCountR then
+			T:go("U1F11 D1")													-- on next farm, facing crops
+		end
 		local isFarmToRight = false
 		local isReady, crop, seed, status = lib.isCropReady("forward")		-- eg true, "minecraft:carrots", "7 / 7" or false, "", ""
-		
+Log:saveToLog("lib.farmToRight(), isReady = "..tostring(isReady)..", crop = "..crop..", seed = "..seed)
 		if crop == "" then -- if no crop then ignore this farm
 			isFarmToRight, isFarmToFront = lib.checkFarmLocations()
 		else
@@ -9794,6 +9766,9 @@ function manageFarm()
 			if crop:find("beetroot") ~= nil then
 				return "minecraft:beetroot", "minecraft:beetroot_seeds"
 			end
+			if crop:find("tomatoes") ~= nil then
+				return "farmersdelight:tomatoes", "farmers_delight:tomato_seeds"
+			end
 		end
 		if crop:find("wheat") ~= nil then
 			return  "minecraft:wheat", "minecraft:wheat_seeds"
@@ -9807,6 +9782,9 @@ function manageFarm()
 		if crop:find("potato") ~= nil then
 			return "minecraft:potato", ""
 		end
+		if crop:find("onion") ~= nil then
+			return "farmersdelight:onion", ""
+		end
 		-- planted crops are plural, harvested singular: carrots / carrot, pototoes/ potato
 		return crop, "" -- no seed for carrot / potato
 	end
@@ -9815,7 +9793,7 @@ function manageFarm()
 Log:saveToLog("==> lib.getItem("..name..")")
 		local slot = U.getItemFromNetwork("barrel", name, 1)
 		if slot > 0 then					-- obtained from network
-Log:saveToLog("    return slot = "..slot)
+Log:saveToLog("    return slot = "..slot..", item = "..name)
 			return slot
 		end
 		-- not found, slot = 0
@@ -9828,24 +9806,6 @@ Log:saveToLog("    return slot = "..slot)
 			end
 		end
 		return slot
-	end
-
-	function lib.getEquipped()
-		return T:getEquipped("minecraft:crafting_table", "minecraft:diamond_pickaxe")
-	
-	
-	
-		-- local left, right = "",""
-		-- local data = turtle.getEquippedLeft()
-		-- if data ~= nil then
-			-- left = data.name
-		-- end
-		-- data = turtle.getEquippedRight()
-		-- if data ~= nil then
-			-- right = data.name
-		-- end
-		
-		-- return left, right
 	end
 	
 	function lib.getSeedsOrCrops(crop, seed)
@@ -9978,24 +9938,28 @@ Log:saveToLog("planting " ..seed)
 	end
 	
 	function lib.goToLeft(plotCountR)
-		T:go("U1R2 F"..plotCountR * 11 .."D1R2")	-- return home and continue with front
-		if R.config ~= nil then
-			local coord = R.config.currentPlot
-			for i = 1, plotCountR do
-				coord = lib.configUpdateCoords(coord, "left")
+		if plotCountR > 0 then
+			T:go("U1B"..plotCountR * 11 .."D1")	-- return home and continue with front
+			if R.config ~= nil then
+				local coord = R.config.currentPlot
+				for i = 1, plotCountR do
+					coord = lib.configUpdateCoords(coord, "left")
+				end
+				R.config.currentPlot = coord
 			end
-			R.config.currentPlot = coord
 		end
 	end
 	
 	function lib.goToFront(plotCountF)
-		T:go("U1R1F"..plotCountF * 11 .."D1L1")
-		if R.config ~= nil then
-			local coord = R.config.currentPlot
-			for i = 1, plotCountF do
-				coord = lib.configUpdateCoords(coord, "back")
+		if plotCountF > 0 then
+			T:go("U1R1F"..plotCountF * 11 .."D1L1")
+			if R.config ~= nil then
+				local coord = R.config.currentPlot
+				for i = 1, plotCountF do
+					coord = lib.configUpdateCoords(coord, "back")
+				end
+				R.config.currentPlot = coord
 			end
-			R.config.currentPlot = coord
 		end
 	end
 	
@@ -10024,7 +9988,9 @@ Log:saveToLog("    Finding tree..")
 		local width = 9
 		local length = 10
 		local toRight = true
+Log:saveToLog("lib.harvest(seed = "..seed..", crop = "..crop..")")
 		if crop:find("pumpkin") ~= nil or crop:find("melon") ~= nil or seed:find("pumpkin") ~= nil or seed:find("melon") ~= nil then
+Log:saveToLog("lib.harvest(seed = "..seed..", crop = "..crop..") found pumpkin or melon")
 			for w = 1, width do
 				lib.replant(seed, crop)	-- check and replant crop below
 				T:forward(1)
@@ -10168,8 +10134,9 @@ Log:saveToLog("Flower "..crop.." found")
 					if data.state.age == 3 then
 						isReady = true
 					end
-				elseif data.name:find("attached") ~= nil then	-- pumpkin / melon does not have state.age
-					isReady = true
+				--elseif data.name:find("attached") ~= nil then	-- pumpkin / melon does not have state.age
+				elseif data.name:find("stem") ~= nil then	-- pumpkin / melon does not have state.age
+					return true, crop, "", 7
 				else			-- all other crops inc Mystical Agriculture
 					if data.state.age == nil then
 						isReady = true
@@ -10297,20 +10264,29 @@ Log:saveToLog("Flower "..crop.." found")
 		local isReady, cropType, seedType, status = lib.isCropReady("down")	-- eg true, "minecraft:carrots", "7 / 7" or false, "", ""
 		if cropType == "" then					-- no crop below (above water, storage or dirt)
 			turtle.digDown("right")				-- use hoe
-			lib.plantCrop(seed, crop, "down")	-- plant crop
+			if not lib.plantCrop(seed, crop, "down") then	-- plant crop
+				turtle.digDown("right")			-- use hoe again required with some mods
+				lib.plantCrop(seed, crop, "down")
+			end
 		elseif crop:find("pumpkin") == nil and crop:find("melon") == nil and isReady then						-- crop below is ready
 			turtle.digDown("left")				-- use pickaxe
-			lib.plantCrop(seedType, cropType, "down")	-- plant crop
+			if not lib.plantCrop(seedType, cropType, "down") then	-- plant crop
+				turtle.digDown("left")
+				lib.plantCrop(seedType, cropType, "down")
+			end
 		elseif cropType == "minecraft:melon" or cropType == "minecraft:pumpkin" then
 			turtle.digDown("left")				-- use pickaxe
 		end
+		turtle.suckDown()
 	end
 	
 	function lib.refuelWithLogs(logSlot)
 		--[[ called after lib.manageTree and on startup ]]
+Log:saveToLog("lib.refuelWithLogs(logSlot = "..logSlot..")")
 		if logslot == 0 then return end
-		local equippedLeft, equippedRight = lib.getEquipped()				-- "" or "minecraft:..." for each side
-		local craftSlot = T:getItemSlot("minecraft:crafting_table")			-- if crafting table in inventory
+		local equippedLeft, equippedRight = T:getEquipped("both")				-- "" or "minecraft:..." for each side
+		local craftSlot = T:getItemSlot("minecraft:crafting_table")				-- if crafting table in inventory
+Log:saveToLog("lib.refuelWithLogs("..logSlot..") equippedLeft = "..equippedLeft..", equippedRight = "..equippedRight)
 		if equippedLeft ~= "minecraft:crafting_table" and equippedRight ~= "minecraft:crafting_table" then
 			if craftSlot == 0 then												-- no crafter present
 				craftSlot = lib.getItem("minecraft:crafting_table") 			-- gets item or errors
@@ -10320,6 +10296,7 @@ Log:saveToLog("Flower "..crop.." found")
 		end
 		turtle.select(logSlot)
 		turtle.transferTo(1)
+-- utils.waitForInput("Ready to craft logs slot 1. Proceed?")
 		turtle.craft()														-- craft logs to planks
 		logSlot = T:getItemSlot("planks")
 		while logSlot > 0 and turtle.getFuelLevel() < turtle.getFuelLimit() do
@@ -10392,6 +10369,15 @@ Log:saveToLog("Local crops ripe calling lib.manageTree()")
 		All farms now use network storage
 	]]
 Log:saveToLog("manageFarm() calling checkFarmPosition()")
+	if turtle.getFuelLevel() < 60 then
+Log:saveToLog("manageFarm(): Unable to proceed. Fuel level is "..turtle.getFuelLevel())
+		if R.auto then 	
+			utils.waitForInput("Unable to proceed. Fuel level is "..turtle.getFuelLevel())
+			return {}
+		else		-- not started from startup.lua
+			return {"Unable to proceed. Fuel level is "..turtle.getFuelLevel()}
+		end
+	end
 	checkFarmPosition()											-- should be facing crops, placed above water source. R.ready, R.networkFarm is true
 	if not R.ready then											-- not in correct starting place
 		lib.goHome()
@@ -10412,7 +10398,7 @@ Log:saveToLog("manageFarm() calling checkFarmPosition()")
 	if not empty then												-- items still in turtle inventory
 		T:sortInventory(false)										-- sort inventory prior to unloading.
 	end
-	local equippedLeft, equippedRight = lib.getEquipped()			-- "" or "minecraft:..." for each side
+	local equippedLeft, equippedRight = T:getEquipped("both")		-- "" or "minecraft:..." for each side
 	local emptySlots = T:getEmptySlotCount()
 	if emptySlots < 3 then											-- 3 slots needed for axe, hoe and crafting
 		T:clear()
@@ -10441,13 +10427,13 @@ Log:saveToLog("manageFarm() calling checkFarmPosition()")
 		end
 		if equippedRight ~= "minecraft:diamond_hoe" then
 			if not T:equip("right", "minecraft:diamond_hoe") then		-- ? equip hoe
-				lib.getItem("minecraft:diamond_hoe")				-- get hoe
+				lib.getItem("minecraft:diamond_hoe")					-- get hoe
 				T:equip("right", "minecraft:diamond_hoe")				-- equip hoe
 			end
 		end
 	end														
 
-	local isFarmToRight, isFarmToFront = false, false
+	--local isFarmToRight, isFarmToFront = false, false
 	--local isReady, crop, seed, status
 	local isReady, crop, seed, status = lib.isCropReady("forward")
 Log:saveToLog("lib.isCropReady('forward'): isReady = "..tostring(isReady)..", crop = "..crop..", seed = "..seed..", status = "..status)
@@ -10457,7 +10443,8 @@ Log:saveToLog("lib.isCropReady('forward'): isReady = "..tostring(isReady)..", cr
 		seed, crop = lib.askPlayerForCrops()
 		if crop ~= "" or seed  ~= "" then	-- something has been chosen
 Log:saveToLog("Initial planting of "..crop, true)
-			isFarmToRight, isFarmToFront = lib.harvest(seed, crop)	-- harvest plot a1 plots to right / front recorded	
+			-- isFarmToRight, isFarmToFront = lib.harvest(seed, crop)	-- harvest plot a1 plots to right / front recorded	
+			lib.harvest(seed, crop)	-- plant this plot only
 			return {"Initial crops planted. Re-start to manage this farm"}
 		elseif crop == "" and seed == "" then	-- request till soil only
 			watch = false
@@ -10466,18 +10453,66 @@ Log:saveToLog("Initial planting of "..crop, true)
 			return {"soil tilled ready for growing"}
 		end
 	end
+
+	if watch and planted then -- planted true when farm first planted
+		crop, seed = lib.watchFarm() -- waits if required, returns seed / crop
+		planted = true		
+	end
+	-- -- first farm is ready to go	
+	Log:saveToLog("Beginning "..crop.. " management", true)
+	local plotCountF = 0																-- move from front to back of farm plots. This counts no of plots moved from front
+	local plotCountR = 0																-- move left to right along farm plots
+	local isFarmToRight, isFarmToFront = true, true										-- flags set to true to ensure loop runs at least once
+	local flagSet = false
 	while true do -- start infinite loop of watching crops, farming all modules
-		if watch and planted then -- planted true when farm first planted
-			crop, seed = lib.watchFarm() -- waits if required, returns seed / crop
-			planted = true		
+		while isFarmToFront do															-- farm to front confirmed on first plot
+			while isFarmToRight do														-- do all plots on the right side
+				lib.manageTree()														-- refuel if needed
+				local hasFrontFarm = false												-- local flag to imitialise isFarmToFront
+				isReady, crop, seed, status = lib.isCropReady("forward")
+				isFarmToRight, hasFrontFarm = lib.harvest(seed, crop)					-- harvest this plot
+				if not flagSet then
+					isFarmToFront = hasFrontFarm										-- external flag now set when first plot is harvested
+					flagSet = true
+				end
+				if isFarmToRight then													-- plot just harvested sets this flag
+					T:go("U1F11 D1")													-- now moved to next farm, facing crops
+					plotCountR = plotCountR + 1											-- increment plot counter for return to base
+					local isReady, crop, seed, status = lib.isCropReady("forward")		-- eg true, "minecraft:carrots", "7 / 7" or false, "", ""
+					-- NOT waiting fror crops to be ready any more
+	Log:saveToLog("farming plot no "..plotCountR.." on right, crop = "..crop..", seed = "..seed)
+					lib.manageTree() 													-- refuel if required, else do nothing
+					if crop == "" then 													-- if no crop then ignore this farm
+	Log:saveToLog("farming plot no "..plotCountR.." no crop found, so checking for further plots")
+						isFarmToRight = lib.checkFarmToRight()							-- check right border for further plot
+					else
+						lib.getSeedsOrCrops(seed, crop)									-- load in crop / seed
+					end
+				end
+			end
+			-- no more farms to right, so return to start position
+			lib.goToLeft(plotCountR)													-- all plots to right have been checked, return to start position
+			plotCountR = 0																-- reset right plot counter
+			isFarmToRight = true														-- reset to ensure farm in front is harvested
+			flagSet = false																-- reset so next band of farms controls isFarmToFront flag
+			if isFarmToFront then														-- farm in front confirmed
+				T:go("U1L1 F11D1 R1")													-- on next farm, facing crops
+				plotCountF = plotCountF + 1
+			end
 		end
-Log:saveToLog("Beginning "..crop.. " management", true)
-		isFarmToRight, isFarmToFront = lib.harvest(seed, crop)	-- harvest plot a1 plots to right / front recorded
-		lib.farmAll(isFarmToRight, isFarmToFront)
-		if not R.auto then -- not started from startup.lua
+		-- no more farms in front
+		lib.goToFront(plotCountF)
+		plotCountR = 0																	-- reset all flags and counters
+		plotCountF = 0																	-- reset forward plot counter
+		isFarmToRight = true
+		isFarmToFront = true
+		flagSet = false
+		if not R.auto then 																-- not started from startup.lua
 			return {"Crop management of all modules completed"}
 		end
+		crop, seed = lib.watchFarm() -- waits if required, returns seed / crop
 	end
+	
 	return {}
 end
 
