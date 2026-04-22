@@ -1,4 +1,4 @@
-local version = 20251003.1700
+local version = 20260422.1230
 local Class = require("lib.Class")
 local Vector2 = require("lib.Vector2")
 local C = Class:derive("Checkbox")
@@ -170,7 +170,7 @@ function C:draw()
 		if self.isEnabled then
 			if self.index > 0 then
 				term.setTextColor(colors.black)
-				term.write(self.index)
+				term.write(tostring(self.index))
 			else
 				term.write(" ")
 			end
