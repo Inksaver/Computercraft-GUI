@@ -1,4 +1,4 @@
-local version = 20260407.1200
+local version = 20260419.1230
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as lib/TurtleUtils.lua
@@ -1384,7 +1384,7 @@ function U.sendItemToNetworkStorage(storageType, itemToSend, amountToSend, fromS
 		end
 		--U.moveItemsFromTurtle(turtleName, toInventoryName, fromTurtleSlot, quantity, toSlot)
 Log:saveToLog("U.moveItemsFromTurtle(turtleName = "..U.turtleName..", storageToUse = "..tostring(storageToUse)..", slot = "..tostring(turtleSlot)..", slotCount = "..tostring(slotCount)..")")
-		if storageToUse ~= nil then
+		if storageToUse ~= nil and storageToUse ~= "" then
 			U.moveItemsFromTurtle(storageToUse, turtleSlot, slotCount)
 		end
 	end
@@ -1550,6 +1550,11 @@ function U.sendItemsToTurtle(fromInventoryName, fromInventorySlot, quantity, toT
 	toTurtleSlot: 		The slot to move to. (nil will use any available slot(s))
 	]]
 	--U.wrapModem()
+	local modem = peripheral.find("modem")		-- find modem
+	if modem == nil then
+		return "Modem not found"
+	end
+	U.turtleName = modem.getNameLocal()
 	return peripheral.call(fromInventoryName, "pushItems", U.turtleName, fromInventorySlot, quantity, toTurtleSlot)
 end
 
