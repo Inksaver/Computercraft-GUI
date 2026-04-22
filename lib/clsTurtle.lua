@@ -1,4 +1,4 @@
-local version = 20260407.2300
+local version = 20260419.1230
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as clsTurtle.lua, preferably in /lib folder
@@ -958,7 +958,8 @@ function T:craft(item, quantity)
 			if total < 2 then	-- not enough logs
 				return false, "Insufficient  logs available"
 			end	
-			if turtle.craft() then
+			local result = pcall(turtle.craft)
+			if result then
 				return true, ""
 			else
 				return false, "Unable to craft planks"
@@ -972,7 +973,8 @@ function T:craft(item, quantity)
 			turtle.transferTo(16) --move planks to 16
 			lib.transfer(16, {1, 2, 3, 5, 6, 7, 9, 10, 11}, 1)
 			turtle.drop() -- drop remaining planks
-			if turtle.craft() then-- craft chest
+			local result = pcall(turtle.craft)
+			if result then-- craft chest
 				return true, ""
 			else
 				return false, "Unable to craft chest"
@@ -991,7 +993,8 @@ function T:craft(item, quantity)
 					turtle.dropUp()
 				end
 			end
-			if turtle.craft() then
+			local result = pcall(turtle.craft)
+			if result then
 				return true, ""
 			else
 				return false, "Unable to craft slabs"
@@ -1078,7 +1081,8 @@ function T:craft(item, quantity)
 	turtle.select(16)
 	turtle.drop() --drop remaining resources before crafting
 	-- Attempt to craft item into slot 16
-	if turtle.craft() then
+	local result = pcall(turtle.craft)
+	if result then
 		craftOK = true
 		--now put crafted item in chest first, so will mix with any existing similar items
 		turtle.drop()
@@ -2023,9 +2027,41 @@ function T:getEmptySlotCount()
 	return emptySlots
 end 
 
-function T:getEquipped(right, left)
+function T:getEquipped(side)
 	-- returns tool equipped on chosen side "left" or "right"
 	-- valid from version 1.101.6
+	if side == nil then
+		side = "both"
+	end
+	local lib = {}
+	
+	function lib.getEmptySlot()
+		local emptySlot = self:getFirstEmptySlot()			-- first empty slot
+		if emptySlot == 0 then -- all slots full
+			turtle.select(16)
+			turtle.drop()
+			emptySlot = 16
+		end
+		return emptySlot
+	end
+	
+	function lib.checkSide(side, slot)
+		local equipped = ""
+		turtle.select(slot)
+		if side == "right" then
+			if turtle.equipRight() then 					-- remove tool on the right
+				equipped = self:getSlotContains(slot) 		-- contains name of tool from right side
+				turtle.equipRight()							-- return tool to right
+			end
+		elseif side == "left" then
+			if turtle.equipLeft() then 						-- remove tool on the left
+				equipped = self:getSlotContains(slot) 		-- contains name of tool from right side
+				turtle.equipLeft()							-- return tool to left
+			end
+		end
+		return equipped										-- returns "" or tool name
+	end
+	
 	local itemLeft = ""
 	local itemRight = ""
 	if _G.ccMajorVersion > 1.101 or _G.ccMajorVersion == 1.101 and _G.ccMinorVersion >= 6 then
@@ -2038,10 +2074,21 @@ function T:getEquipped(right, left)
 			itemRight = dataRight.name
 		end
 	else
-		itemRight, itemLeft, _ = self:setEquipment(right, left)
+		local emptySlot = lib.getEmptySlot()					-- first empty slot
+		if side == "left" or side == "both" then
+			itemLeft = lib.checkSide("left", emptySlot)
+		end
+		if side == "right" or side == "both" then
+			itemRight = lib.checkSide("right", emptySlot)
+		end
 	end
-
-	return itemLeft, itemRight	-- "", "" if nothing equipped; "minecraft:diamond_pickaxe", "minecraft:crafting_table"
+	if side == "left" then
+		return itemLeft
+	elseif side == "right" then
+		return itemRight
+	else
+		return itemLeft, itemRight	-- "", "" if nothing equipped; "minecraft:diamond_pickaxe", "minecraft:crafting_table"
+	end
 end
 
 function T:getFirstEmptySlot()
