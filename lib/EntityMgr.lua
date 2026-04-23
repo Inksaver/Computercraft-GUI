@@ -1,6 +1,4 @@
-local version = 20250914.1600
--- pastebin(1): Hg0S0Gac lib.EntityMgr.lua
--- pastebin(2): vCxYV6zx
+local version = 20260423.1600
 local Class = require("lib.Class")
 --local U = require("lib.TurtleUtils") -- using _G.U loaded in tk3
 local EM = Class:derive("EntityMgr")
