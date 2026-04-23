@@ -1,5 +1,4 @@
-local version = 20250914.1200
--- https://pastebin.com/f8SFrLpL lib.ui.Button.lua
+local version = 20260423.1600
 local Class 	= require("lib.Class")
 local Vector2 	= require("lib.Vector2")
 local B		 	= Class:derive("Button")
