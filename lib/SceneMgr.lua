@@ -1,6 +1,4 @@
-local version = 20250914.1600
--- pastebin(1): 9u6ex4YP lib.SceneMgr.lua
--- pastebin(2): YT0xET0n
+local version = 20260423.1600
 local Class = require("lib.Class")
 local Scene = require("lib.Scene")
 local SM = Class:derive("SceneMgr")
