@@ -1,5 +1,4 @@
-local version = 20250914.1200
--- https://pastebin.com/ZzmwzayE lib.ui.MultiButton.lua
+local version = 20260423.1600
 local Button = require("lib.ui.Button")
 --local U = require("lib.TurtleUtils") -- using _G.U loaded in tk
 local MB = Button:derive("MultiButton")
