@@ -1,5 +1,4 @@
-local version = 20250913.0900
--- https://pastebin.com/i9dprCbT lib.ui.MultiLabel.lua
+local version = 20260423.1600
 local Label = require("lib.ui.Label")
 local ML = Label:derive("MultiLabel")
 
