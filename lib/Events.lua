@@ -1,6 +1,4 @@
-local version = 20250914.1600
--- pastebin(1): Y0vZ9Zgj lib.Events.lua
--- pastebin(2):
+local version = 20260423.1600
 local Class = require("lib.Class")
 local Events = Class:derive("Events")
 
