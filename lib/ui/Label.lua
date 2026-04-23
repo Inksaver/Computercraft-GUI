@@ -1,5 +1,4 @@
-local version = 20250913.0900
--- https://pastebin.com/CrXuTpcT lib.ui.Label.lua
+local version = 20260423.1600
 local Class 	= require("lib.Class")
 local Vector2 	= require("lib.Vector2")
 local menu 		= require("lib.menu")
