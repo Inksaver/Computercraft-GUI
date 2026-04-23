@@ -1,6 +1,4 @@
-local version = 20250914.1600
--- pastebin(1): cTUeYqhF lib.Scene.lua
--- pastebin(2): eBMmftm4
+local version = 20260423.1600
 local Class = require("lib.Class")
 local EntityMgr = require("lib.EntityMgr")
 local Scene = Class:derive("Scene")
