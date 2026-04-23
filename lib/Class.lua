@@ -1,7 +1,5 @@
-local version = 20250914.1600
+local version = 20260423.1600
 --[[
-	pastebin(1) 9LETv15f lib.Class.lua
-	pastebin(2) vNARV362
 	this code based on youtube dot com watch?v=Jte9o4S6rlo&list=PLZVNxI_lsRW2kXnJh2BMb6D82HCAoSTUB
 	Thanks to pixelbytestudios dot com for a brilliant tutorial seies on Lua and Love2d
 	Adapted for use in ccTweaked / computercraft by Inksaver youtube dot com/@Inksaver
