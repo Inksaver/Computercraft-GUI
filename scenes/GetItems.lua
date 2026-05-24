@@ -1,8 +1,8 @@
-local version = 20260403.1000
+local version = 20260524.0800
 
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
-local MultiLabel= require("lib.ui.MultiLabel")
+local MultiLabel= require("lib.ui.Multilabel")
 local Button 	= require("lib.ui.Button")
 local S 		= Scene:derive("GetItems")
 local WIDTH, HEIGHT = term.getSize()-- 39 x 13 turtle terminal
