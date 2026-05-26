@@ -1,4 +1,4 @@
-local version = 20260419.1230
+local version = 20260526.1000
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as clsTurtle.lua, preferably in /lib folder
@@ -2909,7 +2909,7 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 				if self:detect(dir) then -- solid block ahead, not air, water or lava
 					local blockType = self:getBlockType(dir)
 					if blockType ~= "minecraft:bedrock" then
-						if not self:isStone(blockType) and blockType ~= "minecraft:ladder" and blockType ~= "minecraft:deepslate" and blockType ~= "minecraft:torch" then
+						if not self:isStone(blockType) and blockType ~= "minecraft:ladder" and blockType ~= "minecraft:deepslate" and blockType ~= "minecraft:torch" and blockType:find("chest") ~= nil and blockType:find("barrel") ~= nil then
 						--if self:digValuable(direction[modifier + 1]) then
 							fill = true
 						end
