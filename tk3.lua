@@ -1,4 +1,4 @@
-local version = 20260422.1230
+local version = 20260526.1000
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -272,7 +272,7 @@ if tonumber(mcMajorVersion) == nil then -- 1.18.3 NAN
 	end
 end
 
-if mcMajorVersion < 1.7  and mcMajorVersion >= 1.18 then -- 1.12 to 1.??
+if (mcMajorVersion < 1.7  and mcMajorVersion >= 1.18 ) or mcMajorVersion >= 26 then -- 1.12 to 1.?? and 2026 version renaming
 	U.bedrock = -64
 	U.ceiling = 319
 end
@@ -5682,11 +5682,12 @@ function createMine()
 	
 	function lib.floor(length, clearUp)
 		-- excavates a length and places block below
+		-- T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 		for i = 1, length do
 			if clearUp then						-- used along floor to make a corridor
-				T:go("x0C2", false, 0, true)	-- used along top of wall to place below and clear a passage
+				T:go("x0C2", true, 0, true)	-- used along top of wall to place below and clear a passage
 			else
-				T:go("C2", false, 0, true)
+				T:go("C2", true, 0, true)
 			end
 			if i < length then
 				T:forward(1)
