@@ -1,4 +1,4 @@
-local version = 20260526.1000
+local version = 20261026.1100
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as clsTurtle.lua, preferably in /lib folder
@@ -7,15 +7,15 @@ local version = 20260526.1000
 	T = require("lib/T").new()
 	T:clear()
 	T:forward(2)
-	To use logging 
+	To use logging
 	T = require("lib.T"):new(true) -- true enables logfile to log.txt
-	
+
 	Computercraft started with mc version 1.7.10 and went to 1.8.9
 	ccTweaked started around mc 1.12 and currently at 1.21.1
 	mc 1.18 has new blocks and bedrock at -64, so needs to be taken into account.
 	_HOST = The ComputerCraft and Minecraft version of the current computer environment.
 	For example, ComputerCraft 1.93.0 (Minecraft 1.15.2).
-	
+
 	This version no longer uses the 'damage' property found in older versions.
 ]]
 local Class = require("lib.Class")
@@ -25,11 +25,32 @@ local bedrock = 0
 local ceiling = 255
 local deletesWater = false
 local networkName = ""
-local mcMajorVersion = tonumber(_HOST:sub(_HOST:find("Minecraft") + 10, _HOST:find("\)") - 1)) -- eg 1.18 or 1.20 -> 1.18, 1.20
+-- Global variables from tk3
+--_G.mcMajorVersion, _G.mcMinorVersion, _G.ccMajorVersion,_G.ccMinorVersion
+if _G.mcMajorVersion == nil then	-- class being used without tk3
+	_G.mcMinorVersion = 0
+	local mcVersion = _HOST:sub(_HOST:find("Minecraft") + 10):sub(1, -2):gsub("^%s*(.-)%s*$", "%1") -- eg 1.20 / 26.2
+	local mcMajor = mcVersion
+	if tonumber(mcMajor) == nil then -- 1.18.3 NAN
+		local parts = mcMajor:split(".")
+		mcMajor = parts[1]
+		if parts[2] ~= nil then
+			mcMajor = mcMajor.."."..parts[2]
+		end
+		_G.mcMajorVersion = tonumber(mcMajor)
+		if parts[3] ~= nil then
+			_G.mcMinorVersion = tonumber(parts[3])
+		end
+	else
+		_G.mcMajorVersion = tonumber(mcMajor)
+	end
+end
+--local mcMajorVersion = tonumber(_HOST:sub(_HOST:find("Minecraft") + 10, _HOST:find("\)") - 1)) -- eg 1.18 or 1.20 -> 1.18, 1.20
+--local mcMajorVersion = tonumber(_HOST:sub(_HOST:find("Minecraft") + 10):sub(1, -2)) -- eg 1.20 / 26.2
 
 function string:Split(sSeparator, nMax, bRegexp, noEmpty)
 	--[[return a table split with sSeparator. noEmpty removes empty elements
-		use: tblSplit = SplitTest:Split('~',[nil], [nil], false) or tblSplit = string.Split(SplitTest, '~')]]   
+		use: tblSplit = SplitTest:Split('~',[nil], [nil], false) or tblSplit = string.Split(SplitTest, '~')]]
 	assert(sSeparator ~= '','separator must not be empty string')
 	assert(nMax == nil or nMax >= 1, 'nMax must be >= 1 and not nil')
 	if noEmpty == nil then noEmpty = true end
@@ -51,7 +72,7 @@ function string:Split(sSeparator, nMax, bRegexp, noEmpty)
 			nMax = nMax-1
 		end
 		aRecord[nField] = self:sub(nStart)
-		
+
 		if noEmpty then --split on newline preserves empty values
 			for i = 1, #aRecord do
 				if aRecord[i] ~= "" then
@@ -62,13 +83,13 @@ function string:Split(sSeparator, nMax, bRegexp, noEmpty)
 			newRecord = aRecord
 		end
 	end
-	
+
 	return newRecord
 end
 
-if tonumber(mcMajorVersion) == nil then -- 1.18.3 NAN
-	mcMajorVersion = tonumber(_HOST:sub(_HOST:find("Minecraft") + 10, _HOST:find("\)") - 3)) -- eg 1.19.4 -> 1.19
-end
+--if tonumber(mcMajorVersion) == nil then -- 1.18.3 NAN
+	--mcMajorVersion = tonumber(_HOST:sub(_HOST:find("Minecraft") + 10, _HOST:find("\)") - 3)) -- eg 1.19.4 -> 1.19
+--end
 if mcMajorVersion < 1.7  and mcMajorVersion >= 1.18 then -- 1.12 to 1.??
 	bedrock = -64
 	ceiling = 319
@@ -77,7 +98,7 @@ if mcMajorVersion < 1.7  and mcMajorVersion <= 1.12 then -- 1.12 to 1.??
 	deletesWater = true
 end
 local stone =
-{	
+{
 	"minecraft:cobblestone",
 	"minecraft:mossy_cobblestone",
 	"minecraft:netherrack",
@@ -132,7 +153,7 @@ local stone =
 	"minecraft:brown_terracotta",
 	"minecraft:light_gray_terracotta"
 } -- must be exact mc names!
-			  
+
 local flowers =
 {
 	"minecraft:sapling",
@@ -293,7 +314,7 @@ local maSeeds = {
 	"mysticalagriculture:nether_star_seeds",
 	"mysticalagriculture:dragon_egg_seeds"
 }
-			  
+
 --[[local T = {}
 T.__index = T
 
@@ -368,26 +389,26 @@ end
 function T:setLogFileName(value)
 	self.logFileName = value
 end
-function T:getCurrentFileSize()		
+function T:getCurrentFileSize()
 	if self.logFileExists then
 		return fs.getSize(self.logFileName)
 	else
 		return 0
 	end
 end
-function T:deleteLog()		
+function T:deleteLog()
 	if fs.exists(self.logFileName) then
 		fs.delete(self.logFileName)
 	end
 	self.logFileExists = false
-	
+
 	return true
 end
 function T:appendLine(newText)
 	local handle = ""
-	
+
 	if fs.exists(self.logFileName) then --logFile already created
-		handle = fs.open(self.logFileName, "a") 
+		handle = fs.open(self.logFileName, "a")
 	else
 		handle = fs.open(self.logFileName, "w") --create file
 	end
@@ -468,8 +489,8 @@ function T:getMASeeds()
 	return maSeeds
 end
 -- change direction and movement methods
-function T:attack(direction)	
-	if direction ==nil then direction = "all" end
+function T:attack(direction)
+	if direction ==   nil then direction = "all" end
 	turtle.select(1)
 	local success = false
 	local attackLimit = 30 -- won't get in infinite loop attacking a minecart chest
@@ -501,7 +522,7 @@ function T:attack(direction)
 			attackLimit = attackLimit - 1
 			if attackLimit <= 0 then
 				break
-			end			
+			end
 		end
 	end
 
@@ -522,11 +543,11 @@ function T:doMoves(numBlocksRequested, direction)
 	local bypassCount = 0
 	local blockType
 	local moveOK, moveError = false, ""
-	
+
 	if numBlocksRequested == 0 then
 		return true, 0, "0 blocks requested"
 	end
-	
+
 	self:refuel(steps)
 	turtle.select(1)
 	-- re-assign turtle functions to new variables
@@ -541,7 +562,7 @@ function T:doMoves(numBlocksRequested, direction)
 		Dig = turtle.digDown
 		Detect = turtle.detectDown
 	end
-	
+
 	if numBlocksRequested == 0 then
 		return 0
 	end
@@ -557,7 +578,7 @@ function T:doMoves(numBlocksRequested, direction)
 		else
 			if direction == "back" then
 				moveOK, moveError = turtle.back() 				-- try to move back
-				if moveOK then								
+				if moveOK then
 					numBlocksMoved = numBlocksMoved + 1
 				else											-- unable to move back
 					turtle.turnRight()							-- face opposite direction
@@ -590,7 +611,7 @@ function T:doMoves(numBlocksRequested, direction)
 								self:attack()
 							end
 						end
-					end 
+					end
 				end
 				if not bypass then
 					moveOK, moveError = Move() -- try to move forward/back/up/down
@@ -622,7 +643,7 @@ function T:doMoves(numBlocksRequested, direction)
 			end
 		end
 	end
-		
+
 	return numBlocksMoved, errorMsg
 end
 
@@ -643,7 +664,7 @@ function T:changeCoords(direction)
 	--	3 = go east  (x increases)
 	--[[if direction == "forward" then
 		if self.facing == 0 then
-			self.z = self.z + 1 
+			self.z = self.z + 1
 		elseif self.facing == 1 then
 			self.x = self.x - 1
 		elseif self.facing == 2 then
@@ -673,13 +694,13 @@ function T:down(steps, getBlock)
 	steps = steps or 1
 	if getBlock == nil then getBlock = false end
 	local success, blockType = false, nil
-	if steps == 0 then 
+	if steps == 0 then
 		if getBlock then
 			blockType = self:getBlockType("down")
 		end
 		return true, 0, "", blockType
 	end
-	
+
 	local blocksMoved, errorMsg = self:doMoves(steps, "down")
 	if blocksMoved == steps then
 		success = true
@@ -690,12 +711,12 @@ function T:down(steps, getBlock)
 	return success, blocksMoved, errorMsg, blockType
 end
 
-function T:forward(steps, getBlock)    
+function T:forward(steps, getBlock)
 	--[[can be used to get blocktpe only by passing 0 steps ]]
 	steps = steps or 1
 	if getBlock == nil then getBlock = false end
 	local success, blockType = false, nil
-	if steps == 0 then 
+	if steps == 0 then
 		if getBlock then
 			blockType = self:getBlockType("forward")
 		end
@@ -738,7 +759,7 @@ function T:up(steps, getBlock)
 	steps = steps or 1
 	if getBlock == nil then getBlock = false end
 	local success, blockType = false, nil
-	if steps == 0 then 
+	if steps == 0 then
 		if getBlock then
 			blockType = self:getBlockType("up")
 		end
@@ -753,10 +774,10 @@ end
 -- other methods
 function T:checkInventoryForItem(items, quantities, required, message)
 	local lib = {}
-	
+
 	function lib.checkInventory(self, items, quantities, inventory)
 		--[[
-		Does the inventory have any or all of the items required? 
+		Does the inventory have any or all of the items required?
 		Multiple choices are similar alternatives eg cobblestone, dirt. Most requests are single item
 		eg requested: {"stone", "dirt"}, quantities: { 256, 256 }
 		eg inventory: {"minecraft:cobblestone" = 128, "minecraft:dirt" = 100}  = 228: still need 28 cobble or dirt
@@ -765,13 +786,13 @@ function T:checkInventoryForItem(items, quantities, required, message)
 		-- on first entry currentItems = {}
 		local waiting = true 			-- return value. set to false if not enough put in the inventory for this item
 		local quantitiesFound = {} 		-- table of quantities found, based on no of items needed
-		for i = 1, #quantities do		-- Initialise table eg {0, 0, 0}	
+		for i = 1, #quantities do		-- Initialise table eg {0, 0, 0}
 			table.insert(quantitiesFound, 0)
-		end 
+		end
 		for i = 1, #items do 								-- check if item(s) already present
 			local findItem = items[i]
 			for k, v in pairs(inventory) do 				-- eg: {"minecraft:cobblestone" = 128, "minecraft:dirt" = 203}
-				if findItem:find("\:") ~= nil then 			-- specific item requested eg "minecraft:cobblestone"
+				if findItem:find("%:") ~= nil then 			-- specific item requested eg "minecraft:cobblestone"
 					if findItem == k then 					-- exact match eg "minecraft:cobblestone" requested, "minecraft:cobblestone" found
 						item = k							-- item = "minecraft:cobblestone"
 						quantitiesFound[i] = v
@@ -803,10 +824,10 @@ function T:checkInventoryForItem(items, quantities, required, message)
 		end
 		return waiting, quantitiesFound
 	end
-	
+
 	--[[
 	function lib.getInventory(self)
-		-- table eg: {"minecraft:cobblestone" = 256, "minecraft:cobbled_deepslate = 256"} 
+		-- table eg: {"minecraft:cobblestone" = 256, "minecraft:cobbled_deepslate = 256"}
 		local inventory = {}
 		for slot = 1, 16 do
 			local slotContains, slotCount = self:getSlotContains(slot)
@@ -820,7 +841,7 @@ function T:checkInventoryForItem(items, quantities, required, message)
 		end
 		return inventory
 	end]]
-		
+
 	if required == nil then required = true end
 	if message == nil then message = "" end 	-- add further instructions
 	--local inventory = lib.getInventory(self) 	-- create table of blocktypes and quantities
@@ -874,7 +895,7 @@ function T:checkInventoryForItem(items, quantities, required, message)
 	end
 end
 
-function T:checkNoDigBlocks(direction, moveRound) 
+function T:checkNoDigBlocks(direction, moveRound)
 	if moveRound == nil then moveRound = false end
 	local bypass = false
 	local isSpawner = false
@@ -917,32 +938,32 @@ function T:clear()
 	term.setCursorPos(1,1)
 end
 
-function T:craft(item, quantity)	
+function T:craft(item, quantity)
 	--[[
 		eg stairs, 40
 		craftable items: chest, planks, stairs, slabs
 		for chest, either make sure planks available before calling or craft first
 	]]
 	local lib = {}
-	
+
 	function lib.transfer(sourceSlot, slots, quantity)
 		turtle.select(sourceSlot)
 		for _, slot in ipairs(slots) do
 			turtle.transferTo(slot, quantity)
 		end
 	end
-	
+
 	--function lib.getSourceCount(sourceSlot, sourceCount, craftCount, quantity)
 	function lib.getSourceCount(sourceSlot, craftCount, quantity)
 		local maxQuantity = math.floor(turtle.getItemCount(sourceSlot) / craftCount) * craftCount	-- eg 64 / 6 * 6 = 60
 		-- quantity = quantity passed to T:craft() eg 21 slabs. 3 stone crafts to 6 slabs
 		quantity = math.max(quantity, math.ceil(quantity / craftCount) * craftCount)	-- eg 21 slabs needed. math.ceil(21/6) = 4; 4 * 6 = 24
 		-- eg 64 planks in slot 16, 8 planks needed for 1 chest, 1 chest is required quantity
-		
+
 		--return quantity, math.min(quantity, sourceBlockCount)	-- eg min (24, 24) = 24
 		return quantity, math.min(quantity, maxQuantity)	-- eg min (24, 24) = 24
 	end
-	
+
 	local craftOK = false
 	local message = ""
 	local chestSlot = 0
@@ -950,14 +971,14 @@ function T:craft(item, quantity)
 	local sourceSlot = 0
 	local total = 0
 	local turns = 0
-	
+
 	chestSlot = self:getItemSlot("chest") --get the slot number containing a chest
 	if chestSlot == 0 then -- chest not found
 		if item == "planks" then -- could be new turtle and tree felling
-			sourceSlot, total = self:getItemSlot("log") --get the slot number containing log(s)	
+			sourceSlot, total = self:getItemSlot("log") --get the slot number containing log(s)
 			if total < 2 then	-- not enough logs
 				return false, "Insufficient  logs available"
-			end	
+			end
 			local result = pcall(turtle.craft)
 			if result then
 				return true, ""
@@ -968,7 +989,7 @@ function T:craft(item, quantity)
 			sourceSlot, total = self:getItemSlot("planks") --get the slot number containing planks
 			if total < 8 then	-- not enough planks
 				return false, "Insufficient planks available"
-			end					
+			end
 			turtle.select(sourceSlot)
 			turtle.transferTo(16) --move planks to 16
 			lib.transfer(16, {1, 2, 3, 5, 6, 7, 9, 10, 11}, 1)
@@ -983,7 +1004,7 @@ function T:craft(item, quantity)
 			sourceSlot, total = self:getItemSlot("stone") --get the slot number containing stone
 			if total < 3 then	-- not enough stone
 				return false, "Insufficient stone available"
-			end		
+			end
 			turtle.select(sourceSlot)
 			turtle.transferTo(16) --move crafting item to 16
 			lib.transfer(16, {1, 2, 3}, 1)
@@ -1029,8 +1050,8 @@ function T:craft(item, quantity)
 		sourceSlot = stock.mostSlot
 		message = "No logs for crafting planks"
 	end
-	
-	
+
+
 	if sourceSlot == 0 then
 		return false, message
 	end
@@ -1066,7 +1087,7 @@ function T:craft(item, quantity)
 	if item:find("planks") ~= nil then -- crafting planks
 		turtle.transferTo(1, quantity / 4)
 	elseif item:find("chest") ~= nil then  --craft("chest", 1)
-		--8 planks = 1 chest 
+		--8 planks = 1 chest
 		local sourceCount = lib.getSourceCount(16, 8, quantity)	-- max 8 planks (1 - 8 chests)
 		lib.transfer(16, {1, 2, 3, 5, 6, 7, 9, 10, 11}, sourceCount)
 	elseif item:find("stairs") ~= nil then  --craft("stairs", 40)
@@ -1100,7 +1121,7 @@ function T:craft(item, quantity)
 	if turns > 0 then --return to original position
 		self:turnLeft(turns)
 	end
-	
+
 	return craftOK, message
 end
 
@@ -1203,7 +1224,7 @@ function T:createTunnel(length, allowAbandon)
 			self:down(1)
 			onGround = true
 		end
-		
+
 		if allowAbandon then
 			if waterCountAbove + waterCountBelow >= 6 then
 				if not onGround then
@@ -1214,20 +1235,20 @@ function T:createTunnel(length, allowAbandon)
 			end
 		end
 	end
-	
+
 	return distance -- 1 to length. cut short if 3 or more water
 end
 
 function T:detect(direction)
 	direction = direction or "forward"
-	
+
 	local Detect = turtle.detect
 	if direction == "up" then
 		Detect = turtle.detectUp
 	elseif direction == "down" then
 		Detect = turtle.detectDown
 	end
-	
+
 	return Detect()
 end
 
@@ -1248,7 +1269,7 @@ function T:dig(direction, bypass, slot, side)
 		Dig = turtle.digDown
 		Detect = turtle.detectDown
 	end
-	
+
 	turtle.select(slot)
 	if bypass then
 		blockType, bypass = self:checkNoDigBlocks(direction, false)
@@ -1357,7 +1378,7 @@ function T:dropItem(item, direction, keepAmount, except)
 	direction = direction or "forward"
 	local itemSlot = 0
 	local success = false
-	
+
 	if except ~= nil then -- drop everything except specified
 		for slot = 1, 16 do
 			local itemInSlot = self:getSlotContains(slot)	-- eg mysticalagriculture:inferium_essence
@@ -1407,7 +1428,7 @@ function T:dumpRefuse(direction, keepCobbleStacks)
 	local Drop = turtle.drop
 	if direction == "up" then
 		Drop = turtle.dropUp
-	else
+	elselib.setLocation()
 		Drop = turtle.dropDown
 	end
 	keepCobbleStacks = keepCobbleStacks or 0
@@ -1416,7 +1437,7 @@ function T:dumpRefuse(direction, keepCobbleStacks)
 
 	for i = 1, 16 do
 		local blockType, slotCount,  blockModifier = self:getSlotContains(i)
-		
+
 		if blockType:find("cobble") ~= nil or blockType:find("netherrack") ~= nil then
 			if cobbleCount > keepCobbleStacks then
 				turtle.select(i)
@@ -1509,8 +1530,8 @@ function T:emptyTrash(direction)
 	local itemName = ""
 	local move = false
 	-- store these items permanently inside turtle
-	local keepItems = 	{"netherrack", "cobble", "chest", "barrel", "torch", "ore", "bucket", "coal", "diamond", "debris", "deepslate","iron","gold","copper"}			
-	local keepit = false					
+	local keepItems = 	{"netherrack", "cobble", "chest", "barrel", "torch", "ore", "bucket", "coal", "diamond", "debris", "deepslate","iron","gold","copper"}
+	local keepit = false
 	-- empty excess cobble, dirt, all gravel, unknown minerals
 	for i = 1, 16 do
 		keepit = false
@@ -1578,7 +1599,7 @@ function T:equip(side, useItem)
 		end
 	end
 	turtle.select(currentSlot)
-	
+
 	return success
 end
 
@@ -1599,7 +1620,7 @@ function T:unequip(side)
 			end
 		end
 	end
-	
+
 	return success, slot
 end
 
@@ -1608,12 +1629,12 @@ function T:fillVoid(direction, tblPreferredBlock, leaveExisting, allowSlab)
 	assert( tblPreferredBlock == nil or
 			type(tblPreferredBlock) == "string" or
 			type(tblPreferredBlock) == "table", "tblPreferredBlock is not nil, string or table: "..tostring(tblPreferredBlock))
-	
+
 	if tblPreferredBlock == nil or tblPreferredBlock == "" then tblPreferredBlock = {} end
 	if type(tblPreferredBlock) ~= "table" then tblPreferredBlock = {tblPreferredBlock} end -- always use a table
 	if leaveExisting == nil then leaveExisting = true end
 	if allowSlab == nil then allowSlab = false end
-	
+
 	local Detect = turtle.detect
 	local Place = turtle.place
 	local Dig = turtle.dig
@@ -1626,9 +1647,9 @@ function T:fillVoid(direction, tblPreferredBlock, leaveExisting, allowSlab)
 		Place = turtle.placeDown
 		Dig = turtle.digDown
 	end
-	
+
 	local lib = {}
-	
+
 	function lib.place(direction, placeBlock, currentBlock, slot)
 		if placeBlock ~= currentBlock then -- current block does not match type to be used as filler
 			turtle.select(slot)
@@ -1648,7 +1669,7 @@ function T:fillVoid(direction, tblPreferredBlock, leaveExisting, allowSlab)
 		turtle.select(1)
 		return true
 	end
-	
+
 	local placed = false
 	local noBlocks = false
 	local slot = 0
@@ -1661,7 +1682,7 @@ function T:fillVoid(direction, tblPreferredBlock, leaveExisting, allowSlab)
 	if self:isGravityBlock(direction, blockType) then
 		Dig()
 	end
-	
+
 	local continue = false
 	local currentBlock = self:getBlockType(direction)
 	if currentBlock ~= "" then  	-- solid block already present
@@ -1675,17 +1696,17 @@ function T:fillVoid(direction, tblPreferredBlock, leaveExisting, allowSlab)
 			end
 		end
 	end
-	
+
 	-- make a table of all existing blocks
 	local stock = self:getCurrentInventory() -- eg stock[1] = minecraft:dirt, stock[2] = "", stock[3] = "minecraft:cobblestone"
-	
+
 	--[[ debugging
 	for k,v in pairs(tblPreferredBlock) do
 		print("k: "..k.." v: "..tostring(v))
 	end
 	print("Enter to continue")
 	read()]]
-	
+
 	if next(tblPreferredBlock) ~= nil then -- check for preferredBlock
 		local found = false
 		for i = 1, 16 do
@@ -1718,12 +1739,12 @@ function T:fillVoid(direction, tblPreferredBlock, leaveExisting, allowSlab)
 					break
 				end
 			end
-			if found then 
+			if found then
 				break
 			end
 		end
 	end
-	
+
 	if slot == 0 then -- no suitable block found
 		if allowSlab then
 			if self:getItemSlot("slab") ~= nil then
@@ -1747,7 +1768,7 @@ function T:fillVoid(direction, tblPreferredBlock, leaveExisting, allowSlab)
 	-- print("Placing: "..placeBlock) read()
 		placed = lib.place(direction, placeBlock, currentBlock, slot)
 	end
-	
+
 	turtle.select(1)
 	return placed, noBlocks
 end
@@ -1772,7 +1793,7 @@ function T:findBedrockTop(height)
 		end
 		if bedrockFound then
 			self:up(1)
-			height = height -1 
+			height = height -1
 			self:place("stone", "down", true)
 			print("Moving up...")
 		end
@@ -1830,9 +1851,9 @@ function T:getBlockType(direction)
 	local blockType = ""
 	local success = false
 	local data = {} --initialise empty table variable
- 
+
 	if direction == "up" then
-		success, data = turtle.inspectUp() -- store information about the block above in a table	
+		success, data = turtle.inspectUp() -- store information about the block above in a table
 	elseif direction == "down" then
 		success, data = turtle.inspectDown() -- store information about the block below in a table
 	else
@@ -1841,7 +1862,7 @@ function T:getBlockType(direction)
 	if success then -- block found
 		blockType = data.name -- eg "minecraft:log"
 	end
-	
+
 	return blockType, data -- eg "minecraft:oak_log" , {table}
 end
 
@@ -1854,7 +1875,7 @@ function T:getCoords(fromFile)
 	local event = ""
 	local param1 = ""
 	local getInput = true
-	
+
 	self:clear()
 	-- use built-in filesystem fs
 	if fs.exists("homeCoords.txt") then --ask user if current coords are correct
@@ -1992,7 +2013,7 @@ function T:getCoords(fromFile)
 		elseif self.facing == 3 then
 			self.x = self.x + 2
 		end
-		
+
 		-- create/overwrite 'homeCoords.txt'
 		local fileHandle = fs.open("homeCoords.txt", "w")
 		fileHandle.writeLine("x="..self.x)
@@ -2013,7 +2034,7 @@ function T:getCurrentInventory()
 			data = turtle.getItemDetail(i) -- returns {count = x, name = 'minecraft:item" in 1.16.2)
 			stock[i] = data.name
 		end
-	end	
+	end
 	return stock -- eg stock[1] = minecraft:dirt, stock[2] = "", stock[3] = "minecraft:cobblestone"
 end
 
@@ -2025,7 +2046,7 @@ function T:getEmptySlotCount()
 		end
 	end
 	return emptySlots
-end 
+end
 
 function T:getEquipped(side)
 	-- returns tool equipped on chosen side "left" or "right"
@@ -2034,7 +2055,7 @@ function T:getEquipped(side)
 		side = "both"
 	end
 	local lib = {}
-	
+
 	function lib.getEmptySlot()
 		local emptySlot = self:getFirstEmptySlot()			-- first empty slot
 		if emptySlot == 0 then -- all slots full
@@ -2044,7 +2065,7 @@ function T:getEquipped(side)
 		end
 		return emptySlot
 	end
-	
+
 	function lib.checkSide(side, slot)
 		local equipped = ""
 		turtle.select(slot)
@@ -2061,9 +2082,10 @@ function T:getEquipped(side)
 		end
 		return equipped										-- returns "" or tool name
 	end
-	
+
 	local itemLeft = ""
 	local itemRight = ""
+	-- these global values are from tk3.lua
 	if _G.ccMajorVersion > 1.101 or _G.ccMajorVersion == 1.101 and _G.ccMinorVersion >= 6 then
 		local dataLeft = turtle.getEquippedLeft()
 		local dataRight = turtle.getEquippedRight()
@@ -2134,13 +2156,13 @@ function T:getInput()
 			print("Yay!")
 		end
 	]]
-	
+
 	local function tchelper(first, rest)
 		return first:upper()..rest:lower()
 	end
-	
+
 	local input = {}
-	
+
 	function input.getBoolean(prompt) -- assumes yes/no type entries from user
 		while true do
 			write(prompt.."_")
@@ -2148,7 +2170,7 @@ function T:getInput()
 			--if string.len(userInput) == 0 then
 			if userInput:len() == 0 then
 				print("\nJust pressing the Enter key doesn't work...")
-			else		
+			else
 				--if string.sub(userInput, 1, 1):lower() == "y" then
 				if userInput:sub(1, 1):lower() == "y" then
 					userInput = true
@@ -2160,11 +2182,11 @@ function T:getInput()
 				else
 					print("\nOnly anything starting with y or n is accepted...")
 				end
-			end	
+			end
 		end
 		return userInput
 	end
-	
+
 	function input.getString(prompt, withTitle, minInt, maxInt) -- withTitle, minInt and maxInt are given defaults if not passed
 		withTitle = withTitle or false
 		minInt = minInt or 1
@@ -2174,7 +2196,7 @@ function T:getInput()
 			userInput = read()
 			if userInput == "" then
 				print("\nJust pressing Enter doesn't work...")
-			else		
+			else
 				--if string.len(userInput) >= minInt and string.len(userInput) <= maxInt then
 				if userInput:len() >= minInt and userInput:len() <= maxInt then
 					if withTitle then
@@ -2186,10 +2208,10 @@ function T:getInput()
 				end
 			end
 		end
-	
+
 		return userInput
 	end
-	
+
 	function input.getInteger(prompt, minInt, maxInt) -- minInt and maxInt are given defaults if not passed
 		minInt = minInt or 0
 		maxInt = maxInt or 65536
@@ -2213,11 +2235,11 @@ function T:getInput()
 		end
 		return userInput
 	end
-	
+
 	function input.toTitle(inputText) --converts any string to Title Case
 		return inputText:gsub("(%a)([%w_']*)", tchelper)
 	end
-	
+
 	return input
 end
 
@@ -2226,7 +2248,7 @@ function T:getInventory()
 	local blockCount = 0
 	local blockTypeCount = 0
 	local mostItem = ""
-	
+
 	for slot = 1, 16 do
 		local slotContains, slotCount = T:getSlotContains(slot)
 		if slotContains ~= "" then
@@ -2288,7 +2310,7 @@ function T:updateInventory()
 			end
 		end
 	until quit
-	
+
 	return nil
 end
 
@@ -2344,7 +2366,7 @@ function T:getItemName(slot)
 			data = turtle.getItemDetail(slot)
 		end
 	end
-	
+
 	return data.name
 end
 
@@ -2353,7 +2375,7 @@ function T:getItemSlot(item)
 	-- along with a table of mostSlot, mostCount, leastSlot, leastCount
 	-- if minecraft:log or log2, names for 1.16.2 changed to 'minecraft:oak_log' etc so use wildcards 'log'
 	item = item or "stone"
-	
+
 	local slotData = {}	-- setup return table
 	slotData.firstSlot = 0
 	slotData.lastSlot = 0
@@ -2363,9 +2385,9 @@ function T:getItemSlot(item)
 	slotData.leastSlot = 0
 	slotData.leastName = ""
 	slotData.leastCount = 0
-	
+
 	local lib = {}
-	
+
 	function lib.update(i, v)
 		local count = turtle.getItemCount(i)
 		if slotData.firstSlot == 0 then		-- setup .firstSlot
@@ -2382,15 +2404,15 @@ function T:getItemSlot(item)
 			slotData.leastCount = count
 		end
 		slotData.lastSlot = i				-- setup / edit .lastSlot
-		
+
 		return count
 	end
-	
+
 	local total = 0
 	-- make a table of all existing blocks
 	local stock = self:getCurrentInventory()		-- returns full names of all inventory items in a list 1-16
 --Log:saveToLog("currentInventory = "..textutils.serialise(stock))
-	if item:find("\:") ~= nil then 					-- find exact match only
+	if item:find("%:") ~= nil then 					-- find exact match only
 		for i,v in ipairs(stock) do					-- iterate current inventory
 			if v == item then						-- item found
 				total = total + lib.update(i, v)
@@ -2439,7 +2461,7 @@ end
 function T:getMostItem(excludeItem, stoneOnly)
 	--[[ Used to get user choice of stone based on quantity ]]
 	local lib = {}
-	
+
 	function lib.checkStone(item)
 		for k,v in ipairs (stone) do
 			if item == v then
@@ -2448,10 +2470,10 @@ function T:getMostItem(excludeItem, stoneOnly)
 		end
 		return false
 	end
-	
+
 	excludeItem = excludeItem or ""
 	stoneOnly = stoneOnly or false
-	local data = {} 
+	local data = {}
 	local inventory = {}
 	local mostItem = ""
 	local leastItem = ""
@@ -2554,7 +2576,7 @@ function T:getMostItem(excludeItem, stoneOnly)
 			end
 		end
 	end
-	
+
 	--print("mostItem: "..mostItem.." mostCount: "..mostCount) read()
 	return mostItem, mostCount, leastItem, leastCount, inventory
 end
@@ -2562,7 +2584,7 @@ end
 function T:getName(item)
 	-- eg minecraft:beetroot_seeds -> beetroot_seeds or beetroot
 	local marker, name, shortName = 0, "", ""
-	marker = item:find("\:")			-- eg minecraft:beetroot_seeds -> 10
+	marker = item:find("%:")			-- eg minecraft:beetroot_seeds -> 10
 	if marker ~= nil then
 		name = item:sub(marker + 1)		-- eg minecraft:beetroot_seeds -> beetroot_seeds
 	else
@@ -2581,7 +2603,7 @@ function T:getNames(item)
 	-- item MUST be full name
 	-- eg minecraft:beetroot_seeds
 	local parts, tblParts, mod, rest
-	if item:find("\:") == nil then
+	if item:find("%:") == nil then
 		if item:find("_") == nil then
 			return {item}	-- eg "seeds"
 		else
@@ -2600,7 +2622,7 @@ function T:getNames(item)
 		table.insert(tblParts, v)
 	end
 
-	return tblParts -- eg {"minecraft","crafting", "table"} 
+	return tblParts -- eg {"minecraft","crafting", "table"}
 end
 
 function T:getNetworkName()
@@ -2614,9 +2636,9 @@ function T:getPolishedItem(blockType)
 		local blockType, count = T:getPolishedItem("stairs")
 		local blockType, count = T:getPolishedItem("wall")
 	]]
-	local data = {} 
+	local data = {}
 	local inventory = {}
-	
+
 	for i = 1, 16 do
 		if turtle.getItemCount(i) > 0 then
 			data = turtle.getItemDetail(i)
@@ -2640,7 +2662,7 @@ function T:getPolishedItem(blockType)
 			end
 		end
 	end
-	
+
 	return "", 0
 end
 
@@ -2688,7 +2710,7 @@ function T:getPlaceChestDirection()
 	--local facing = self.facing
 	local chestDirection = "forward"
 	local turns = 0
-	
+
 	for i = 1, 4 do
 		if turtle.detect() then
 			self:turnRight(1)
@@ -2716,7 +2738,7 @@ end
 
 function T:getSlotContains(slotNo)
 	local data = {} --initialise empty table variable
-	
+
 	local slotCount = 0
 	local slotContains = ""
 	if turtle.getItemCount(slotNo) > 0 then
@@ -2724,7 +2746,7 @@ function T:getSlotContains(slotNo)
 		slotCount = data.count
 		slotContains = data.name
 	end
-	
+
 	return slotContains, slotCount
 end
 
@@ -2737,7 +2759,7 @@ function T:getStock(item)
 	rt.leastSlot = slotData.leastSlot
 	rt.mostCount = slotData.mostCount
 	rt.leastCount = slotData.leastCount
-	
+
 	return rt --{rt.total, rt.mostSlot, rt.leastSlot, rt.mostCount, rt.leastCount}
 end
 
@@ -2759,7 +2781,7 @@ end
 
 function T:getTotalItemCount()
 	local count = 0
-	
+
 	for i = 1, 16 do
 		count = count + turtle.getItemCount(i)
 	end
@@ -2798,10 +2820,10 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 			preferredBlock = {preferredBlock}
 		end
 	end
-	
+
 	local intervalList =
 	{
-		1, 
+		1,
 		torchInterval * 1 + 1,
 		torchInterval * 2 + 1,
 		torchInterval * 3 + 1,
@@ -2810,7 +2832,7 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 		torchInterval * 6 + 1
 	}
 	local slot = turtle.getSelectedSlot()
-	turtle.select(1)		
+	turtle.select(1)
 	local commandList = {}
 	local command = ""
 	local direction = {"up", "forward", "down"}
@@ -2834,7 +2856,7 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 	-- R# L# F# B# U# D# +0 -0 d0 = Right, Left, Forward, Back, Up, Down, up while detect and return, down while not detect, down and place while not detect
 	-- dig:			  x0,x1,x2 (up/fwd/down)
 	-- suck:		  s0,s1,s2
-	-- place chest:   H0,H1,H2 
+	-- place chest:   H0,H1,H2
 	-- place sapling: S0,S1,S2
 	-- place Torch:   T0,T1,T2
 	-- place Hopper:  P0,P1,P2
@@ -2909,8 +2931,17 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 				if self:detect(dir) then -- solid block ahead, not air, water or lava
 					local blockType = self:getBlockType(dir)
 					if blockType ~= "minecraft:bedrock" then
-						if not self:isStone(blockType) and blockType ~= "minecraft:ladder" and blockType ~= "minecraft:deepslate" and blockType ~= "minecraft:torch" and blockType:find("chest") ~= nil and blockType:find("barrel") ~= nil then
-						--if self:digValuable(direction[modifier + 1]) then
+                        --[[if not self:isStone(blockType) and blockType ~= "minecraft:ladder"
+                            and blockType ~= "minecraft:deepslate"
+                            and blockType ~= "minecraft:torch"
+                            and blockType:find("chest") ~= nil
+                            and blockType:find("barrel") ~= nil then
+                            fill = true]]
+                        if not self:isStone(blockType)
+                                and blockType ~= "minecraft:ladder"
+                                and blockType ~= "minecraft:torch"
+                                and blockType:find("chest") ~= nil
+                                and blockType:find("barrel") ~= nil then
 							fill = true
 						end
 						if self:digGravityBlock(dir, blockType) then -- sand or gravel
@@ -3053,7 +3084,7 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 				if not turtle.detect() then
 					self:fillVoid("forward", preferredBlock, leaveExisting)
 				end
-				self:turnRight(1)	
+				self:turnRight(1)
 				if i <= modifier then -- m8 = move forward 8x
 					if useTorch then
 						if  i == intervalList[1] or
@@ -3111,7 +3142,7 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 				if not turtle.detect() then
 					self:fillVoid("forward", preferredBlock)
 				end
-				self:turnRight(1)	
+				self:turnRight(1)
 				if i <= modifier then
 					self:forward(1)
 				end
@@ -3136,7 +3167,7 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 				if not turtle.detect() then
 					self:fillVoid("forward", preferredBlock)
 				end
-				self:turnRight(1)	
+				self:turnRight(1)
 				if self:isValuable("down") then
 					turtle.digDown()
 				end
@@ -3290,7 +3321,7 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 				end
 			end
 		elseif move == "Z" then -- mine to bedrock
-			for i = 1, modifier + 1 do	
+			for i = 1, modifier + 1 do
 				turtle.select(1)
 				local goUp = 0
 				while self:down(1) do
@@ -3307,7 +3338,7 @@ function T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
 					self:place("minecraft:cobblestone", "down")
 					turtle.select(1)
 				end
-				if i <= modifier then 
+				if i <= modifier then
 					self:forward(2)
 				end
 			end
@@ -3368,15 +3399,15 @@ function T:harvestTree(direction)
 			direction = "forward"
 		end
 	end
-	
+
 	local singleTypes ="minecraft:birch_log, minecraft:acacia_log, minecraft:cherry_log, minecraft:warped_stem"
 	local dualTypes = "minecraft:spruce_log, minecraft:jungle_log, minecraft:crimson_stem, biomesoplenty:redwood_log"
 	local doubleTypes = "minecraft:dark_oak_log, minecraft:pale_oak_log"
 	local logType = ""
 	local double, onLeft  = false, true -- default position in double tree
-	
+
 	local lib = {}
-	
+
 	function lib.doubleUpDown(onLeft, forward)
 		-- starts facing away from trunk
 		local sideA = "F1x1 R1x1 R1F1 L1x1 R1F1 L1x1 R1F1 L1x1 R1x1B1"
@@ -3395,7 +3426,7 @@ function T:harvestTree(direction)
 			end
 		end
 	end
-	
+
 	function lib.cutBranch()
 		local blockType = self:getBlockType("forward")
 		if blockType == "" then						-- air in front, ignore
@@ -3406,7 +3437,7 @@ function T:harvestTree(direction)
 			return false
 		end
 		local moves = 0
-		
+
 		while blockType:find("log") ~= nil or blockType:find("mangrove_root") ~= nil or blockType:find("stem") ~= nil do	-- log or roots in front
 			self:forward(1)
 			moves = moves + 1
@@ -3423,7 +3454,7 @@ function T:harvestTree(direction)
 		moves = 0
 		return true
 	end
-	
+
 	function lib.cutUp()
 		local blockType = self:getBlockType("up")
 		if blockType:find("leaves") ~= nil then
@@ -3440,7 +3471,7 @@ function T:harvestTree(direction)
 			movesUp = 0
 		end
 	end
-	
+
 	function lib.isDouble()
 		-- check if on r or l of double width tree
 		local double, onLeft = false, false
@@ -3458,7 +3489,7 @@ function T:harvestTree(direction)
 		self:turnLeft(1)				-- return to start position
 		return double, onLeft
 	end
-	
+
 	function lib.dual(double, onLeft)
 		-- spruce or jungle can be single or double
 		-- no side branches
@@ -3486,7 +3517,7 @@ function T:harvestTree(direction)
 			lib.single()
 		end
 	end
-	
+
 	function lib.doubleOak(onLeft)
 		-- Loop to climb up tree and harvest trunk and surrounding leaves
 		-- only pale and dark oak use this function starts on l or r of the trunk
@@ -3546,7 +3577,7 @@ function T:harvestTree(direction)
 			end
 		end
 	end
-	
+
 	function lib.oak()
 		-- usually single stem, but can have multiple branches
 		-- start same as single, but if side branch found move into diagonals
@@ -3561,7 +3592,7 @@ function T:harvestTree(direction)
 			lib.cutBranch()
 			self:turnRight(1)			-- turn right
 			lib.cutBranch()
-			self:go("L1B1R1")			-- return to centre of trunk, turn to right side	
+			self:go("L1B1R1")			-- return to centre of trunk, turn to right side
 			lib.cutBranch()
 			self:go("R1F1L1")			-- move in back of trunk, turn left
 			lib.cutBranch()
@@ -3571,13 +3602,13 @@ function T:harvestTree(direction)
 			lib.cutBranch()
 			self:go("L1B1L2")			-- return to centre of trunk facing forward
 		end
-		while turtle.down() do end 
+		while turtle.down() do end
 	end
-	
+
 	function lib.mangrove()
 		lib.single()
 	end
-	
+
 	function lib.single()
 		while turtle.detectUp() do 		-- continue loop while block detected above
 			-- check for side branches
@@ -3599,14 +3630,14 @@ function T:harvestTree(direction)
 			lib.cutBranch()			-- if leaves cut them. If branch follow length and cut above at the same time
 			turtle.turnRight()		-- repeat above 4x
 		end		-- move up
-		while turtle.down() do end 
+		while turtle.down() do end
 	end
-	
+
 	logType = self:getBlockType(direction)
 	if direction == "forward" then
 		self:forward(1)					-- dig base of tree if not done for refuelling, go under.
 	end
-	
+
 	if logType == "minecraft:oak_log" then
 		lib.oak()
 	elseif singleTypes:find(logType) ~= nil then
@@ -3630,11 +3661,11 @@ function T:harvestTree(direction)
 			turtle.dig()
 		end
 	end
-	
+
 	return double	-- true if double tree
 end
 
-function T:harvestWholeTree(direction)	
+function T:harvestWholeTree(direction)
 	--RECURSIVE FUNCTION - BEWARE!
 	local blockType, height
 
@@ -3666,7 +3697,7 @@ function T:harvestWholeTree(direction)
 	elseif direction == "forward" then
 		if self:isLog("forward") then
 			self:refuel(15)
-			
+
 			self:forward(1)
 			if turtle.detectUp() then
 				turtle.digUp()
@@ -3705,42 +3736,42 @@ function T:isEmpty()
 	return isEmpty
 end
 
-function T:isLog(direction) 
+function T:isLog(direction)
 	local success = false
 	local blockType, modifier
-	
+
 	local Detect = turtle.detect
 	if direction == 'up' then
 		Detect = turtle.detectUp
 	elseif direction == 'down' then
 		Detect = turtle.detectDown
 	end
-	
+
 	if Detect() then
 		blockType = self:getBlockType(direction)
 		if blockType:find('log') ~= nil or blockType:find('mangrove_root') ~= nil or blockType:find('stem') ~= nil then
 			success = true
 		end
 	end
-	
+
 	return success
 end
 
-function T:isValuable(direction) 
+function T:isValuable(direction)
 	local success = false
 	local ignoreList = "minecraft:dirt,minecraft:grass,minecraft:gravel,minecraft:chest,minecraft:barrel"..
 					   "minecraft:ender_chest,minecraft:shulker_box,minecraft:sand,minecraft:torch,minecraft:bedrock,minecraft:ladder"
-		 
+
 	local Detect = turtle.detect
-	
+
 	if direction == "up" then
 		Detect = turtle.detectUp
 	elseif direction == "down" then
 		Detect = turtle.detectDown
 	end
-	
+
 	local blockType = self:getBlockType(direction)
-	
+
 	if blockType ~= "" then --block found
 		success = true
 		if blockType == "minecraft:deepslate" then
@@ -3801,7 +3832,11 @@ function T:isEmpty()
 	return true
 end
 
-function T:isStone(item)
+function T:isStone(item, inludeDeepslate)
+	if inludeDeepslate == nil then inludeDeepslate = false end
+	if inludeDeepslate and item == "minecraft:deepslate" then
+		return true, "minecraft:deepslate"
+	end
 	for _,v in ipairs(stone) do
 		if item:find(v) ~= nil then
 			return true, v
@@ -3817,7 +3852,7 @@ function T:isVegetation(blockName)
 			return true
 		end
 	end
-	
+
 	return false
 end
 
@@ -3828,8 +3863,8 @@ function T:isWater(direction)
 	local isIce = false
 	local level = nil
 	local isAir = false
-	
-	local blockType, data = self:getBlockType(direction)		
+
+	local blockType, data = self:getBlockType(direction)
 	if blockType == "" then
 		return false, false, false, nil, true
 	end
@@ -3849,7 +3884,7 @@ function T:isWater(direction)
 			end
 		end
 	end
-	
+
 	-- isWater 	= source, ice, flowing water or bubble column
 	-- isSource = source or ice
 	-- isIce 	= ice
@@ -3857,13 +3892,13 @@ function T:isWater(direction)
 	-- air 		= NOT water, source, ice
 	return isWater, isSource, isIce, level, isAir --true, true, false, 0, false = source true, false, false, 1 if next to source
 end
- 
+
 function T:isWaterOrLava(direction)
 	direction = direction or "forward"
 	local blockType = ""
 	if not self:detect(direction) then --air, water or lava
 		blockType = self:getBlockType(direction)
-		if blockType:find("lava") ~= nil then 
+		if blockType:find("lava") ~= nil then
 			self:place("minecraft:bucket", direction, false) -- auto refuel
 		end
 	end
@@ -3912,13 +3947,13 @@ function T:place(blockType, direction, leaveExisting, signText, doNotAttack)
 		-- correct params
 		direction = direction or "forward"
 	end
-	
+
 	if leaveExisting == nil then
 		leaveExisting = true
 	end
 	signText = signText or ""
 	if doNotAttack == nil then doNotAttack = true end
-	
+
 	local success = false
 	local doContinue = true
 	local dig = true
@@ -3946,12 +3981,12 @@ function T:place(blockType, direction, leaveExisting, signText, doNotAttack)
 		if leaveExisting then -- do not remove existing block unless sand gravel water or lava
 			doContinue = false
 			if self:detect(direction) then -- not water or lava
-				if existingBlock:find("sand") ~= nil or existingBlock:find("gravel") ~= nil then --leave anything except sand/gravel	
+				if existingBlock:find("sand") ~= nil or existingBlock:find("gravel") ~= nil then --leave anything except sand/gravel
 					doContinue = true
 				end
 			else
 				doContinue = true
-			end	
+			end
 		end
 		if existingBlock:find("cobble") ~= nil and blockType:find("cobble") ~= nil then -- already cobble or cobbled deepslate
 			doContinue = false-- no need to replace 1 cobble with another
@@ -4009,12 +4044,12 @@ Log:saveToLog("T:placeWater("..direction.."): slot = "..slot.." failed. Using tu
 			end
 		end
 	end
-	
+
 	turtle.select(1)
 	return false
 end
 
-function T:refuel(minLevel, toLimitOnly)	
+function T:refuel(minLevel, toLimitOnly)
 	minLevel = minLevel or 15
 	if toLimitOnly == nil then
 		toLimitOnly = false
@@ -4027,7 +4062,7 @@ function T:refuel(minLevel, toLimitOnly)
 	local count = 0
 	local item = ""
 	local refuelOK = false
-	
+
 	if turtle.getFuelLevel() >= minLevel and minLevel > 0 then -- prevent auto refuel eg fell tree
 		return false
 	end
@@ -4115,14 +4150,14 @@ function T:refuel(minLevel, toLimitOnly)
 			end
 		end
 		turtle.select(slot)
-		
+
 		return refuelOK
 	end
 end
 
 function T:removeEquipped(side)
 	local slot = self:getFirstEmptySlot()			-- find empty slot
-	if slot > 0 then								-- empty slot found							
+	if slot > 0 then								-- empty slot found
 		turtle.select(slot)							-- remove equipment to this slot
 		if side == "left" then						-- attempt to remove left side
 			if turtle.equipLeft() then				-- success removed tool
@@ -4132,7 +4167,7 @@ function T:removeEquipped(side)
 				end
 			end
 		elseif side == "right" then					-- as above but on right side
-			if turtle.equipRight() then				
+			if turtle.equipRight() then
 				item = self:getSlotContains(slot)
 				if item == "" then
 					slot = 0
@@ -4141,7 +4176,7 @@ function T:removeEquipped(side)
 		end
 		return item, slot							-- 0, "" if nothing equipped; 1, "minecraft:crafting_table"
 	end
-	return "", 0									-- no empty slots so return 
+	return "", 0									-- no empty slots so return
 end
 
 function T:selectPlaceItem(item)
@@ -4161,9 +4196,9 @@ function T:setEquipment(right, left)
 	if left == nil then
 		left = "minecraft:diamond_pickaxe"
 	end
-	
+
 	local lib = {}
-	
+
 	function lib.getEmptySlot()
 		local emptySlot = self:getFirstEmptySlot()			-- first empty slot
 		if emptySlot == 0 then -- all slots full
@@ -4173,7 +4208,7 @@ function T:setEquipment(right, left)
 		end
 		return emptySlot
 	end
-	
+
 	function lib.checkSide(side, slot)
 		local equipped = ""
 		turtle.select(slot)
@@ -4194,12 +4229,12 @@ function T:setEquipment(right, left)
 		end
 		return equipped										-- returns "" or tool name
 	end
-	
-	
+
+
 	self:clear()
 	print("Setting up equipment...")
-	
-	local equippedRight = "" 
+
+	local equippedRight = ""
 	local equippedLeft = ""
 	local inInventory = ""
 	local itemSlot = 0
@@ -4248,7 +4283,7 @@ function T:setEquipment(right, left)
 			inInventory = inInventory..","..equippedLeft
 		end
 	end
-		
+
 	-- any tools equipped except right (?diamond_pickaxe) and left (?crafting_table) have been removed to inventory
 	return equippedRight, equippedLeft, inInventory
 end
@@ -4256,7 +4291,7 @@ end
 function T:setNetworkName(name)
 	networkName = name
 end
-	
+
 function T:sortInventory(useChest)
 	if useChest == nil then useChest = true end
 	local lib = {}
@@ -4276,7 +4311,7 @@ function T:sortInventory(useChest)
 		end
 		return ""
 	end
-	
+
 	function lib.chestSort(self, chestDirection)
 		for i = 1, 16 do	-- fill chest with everything
 			self:drop(chestDirection, i)
@@ -4377,7 +4412,7 @@ function T:suck(direction, slot, quantity)
 	--[[success, msg = turtle.suck()
 		success = true / false
 		msg = "No space for items" / nil]]
-	
+
 	turtle.select(slot)
 	local Suck = turtle.suck
 	if direction == "up" then
@@ -4409,7 +4444,7 @@ function T:trimItemName(item)
 	if colonPos ~= nil then
 		itemName = item:sub(colonPos + 1)
 	end
-	
+
 	return itemName
 end
 
