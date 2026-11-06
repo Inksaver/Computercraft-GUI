@@ -7686,7 +7686,7 @@ function createStaircase()
 	R.useBlockType = T:getMostItem("slab", true) -- exclude slab, use stone only/netherrack
 --Log:saveToLog("Creating staircase "..R.height.." blocks", true)
 --Log:saveToLog("tk3.createStaircase() starting; R.up = "..tostring(R.up).."R.down = "..tostring(R.down)
-			   .."R.startLevel = "..R.startLevel.."R.destinationLevel = "..R.destinationLevel..", R.height = "..R.height)
+			   --.."R.startLevel = "..R.startLevel.."R.destinationLevel = "..R.destinationLevel..", R.height = "..R.height)
 
 	local success, numBlocks, errorMsg, blockType = true, 0, "", ""
 	if R.down then -- go down towards bedrock
