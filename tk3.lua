@@ -1,4 +1,4 @@
-local version = 20261105.1900
+local version = 20261106.1300
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -192,12 +192,12 @@ local ccVersion = _HOST:sub(15, _HOST:find("Minecraft") - 2):gsub("^%s*(.-)%s*$"
 local ccMajor = ccVersion
 local mcVersion = _HOST:sub(_HOST:find("Minecraft") + 10):sub(1, -2):gsub("^%s*(.-)%s*$", "%1") -- eg 1.20 / 26.2
 local mcMajor = mcVersion
---Log:saveToLog("_HOST = ".._HOST.."\nmcVersion = "..mcVersion.."\nccVersion = "..ccVersion)
+----Log:saveToLog("_HOST = ".._HOST.."\nmcVersion = "..mcVersion.."\nccVersion = "..ccVersion)
 --eg ComputerCraft 1.93.0 (Minecraft 1.15.2) -> '1.93.0' or eg ComputerCraft 1.120.2 (Minecraft 26.2) -> '1.120.2'
 if tonumber(ccMajor) == nil then 							-- almost certain. 1.93.0 NAN
 	local parts = U.split(ccMajor, ".")
 	ccMajor = parts[1]
---Log:saveToLog("ccMajor split = "..textutils.serialise(parts))
+----Log:saveToLog("ccMajor split = "..textutils.serialise(parts))
 	if parts[2] ~= nil then
 		ccMajor = ccMajor.."."..parts[2]
 	end
@@ -413,13 +413,13 @@ function utils.craftItem()
 	--local message = U.loadStorageLists()	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
 	local message = U.wrapModem(true)	-- initialises or creates lists of where an item can be found: GLOBAL LISTS!
 	if message ~= "" then return {message} end
-	_G.Log:saveToLog("call U.emptyInventory({'sapling', 'propagule', 'dirt', 'crafting'}, {'all'}, true)")
+	----Log:saveToLog("call U.emptyInventory({'sapling', 'propagule', 'dirt', 'crafting'}, {'all'}, true)")
 	U.emptyInventory({"sapling", "propagule", "dirt", "crafting"}, {"all"}, true)	-- 2 lists, one for barrels, one for chests
-	_G.Log:saveToLog("\ncall U.getItemFromNetwork('barrel', 'minecraft:dirt', 169)")
+	----Log:saveToLog("\ncall U.getItemFromNetwork('barrel', 'minecraft:dirt', 169)")
 	local turtleSlot, turtleCount = U.getItemFromNetwork("barrel", "minecraft:dirt", 169, nil, false)
-	_G.Log:saveToLog("Get from barrel completed: turtleSlot = "..turtleSlot..", turtleCount = "..turtleCount..", ignoreStock = "..tostring(ignoreStock))
+	----Log:saveToLog("Get from barrel completed: turtleSlot = "..turtleSlot..", turtleCount = "..turtleCount..", ignoreStock = "..tostring(ignoreStock))
 	if turtleCount < 169 then
-		_G.Log:saveToLog("\ncall U.getItemFromNetwork('chest', 'minecraft:dirt', ".. 169 - turtleCount..", ignoreStock = "..tostring(ignoreStock)..")")
+		----Log:saveToLog("\ncall U.getItemFromNetwork('chest', 'minecraft:dirt', ".. 169 - turtleCount..", ignoreStock = "..tostring(ignoreStock)..")")
 		turtleSlot, turtleCount = U.getItemFromNetwork("chest", "minecraft:dirt", 169 - turtleCount, nil, true)
 		if turtleCount < 169 then	-- ask player for saplings
 			T:checkInventoryForItem({"dirt"}, {169 - turtleCount})
@@ -888,7 +888,7 @@ function utils.move(blocks, reverse)
 	if reverse == nil then
 		reverse = false
 	end
-	--Log:saveToLog("utils.move R.goDown = "..tostring(R.goDown)..", reverse = "..tostring(reverse)..", R.goUp = "..tostring(R.goUp))
+	----Log:saveToLog("utils.move R.goDown = "..tostring(R.goDown)..", reverse = "..tostring(reverse)..", R.goUp = "..tostring(R.goUp))
 	if reverse then
 		if R.goDown then -- reverse direction
 			T:up(blocks)
@@ -1047,7 +1047,7 @@ function utils.writeTraceTable(description, tbl)
 			text = "key = "..key..", value = "..value
 		end
 	end
-	_G.Log:saveToLog(description.."\n".. text)
+	--Log:saveToLog(description.."\n".. text)
 end
 
 local pp = utils.getPrettyPrint()
@@ -1103,7 +1103,7 @@ function assessTreeFarm()
 		T:go("R1F1")
 		-- if in correct start, log below
 		blockType = T:getBlockType("down")
-Log:saveToLog("T:go(R1F1): blockType = "..blockType)
+--Log:saveToLog("T:go(R1F1): blockType = "..blockType)
 		if blockType:find("log") ~= nil then
 			lib.getSaplingType(blockType)
 			T:go("B1L1")
@@ -1142,17 +1142,17 @@ Log:saveToLog("T:go(R1F1): blockType = "..blockType)
 		end
 	end
 
-	Log:saveToLog("assessTreeFarm() started")
+	--Log:saveToLog("assessTreeFarm() started")
 	local blockType = T:getBlockType("down")
 	if blockType:find("modem") == nil then
 		R.message = "Not on modem. Check position"
-		Log:saveToLog("Not on modem. Check position")
+		--Log:saveToLog("Not on modem. Check position")
 		return
 	end
 	-- must be network farm so check position
 	if not lib.checkPosition() then
 		R.message = "Unable to find log for sapling type. Check position"
-		Log:saveToLog("Unable to find log for sapling type. Check position")
+		--Log:saveToLog("Unable to find log for sapling type. Check position")
 	end
 
 	return	-- no values returned as R values are set above
@@ -1590,7 +1590,7 @@ function checkFarmPosition()
 		R.ready = true
 	end	-- else not over water
 	if R.ready then
-		Log:saveToLog("checkFarmPosition() complete. Ready to go", true)
+		--Log:saveToLog("checkFarmPosition() complete. Ready to go", true)
 	else
 		Log:saveToLog("checkFarmPosition() NOT ready", true)
 	end
@@ -1788,7 +1788,7 @@ function clearAndReplantTrees()
 			end
 				return true, blockType					-- dirt, grass_block, log and vegetation eliminated:must be border
 		else
-Log:saveToLog("length = "..length)
+--Log:saveToLog("length = "..length)
 			if length >= R.length then
 				return true
 			end
@@ -1841,7 +1841,7 @@ Log:saveToLog("length = "..length)
 		menu.colourPrint("Re-planting saplings enabled...", colors.lime)
 	end
 	menu.colourPrint("Width: "..R.width..", length: "..R.length, colors.lime)
-	Log:saveToLog("clearAndReplantTrees() width: "..R.width..", length: ".. R.length..", re-plant saplings = "..tostring(R.auto))
+	--Log:saveToLog("clearAndReplantTrees() width: "..R.width..", length: ".. R.length..", re-plant saplings = "..tostring(R.auto))
 	local turn = "r"
 	local blockTypeF = ""
 	local success = false
@@ -1873,7 +1873,7 @@ Log:saveToLog("length = "..length)
 						end
 					end
 					if direction == "" then									-- block in front, not air or leaves
-						Log:saveToLog("calling lib.moveUp("..blockType..")")
+						--Log:saveToLog("calling lib.moveUp("..blockType..")")
 						success, blockType = lib.moveUp(blockType)			-- true if tree felled
 						if not success then									-- moved up, tree not cut
 							T:forward(1)									-- move forward
@@ -1886,7 +1886,7 @@ Log:saveToLog("length = "..length)
 		-- length finished, turn and repeat
 		lib.turn(turn)														-- turn r or l. turn direction is not changed
 		success, blockType, direction = lib.moveForward()					-- try to move forward 1 block, return block type ahead
-		Log:saveToLog("turn: success = "..tostring(success)..", blockType = '"..blockType.."', direction = "..direction)
+		--Log:saveToLog("turn: success = "..tostring(success)..", blockType = '"..blockType.."', direction = "..direction)
 		if not success then													-- did not move forward
 			if direction == "up" then										-- did not go forward as block above
 				while turtle.detectUp() do									-- break blocks above
@@ -2066,7 +2066,7 @@ utils.logRvalues()
 
 	R.up = false
 	R.down = false
-Log:saveToLog("R.goUp = "..tostring(R.goUp)..", R.goDown = "..tostring(R.goDown)..", R.ceiling = "..tostring(R.ceiling)..", R.floor = "..tostring(R.floor))
+--Log:saveToLog("R.goUp = "..tostring(R.goUp)..", R.goDown = "..tostring(R.goDown)..", R.ceiling = "..tostring(R.ceiling)..", R.floor = "..tostring(R.floor))
 	if (R.goUp and R.ceiling) or (R.goDown and R.floor) then		-- from bottom to top
 		clearRectangle()
 	end
@@ -2339,10 +2339,10 @@ function clearMountainSide()
 	local lib = {}
 
 	function lib.isAnyAbove(above)
-		_G.Log:saveToLog("lib.isAnyAbove: "..U.tableConcat(above, ", "), false)
+		--Log:saveToLog("lib.isAnyAbove: "..U.tableConcat(above, ", "), false)
 		for k,v in ipairs(above) do
 			if v then
-				_G.Log:saveToLog("lib.isAnyAbove Found: "..k , false)
+				--Log:saveToLog("lib.isAnyAbove Found: "..k , false)
 				return true
 			end
 		end
@@ -2420,7 +2420,7 @@ function clearMountainSide()
 				up, forward, down = lib.getDetect() 		-- check if anything around current block
 				length = length + 1
 				if length >= R.length then					-- check if going out of range
-					_G.Log:saveToLog("lib.getStartingLength() : outward = "..tostring(outward).." MaxLength "..maxLength.." reached", false)
+					--Log:saveToLog("lib.getStartingLength() : outward = "..tostring(outward).." MaxLength "..maxLength.." reached", false)
 					break
 				end
 			end
@@ -2437,16 +2437,16 @@ function clearMountainSide()
 		local height = 1									-- starts at ground level, but forced up 1
 		T:up(1)
 		local above = lib.getStartingLength()				-- clear the ground level and 1 above eg 9, 2, 5, 4
-		if _G.Log:saveToLog("startLength: "..#above, true) then
-			_G.Log:saveToLog(U.tableConcat(above, ", "), false)
+		if Log:saveToLog("startLength: "..#above, true) then
+			--Log:saveToLog(U.tableConcat(above, ", "), false)
 			utils.waitForInput()
 		end													-- at end of first row as already turned 180, outward set to false in getStartingLength
 		while lib.isAnyAbove(above) do
 			T:go("U3")	-- go up 3
 			height = height + 3
 			above = lib.clearLevel(above)	-- returns start and finish of blocks above, rotates 180
-			if _G.Log:saveToLog("checking level: "..height, true) then
-				_G.Log:saveToLog(U.tableConcat(above, ", "), false)
+			if Log:saveToLog("checking level: "..height, true) then
+				--Log:saveToLog(U.tableConcat(above, ", "), false)
 				utils.waitForInput()
 			end
 		end													-- first row all levels completed.
@@ -2480,7 +2480,7 @@ function clearMountainSide()
 			up, forward, down = lib.getDetect() 		-- check if anything around current block
 
 			if #above >= math.floor(maxLength / 2) then	-- check if going out of range
-				_G.Log:saveToLog("lib.getHalf() : outward = "..tostring(outward).." MaxLength "..maxLength.." reached", false)
+				--Log:saveToLog("lib.getHalf() : outward = "..tostring(outward).." MaxLength "..maxLength.." reached", false)
 				T:go("x0x2")
 				break
 			end
@@ -2502,34 +2502,34 @@ function clearMountainSide()
 
 	function lib.nextRow()
 		local height = 1
-		_G.Log:saveToLog("lib.nextRow()", false)
+		--Log:saveToLog("lib.nextRow()", false)
 		T:up(1)
 		local pattern = turn.."1F1"..turn.."1"
 		if not outward then
 			pattern = oTurn.."1F1"..oTurn.."1"
 		end
 		T:go(pattern)
-		_G.Log:saveToLog("    T:go("..pattern..")", false)
+		--Log:saveToLog("    T:go("..pattern..")", false)
 		outward = not outward -- reverse direction flag
 		-- now in next vertical row
 		local above = lib.getHalf({})
 		local index = 0
-		if _G.Log:saveToLog("\t  first half Length: "..#above.." Enter", true) then
-			_G.Log:saveToLog(U.tableConcat(above, ", "), false)
+		if Log:saveToLog("\t  first half Length: "..#above.." Enter", true) then
+			--Log:saveToLog(U.tableConcat(above, ", "), false)
 			utils.waitForInput()
 		end
 		lib.returnToMidPoint(#above)					-- return to starting point
 		T:forward(1)
 		above = lib.getHalf(above)					-- returns length - 1 eg 5, 4
-		if _G.Log:saveToLog("\t  total length: "..#above.." Enter", true) then
-			_G.Log:saveToLog(U.tableConcat(above, ", "), false)
+		if Log:saveToLog("\t  total length: "..#above.." Enter", true) then
+			--Log:saveToLog(U.tableConcat(above, ", "), false)
 			utils.waitForInput()
 		end
 
 		while lib.isAnyAbove(above) do
 			T:go("U3")				-- go up 3
 			height = height + 3		-- increment height
-			_G.Log:saveToLog("\tClear height loop: height = "..height, false)
+			--Log:saveToLog("\tClear height loop: height = "..height, false)
 			above = lib.clearLevel(above)	-- returns start and finish of blocks above
 		end
 		T:down(height)	-- now on ground + 1
@@ -2539,20 +2539,20 @@ function clearMountainSide()
 	function lib.returnToMidPoint(above)
 		--[[ value can be integer or table]]
 		if type(above) == "table" then
-			_G.Log:saveToLog("lib.returnToMidPoint("..#above..")", false)
+			--Log:saveToLog("lib.returnToMidPoint("..#above..")", false)
 			if #above > 0 then
 				local midPoint = math.floor(#above / 2)
 				if #above % 2 == 1 and  not outward then -- length is odd no
 					midPoint = math.ceil(#above / 2)
-					_G.Log:saveToLog("    midPoint adjusted "..midPoint..")", false)
+					--Log:saveToLog("    midPoint adjusted "..midPoint..")", false)
 				end
-				_G.Log:saveToLog("    T:forward("..midPoint..")", false)
+				--Log:saveToLog("    T:forward("..midPoint..")", false)
 				T:forward(midPoint)
 			end
 		else
-			_G.Log:saveToLog("lib.returnToMidPoint("..above..")", false)
+			--Log:saveToLog("lib.returnToMidPoint("..above..")", false)
 			if above > 0 then
-				_G.Log:saveToLog("    T:forward("..above..")", false)
+				--Log:saveToLog("    T:forward("..above..")", false)
 				T:forward(above)
 			end
 		end
@@ -2561,7 +2561,7 @@ function clearMountainSide()
 
 	-- Start here
 	-- if "tk log d.." typed instead of "tk" will start logfile and display comments. read() will be activated for debugging
-	_G.Log:saveToLog("Starting function clearMountainSide", false)
+	--Log:saveToLog("Starting function clearMountainSide", false)
 	local above = lib.firstRow() 			-- outward depends on height eg 1-2 = false, 3-5 = true, 6-8 = false
 	lib.returnToMidPoint(above)				-- return to mid first row of blocks
 	for row = 1, R.width -1 do
@@ -3417,37 +3417,105 @@ function clearWaterPlants()
 end
 
 function composter()
-	-- should have composter in inventory, or be placed on top of an existing one
-	local composterSlot = T:getItemSlot("composter")
-	if composterSlot == 0 then
-		if T:getBlockType("down"):find("composter") == nil then
-			return {"No composter in inventory or below turtle"}
-		end
-	else
-		T:place("composter", "down")
-	end
+    -- should have composter in inventory, or be placed on top of an existing one
+    -- should be double chest above, filled with seeds
+    -- barrel in front for bone_meal
+    local lib = {}
+
+    function lib.checkSetup()
+        local message  = ""
+        local composterSlot = T:getItemSlot("composter")
+    --Log:saveToLog("checkSetup() composterSlot = "..composterSlot)
+        if composterSlot == 0 then
+            if T:getBlockType("down"):find("composter") == nil then
+                message = message.. "\nNo composter in inventory or below turtle"
+            else
+                turtle.select(15)
+                turtle.dropUp()
+                turtle.digDown()
+            end
+        else
+            if composterSlot ~= 15 then
+                turtle.select(15)
+                turtle.dropUp()
+                turtle.select(composterSlot)
+                turtle.transferTo(15)
+            end
+        end
+        local blockType = T:getBlockType("forward")
+        if blockType:find("barrel") == nil then
+            message  = message..  "\nNo barrel in front of turtle"
+        end
+        blockType = T:getBlockType("up")
+        if blockType:find("chest") == nil and blockType:find("barrel") == nil then
+            message  = message..  "\nNo chest or barrel above turtle"
+        end
+    --Log:saveToLog("checkSetup() return message = '"..message.."'")
+        return message
+    end
+
+    function lib.emptySlot(slot)
+		turtle.select(slot)
+        if turtle.getItemCount(slot) > 0 then
+			local item = T:getSlotContains(slot)
+            if item:find("composter") == nil then
+                while turtle.dropUp() do end
+            end
+        end
+    end
+
+    function lib.emptyBonemeal()
+		-- empty bonemeal into barrel in front
+		for slot = 1, 16 do
+			local item = T:getSlotContains(slot)
+            if item:find("bone") ~= nil then
+                turtle.select(slot)
+                turtle.drop()
+            end
+        end
+    end
+
+    function lib.fillInventory()
+        lib.emptyBonemeal()						-- put bonemeal into barrel in front
+        lib.emptySlot(15)                       -- select slot 15 and empty it
+        turtle.digDown()                        -- dig composter from below
+        turtle.select(1)                        -- ready to empty chest into slot 1
+        while turtle.suckUp() do end            -- get contents of chest above all slots except 15
+        lib.emptyBonemeal()                     -- put any further bonemeal into barrel in front
+        lib.emptySlot(16)                       -- empty slot 16 into chest above
+    end
+
+    local message = lib.checkSetup()
+    if message ~= "" then
+       --Log:saveToLog("local message = '"..message.."'")
+		return {message}
+    end
+
+    lib.fillInventory()
+
 	local hasVeg = true
-	local bonemeal = 0
 	while hasVeg do
-		for slot = 1, 14 do
-			turtle.select(slot)
-			while turtle.getItemCount(slot) > 0 do
-				while turtle.dropDown() do end
-				sleep(2)
-				turtle.select(15)
-				turtle.digDown()
-				turtle.placeDown()
-				turtle.select(slot)
-			end
-			bonemeal = T:getItemCount("bonemeal")
-			if bonemeal >= 64 then
-				return {"Bulk composting halted. Bonemeal full"}
-			end
-		end
-		hasVeg = false
+        for slot = 1, 14 do
+            turtle.select(slot)
+            while turtle.getItemCount(slot) > 0 do
+                while turtle.dropDown() do end
+                sleep(2)
+                lib.emptySlot(15) -- select slot 15 and empty it
+                turtle.digDown() -- dig composter from below
+				turtle.select(1)
+				while turtle.suckDown() do end
+				T:place("composter", "down")
+                turtle.select(slot) -- re-select slot
+            end
+        end
+        lib.fillInventory()
+        hasVeg = false
 		for slot = 1, 14 do
 			if turtle.getItemCount(slot) > 0 then
-				hasVeg = true
+				local item = T:getSlotContains(slot)
+				if item:find("composter") == nil and item:find("bone") == nil then
+					hasVeg = true
+				end
 			end
 		end
 	end
@@ -3531,7 +3599,7 @@ function convertEssence()
 		if utils.isStorage("up") then
 			T:dropItem("crystal", "up")
 		end
-Log:saveToLog("==> lib.storeOutput() call --> U.sendItemToNetworkStorage('chest', 'all', 0")
+		--Log:saveToLog("==> lib.storeOutput() call --> U.sendItemToNetworkStorage('chest', 'all', 0")
 		U.sendItemToNetworkStorage("chest", "all", 0)	-- empty turtle to storage chests
 	end
 
@@ -3544,7 +3612,7 @@ Log:saveToLog("==> lib.storeOutput() call --> U.sendItemToNetworkStorage('chest'
 		for _, storageName in pairs(storageNames) do
 			local storageCount, storageData = U.findItemCountInInventory(storageName, essence)	-- eg 86, {{1, 64},{4, 22}}
 			if storageCount > 0 then		-- eg 86: storage has some items
-				_G.Log:saveToLog("storageCount = "..storageCount)
+				--Log:saveToLog("storageCount = "..storageCount)
 				availableStorage[storageName] = {}
 				availableStorage[storageName].count = storageCount
 				availableStorage[storageName].data = storageData
@@ -3583,7 +3651,7 @@ Log:saveToLog("==> lib.storeOutput() call --> U.sendItemToNetworkStorage('chest'
 		return {"No crafter found"}
 	else
 		crafterName = peripheral.getName(crafter)
-		_G.Log:saveToLog("utils.convertEssence started using "..essence..", quantity = "..R.size )
+		--Log:saveToLog("utils.convertEssence started using "..essence..", quantity = "..R.size )
 		while turtle.suck() do end						-- empty crafter
 		lib.storeOutput()	-- empty turtle to storage chests, (except crystal if storage above)
 		if not lib.getCrystal() then
@@ -3599,7 +3667,7 @@ Log:saveToLog("==> lib.storeOutput() call --> U.sendItemToNetworkStorage('chest'
 			-- these have to be sent into the turtle first, dropped into crafter slot 1 and moved to correct position
 			totalInStorage = math.floor(totalInStorage / 4) * 4
 			if R.size == 0 then	-- process all
-				_G.Log:saveToLog("initial call lib.loadTurtle("..U.turtleName..", "..totalInStorage.." essence")
+				--Log:saveToLog("initial call lib.loadTurtle("..U.turtleName..", "..totalInStorage.." essence")
 				local processed = 0
 				local loaded = 0
 
@@ -4391,7 +4459,7 @@ function createBubbleLift()
 		menu.colourPrint("Wait for my return!", colors.yellow)
 	end
 	R.height = math.abs(R.upperLevel - R.lowerLevel)
-Log:saveToLog("createBubbleColumn(): R.height = "..R.height, true)
+--Log:saveToLog("createBubbleColumn(): R.height = "..R.height, true)
 	if R.up then
 		T:go("F1U"..R.height)
 	end
@@ -5348,7 +5416,7 @@ function createFloorCeiling()
 	--Log:saveToLog("R.useBlockType = "..R.useBlockType)
 	--R.inventory.useBlock = R.useBlockType
 	--local inventory = T:getInventory()
-	Log:saveToLog("T:R.inventory = "..textutils.serialise(inventory, {compact = true}))
+	--Log:saveToLog("T:R.inventory = "..textutils.serialise(inventory, {compact = true}))
 	--R.inventory.blockCount = T:getInventory()["blockCount"]
 	--Log:saveToLog("T:getInventory()['blockCount'] = "..	R.inventory.blockCount)
 
@@ -5566,7 +5634,7 @@ function createLadder()
 			T:turnRight(1)
 		end
 		blockType = T:getBlockType("forward")
-		Log:saveToLog("lib.isFluid() blockType (forward) = "..blockType)
+		--Log:saveToLog("lib.isFluid() blockType (forward) = "..blockType)
 		if blockType:find("lava") ~= nil or blockType:find("water") ~= nil then	-- fluid found, return to correct position
 			if side == "left" then
 				T:turnRight(1)
@@ -5576,13 +5644,13 @@ function createLadder()
 			return true
 		end
 		blockType = T:getBlockType("up")
-		Log:saveToLog("lib.isFluid() blockType (up) = "..blockType)
+		--Log:saveToLog("lib.isFluid() blockType (up) = "..blockType)
 		if blockType:find("lava") ~= nil or blockType:find("water") ~= nil then
 			return true
 		end
 
 		blockType = T:getBlockType("down")
-		Log:saveToLog("lib.isFluid() blockType (down) = "..blockType)
+		--Log:saveToLog("lib.isFluid() blockType (down) = "..blockType)
 		if blockType:find("lava") ~= nil or blockType:find("water") ~= nil then
 			return true
 		end
@@ -5624,8 +5692,8 @@ function createLadder()
 	-- R.startLevel eg 64 at top (R.goDown = true) or 5 at bedrock, R.goUp = true
 	-- R.lowerLevel = bottom of ladder
 	-- R.upperLevel = top of ladder
-Log:saveToLog("tk3.createLadder() starting; R.up = "..tostring(R.up).."R.down = "..tostring(R.down)
-			   .."R.startLevel = "..R.startLevel.."R.destinationLevel = "..R.destinationLevel)
+--Log:saveToLog("tk3.createLadder() starting; R.up = "..tostring(R.up).."R.down = "..tostring(R.down)
+--			   .."R.startLevel = "..R.startLevel.."R.destinationLevel = "..R.destinationLevel)
 
 	R.height = math.abs(R.upperLevel - R.lowerLevel)
 	R.currentLevel = R.startLevel	-- eg 64 going down
@@ -7072,7 +7140,7 @@ function createSafeDrop()
 	local drop = 0
 	menu.colourPrint("Wait for my return!", colors.yellow)
 	R.height = math.abs(R.upperLevel - R.lowerLevel)	-- eg 64 - -59 = 123
-Log:saveToLog("createSafeDrop(): R.height = "..R.height, true)
+--Log:saveToLog("createSafeDrop(): R.height = "..R.height, true)
 	for i = 1, R.height do				-- assume turtle is at foot level
 		if i > 2 then					-- start placing blocks when below ground level
 			for j = 1, 4 do
@@ -7095,7 +7163,7 @@ Log:saveToLog("createSafeDrop(): R.height = "..R.height, true)
 	if blockType:find("bedrock") ~= nil then	-- at bedrock
 		T:go("C1R1 C1R1 C1R1 C1R1 U1", false, 0, true )
 	else
-Log:saveToLog("createSafeDrop(): drop = "..drop.." blocks")
+--Log:saveToLog("createSafeDrop(): drop = "..drop.." blocks")
 		T:go("D1 C1R1 C1R1 C1R1 C1R1 U1")
 		drop = drop + 1
 	end
@@ -7122,7 +7190,7 @@ function createSandWall()
 			reg[i] = reg[i + 1]
 		end
 		reg[8] = count
-		Log:saveToLog("reg = "..textutils.serialise(reg, {compact = true}))
+		--Log:saveToLog("reg = "..textutils.serialise(reg, {compact = true}))
 		if  reg[2] == reg[3] and reg[2] == reg[4] and reg[2] == reg[5] and reg[2] == reg[6] and reg[2] == reg[7]  then
 			if  reg[1] == reg[2] + 1 and reg[8] == reg[7] + 1 then
 				return true
@@ -7191,7 +7259,7 @@ function createSandWall()
 	if R.length > 0 then
 		for i = 1, R.length - 1 do
 			success, count = utils.dropSand()
-			Log:saveToLog("Sand dropped = "..count)
+			--Log:saveToLog("Sand dropped = "..count)
 			if lib.isArch(count) then
 				lib.underArch()
 			end
@@ -7202,7 +7270,7 @@ function createSandWall()
 		while not turtle.detectDown() do 				-- over water
 			while not turtle.detectDown() do 			-- nested to allow forward movement
 				success, count = utils.dropSand() 		-- drops sand and checks supplies
-				Log:saveToLog("Sand dropped = "..count)
+				--Log:saveToLog("Sand dropped = "..count)
 				if lib.isArch(count) then				-- pattern of sand drops matches arch
 					lib.underArch()
 				end
@@ -7564,7 +7632,7 @@ function createStaircase()
 		--  |>|S|S| in air / solid ground
 		--  |S|S|S|
 		--  |S|S|S|
-Log:saveToLog("lib.clearCore() starting")
+--Log:saveToLog("lib.clearCore() starting")
 
 		local remaining = R.height - 2					-- -2 as already 2 blocks below top
 		local drainHeight = math.min(3, remaining)		-- 3 unless very shallow
@@ -7574,7 +7642,7 @@ Log:saveToLog("lib.clearCore() starting")
 			else
 				lib.cutDrain(drainHeight)
 			end
-Log:saveToLog("lib.clearCore() remaining = "..remaining)
+--Log:saveToLog("lib.clearCore() remaining = "..remaining)
 			if remaining > 3 then
 				T:down(3)
 				drainHeight = 3
@@ -7617,7 +7685,7 @@ Log:saveToLog("lib.clearCore() remaining = "..remaining)
 	R.currentLevel = R.startLevel	-- eg 64 going down
 	R.useBlockType = T:getMostItem("slab", true) -- exclude slab, use stone only/netherrack
 --Log:saveToLog("Creating staircase "..R.height.." blocks", true)
-Log:saveToLog("tk3.createStaircase() starting; R.up = "..tostring(R.up).."R.down = "..tostring(R.down)
+--Log:saveToLog("tk3.createStaircase() starting; R.up = "..tostring(R.up).."R.down = "..tostring(R.down)
 			   .."R.startLevel = "..R.startLevel.."R.destinationLevel = "..R.destinationLevel..", R.height = "..R.height)
 
 	local success, numBlocks, errorMsg, blockType = true, 0, "", ""
@@ -10018,7 +10086,7 @@ function harvestTreeFarm()
 		T:up(3)													-- one additional layer
 		height = height + 3
 		currentLogCount = clearRectangle(true)					-- true = return logs dug from digUp() only
-		Log:saveToLog("logs from final digUp() height = "..height..", count = "..currentLogCount, true)
+	--Log:saveToLog("logs from final digUp() height = "..height..", count = "..currentLogCount, true)
 		T:down(height + 1)
 		T:go(finish)
 		T:go("R1F3 L1")			-- on modem
@@ -10762,10 +10830,12 @@ function manageFarm()
 		if turtle.getFuelLevel() < 250 then
 		--Log:saveToLog("==> lib.manageTree() Fuel required: Extracting saplings from storage")
 			-- assume facing crops
-			if lib.getItem("sapling") > 0 then					-- gets one sapling only (if present)
-			--Log:saveToLog("    calling lib.gotoTree()")
-				lib.gotoTree()			-- check for sapling or harvest tree, retuns to facing crops
-				lib.refuelWithLogs(T:getItemSlot("log"))
+			if not lib.refuelFromNetwork() then
+				if lib.getItem("sapling") > 0 then					-- gets one sapling only (if present)
+				--Log:saveToLog("    calling lib.gotoTree()")
+					lib.gotoTree()			-- check for sapling or harvest tree, retuns to facing crops
+					lib.refuelWithLogs(T:getItemSlot("log"))
+				end
 			end
 		end
 	end
@@ -10835,7 +10905,7 @@ function manageFarm()
 			for i = 1, 4 do
 				T:forward(1)
 				success, storage = utils.isStorage("down")
-				_G.Log:saveToLog("i = "..i..",success = "..tostring(success)..". storage = "..storage)
+				--Log:saveToLog("i = "..i..",success = "..tostring(success)..". storage = "..storage)
 				if success then
 					discovered = discovered .. storage
 					if storage == "modem" then
@@ -10942,6 +11012,22 @@ function manageFarm()
 		turtle.suckDown()
 	end
 
+	function lib.refuelFromNetwork()
+		local logSlot, logCount = 0, 0
+		U.wrapModem(true)
+--Log:saveToLog("lib.refuelFromNetwork() calling U.getItemFromNetwork('chest', 'planks', 64)")
+		logSlot, logCount = U.getItemFromNetwork("chest", "planks", 64)
+
+		if logCount > 0 then
+			print("refuelling with planks")
+			turtle.select(logSlot)
+			turtle.refuel(turtle.getItemCount(logSlot))
+			print ("Refuelled to ".. turtle.getFuelLevel())
+			return true
+		end
+		return false
+	end
+	
 	function lib.refuelWithLogs(logSlot)
 		--[[ called after lib.manageTree and on startup ]]
 		--Log:saveToLog("lib.refuelWithLogs(logSlot = "..logSlot..")")
@@ -11032,12 +11118,14 @@ function manageFarm()
 	]]
 	--Log:saveToLog("manageFarm() calling checkFarmPosition()")
 	if turtle.getFuelLevel() < 60 then
-	    --Log:saveToLog("manageFarm(): Unable to proceed. Fuel level is "..turtle.getFuelLevel())
-		if R.auto then
-			utils.waitForInput("Unable to proceed. Fuel level is "..turtle.getFuelLevel())
-			return {}
-		else		-- not started from startup.lua
-			return {"Unable to proceed. Fuel level is "..turtle.getFuelLevel()}
+	    --Log:saveToLog("manageFarm(): Fuel level is "..turtle.getFuelLevel())
+		if not lib.refuelFromNetwork() then
+			if R.auto then
+				utils.waitForInput("Unable to proceed. Fuel level is "..turtle.getFuelLevel())
+				return {}
+			else		-- not started from startup.lua
+				return {"Unable to proceed. Fuel level is "..turtle.getFuelLevel()}
+			end
 		end
 	end
 	checkFarmPosition()											-- should be facing crops, placed above water source. R.ready, R.networkFarm is true
@@ -11544,7 +11632,7 @@ function measureHeight()
 end
 
 function measureLength()
-	Log:saveToLog("measureLength() called")
+	--Log:saveToLog("measureLength() called")
 	return measure()
 end
 
@@ -12186,7 +12274,7 @@ function test2()
 	local drop = 0
 	menu.colourPrint("Wait for my return!", colors.yellow)
 	R.height = math.abs(R.upperLevel - R.lowerLevel)
-	Log:saveToLog("createBubbleColumn(): R.height = "..R.height, true)
+	--Log:saveToLog("createBubbleColumn(): R.height = "..R.height, true)
 
 	local atBedrock = false
 	local blockType = T:getBlockType("down")
@@ -12519,7 +12607,7 @@ local function sceneLoader()
 						else
 							if word:find("%(") == nil then
 								local key = word:sub(3)
-								Log:saveToLog("key = "..key)
+								--Log:saveToLog("key = "..key)
 								description = description..tostring(R[key])
 							else
 								local expression = U.parseExpression(word, "tk3.sceneLoader()")
@@ -12685,7 +12773,7 @@ Enter to exit]]
         --if fList[result[1]] ~= nil then
         if F[result[1]] ~= nil then
             local task = result[1] -- eg {"createMine"}
-            Log:saveToLog("tk3.main() task = " .. task .. "()")
+            --Log:saveToLog("tk3.main() task = " .. task .. "()")
             utils.logRvalues()
             result = F[task].call() -- eg createMine()
         end
