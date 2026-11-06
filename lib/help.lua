@@ -1,4 +1,4 @@
-local version = 20260116.1600
+local version = 20261104.2200
 -- display help about selected task
 -- terminal size = 39 x 13
 --[[This line of text = 39 characters]]
@@ -6,46 +6,54 @@ local help = {}
 --help.main = {}
 --help.sub = {}
 help["1+0"] =
-[[~white~Can be used in any dimension.~brown~
-1.Ladders and ~lightGray~stairs up/down    
-2.Create a pre-formatted 33 x 33 blocks  
-mine at chosen level.
-~blue~3.Bubble lift and ~cyan~safe drop to water.~magenta~  
-4.Faster version of ~white~33x33 mine pattern   
-using ~magenta~corridor and ~pink~rectangle functions.~brown~
-5.Mine to bedrock (inefficient)
-~brown~6.Strip resources from abandoned mines.
+[[~lightGray~1,2.~brown~Ladders~lightGray~ and ~white~stairs ~lightGray~up/down
+
+3.Create pre-formatted ~white~33x33 mine ~lightGray~here.
+
+~cyan~4,5.Bubble lift and safe drop to ~blue~water.
+
+~magenta~6,7.Faster version of ~white~33x33 mine ~magenta~using
+   ~white~corridor ~magenta~and ~white~rectangle ~magenta~functions.
+
+~brown~8.Mine to bedrock ~red~(inefficient)
+
+~orange~9.Strip resources from abandoned mines.
 ]]
 help["2+0"] =
-[[~brown~1.Fell Tree (or Nether stem) for cutting any size tree / branches~lime~
-2.Create a tree farm: 16 single or 4 double size (Dark oak or any type) suitable for turtle harvesting.
-~brown~3.Fence or wall a rectangle keeping to contours.
-~green~4.Forest harvested and replanted.
+[[~brown~1.Fell Tree (or Nether stem) for cutting any size tree
+~lime~2.Create a tree farm: 16 single or 4 double size (depending on species).
+~green~3.Plant tree farm (no interaction).
+~lime~4.Harvest tree farm (no interaction).
+~brown~5.Fence/wall rectangle keeping contours.
+~green~6.Forest harvested and replanted.
 (Must be walled)
-~brown~5.Convert a legacy tree farm to
+~magenta~7.Convert a legacy tree farm to
 network storage
 ]]
 help["3+0"] =
-[[~yellow~1.Modules built to fixed size
-and placed next to each other in linear
-or rectangular pattern.~lime~
-2.Whole farm is managed by a dedicated
-turtle, which must be equipped with a
-diamond hoe as well as pickaxe.
-~orange~Fuelled from a tree in each module.
-~brown~3.Double chests store produce / seeds.
-~magenta~4.Modems used for Network storage
+[[~yellow~1.Create first farm with storage.
+~orange~2.Extend existing farm right or behind.
+~red~3.Manage farm auto-start.
+~lightGray~4.Build linear fence or wall.
+~brown~5.Fence or wall contoured rectangle.
+~magenta~6.Convert legacy farm to network.
+~cyan~7.Mystical Agriculture upgrade soil.
+~lightGray~8.Create a mud and clay farm.
+~lightGray~9.Produce clay or mud.
+~green~10.Bamboo farm create, harvest, manage.
 ]]
 help["4+0"] =
-[[~lightGray~1.Turtle can extract obsidian
-from lava areas safely.~pink~
-2.Nether portals built or removed
-without needing diamond pickaxes.~orange~
-3.End World dragon towers can be
-undermined ready for deactivating.
-4.Destroy End world tower crystals.~red~
-5.Water trapped dragon killed~brown~
-6.End portal stations with trapdoor
+[[~red~1.Refuel turtle from lava lake.
+~lightGray~2.Harvest obsidian field.
+~magenta~3.Build a Nether portal.
+~gray~4.Demolish a nether portal.
+~red~5.Stripmine Netherite
+~orange~6.Undermine End World dragon towers.
+~yellow~7.Destroy End world tower crystals.
+~blue~8.Build dragon water trap.
+~magenta~9.Attack dragon or other mobs.
+~lightGray~10.End portal station with trapdoor.
+~red~11.Shulker harvesting.
 ]]
 help["5+0"] =
 [[~white~1.Can be used in Nether and End.~lightGray~
@@ -78,7 +86,7 @@ help["7+0"] =
 5.Dig a trench.~gray~
 6.Carve away side of a mountain.~lightBlue~
 7.Place or replace floors and ceilings
-8.Control turtle directly with commands 
+8.Control turtle directly with commands
   eg ~white~U4F6
 
 ]]
@@ -114,7 +122,7 @@ help["10+0"] =
 
 
 ]]
--- index elevated to 100 for sub-menus eg Measurement tools -> help.sub[101], 102, 103 = 
+-- index elevated to 100 for sub-menus eg Measurement tools -> help.sub[101], 102, 103 =
 help["11+0"] =
 [[~yellow~1.Use a turtle next to a ~cyan~modem ~yellow~to locate ingredients and craft another item
 
@@ -158,7 +166,7 @@ help["1+2"] = -- "createStaircase": stairs up/down
 
 ~lightGray~If going ~blue~down~lightGray~ -> digs down first
 Spine up > Clear down > Steps up
-]] 
+]]
 
 help["1+3"] = -- "createMine" Create mine at this level
 [[~yellow~Press F3 to check Y level.
@@ -172,7 +180,7 @@ help["1+3"] = -- "createMine" Create mine at this level
 
 ]]
 if U.bedrock == 0 then	--pre 1.18
-	help["1+3"] = help["1+3"].."Place at Y = 5, 8, 11 ~red~(11 nether)" 
+	help["1+3"] = help["1+3"].."Place at Y = 5, 8, 11 ~red~(11 nether)"
 else
 	help["1+3"] = help["1+3"].."Place at Y = -59, -56, -53 (11 nether)"
 end
@@ -188,7 +196,7 @@ If next to a ladder, place as below:
 | |~red~^~brown~|L|~red~^~lightGray~| | ~brown~L = ladder
 ~lightGray~| | | | | | ~red~^ = Turtle facing forward
 ~lightGray~| | | | | |
-		   
+
 ]]
 
 help["1+5"] = -- "createBubbleLift": single column bubble lift
@@ -214,7 +222,7 @@ help["1+6"] = -- "quickMineCorridor": quick corridor system
 ~lightGray~*| | | | | |*               ~orange~L
 ~lightGray~*| |*|*|*| |*               ~orange~E
 ~lightGray~*| |*|*|*| |*               ~orange~N
-~lightGray~*| |*|*|*| |*               ~orange~G 
+~lightGray~*| |*|*|*| |*               ~orange~G
 ~lightGray~*|~red~^~lightGray~| | | | |*  ~red~^~lightGray~ = Turtle   ~orange~T
 ~lightGray~*|~cyan~P~lightGray~|*|*|*|*|*  ~cyan~P~lightGray~ = Player   ~orange~H
 ]]
@@ -223,7 +231,7 @@ help["1+7"] = -- "quickMine": quick mine
 [[~yellow~~yellow~Place turtle as below:
  1. On ~blue~floor   ~yellow~(feet height)
  2. On ~lime~ceiling ~yellow~(eye height)
-~lightGray~*|*|*|*|*|*|* 
+~lightGray~*|*|*|*|*|*|*
 *| | | | | |*
 *| |*|*|*| |*
 *| |*|*|*| |*
@@ -241,7 +249,7 @@ expose bedrock ~red~(slow and inefficient)
 ~lightGray~|*| | | | | |*               ~orange~L
 ~lightGray~| | | |*|*| |                ~orange~E
 ~lightGray~| | |*| | |*|                ~orange~N
-~lightGray~|*| | | |*| |                ~orange~G 
+~lightGray~|*| | | |*| |                ~orange~G
 ~lightGray~| | | | | | |*               ~orange~T
 ~lightGray~|~red~^~lightGray~| | | |*| |*  ~red~^~lightGray~ = Turtle   ~orange~H
 
@@ -302,7 +310,7 @@ help["2+3"] = -- "plantTreefarm": Plant treefarm / Harvest treefarm
 ~magenta~^ = Turtle on Modem (Network storage)
 ]]
 
-help["2+4"] = help["2+3"] 
+help["2+4"] = help["2+3"]
 help["2+5"] = -- "createEnclosure":
 [[~yellow~Place turtle at ~red~^
 
@@ -312,7 +320,7 @@ help["2+5"] = -- "createEnclosure":
 ~lightGray~|F|~lime~ | | | |~cyan~T~lightGray~|F| ~cyan~T = Tree
 ~lightGray~|F|~lime~ |~cyan~T~lime~| | | ~lightGray~|F|
 ~lightGray~|F|~lime~ | | | | ~lightGray~|F|
-~lightGray~|F|~brown~B~lime~| |~cyan~T~lime~| |~brown~B~lightGray~|F| 
+~lightGray~|F|~brown~B~lime~| |~cyan~T~lime~| |~brown~B~lightGray~|F|
 ~lightGray~|~red~^~lightGray~|F|F|F|F|F|F| ~red~^ = Turtle
 
 ~yellow~Fence/Wall follows land contours
@@ -351,17 +359,17 @@ help["2+7"] = -- "convertTreefarm": Convert treefarm
 help["3+1"] = -- "createFarm" Create modular crop farm
 [[~yellow~Place turtle on the ground as below ~red~^
 
-~lightGray~|*|~green~ | | |   ~lightGray~|*| ~green~| | ~lightGray~* = Wall
-~lightGray~|*|~green~ | | |   ~lightGray~|*| ~green~| |
-~lightGray~|*|~green~ | | |   ~lightGray~|*| ~green~| |
-~lightGray~|*|~green~ | | |   ~lightGray~|*| ~green~| | 
-~lightGray~|*|~green~ | | |   ~lightGray~|*| ~green~| | ~magenta~M = Modem
-~brown~|B|B~green~| | |~lightGray~or |*| ~green~| | ~brown~B = Barrel or Chest
-~brown~|B|~blue~W~green~| | |~lightGray~or ~magenta~|M|~blue~W~green~| | ~blue~W = Water
-~lime~|~red~^~lime~|~brown~B|B|~lightGray~*|or ~brown~|~red~^~brown~|~magenta~M|~lightGray~*| ~red~^ = Turtle
-~brown~Legacy   ~lightGray~or ~magenta~Network ~yellow~Size = 12 x 12
+~lightGray~|*|~green~ | | |    ~lightGray~* = Wall
+~lightGray~|*|~green~ | | |    ~green~ | | = crop site
+~lightGray~|*|~green~ | | |
+~lightGray~|*|~green~ | | |
+~lightGray~|*|~green~ | | |
+~lightGray~|*|~green~ | | |
+~magenta~|M|~blue~W~green~| | |   ~magenta~M = Modem ~blue~W = Water
+~lime~|~red~^~lime~|~magenta~M~lightGray~|*|*|   ~red~^ = Turtle
+~yellow~Size = 12 x 12.
+~magenta~Network storage underneath: 8 chests
 ]]
-
 help["3+2"] = -- "createFarmExtension" Extend farm
 [[~yellow~Place on any ~brown~T ~blue~T ~magenta~T~yellow~ facing < > ^ v
 
@@ -445,7 +453,7 @@ It will go through the water and place
 essence on soil from underneath.
 ]]
 
-help["3+8"] = -- "makeMud": make mud or clay from dirt
+help["3+8"] = -- "createMudfarm":create mud / clay farm
 [[~yellow~Makes mud and/or clay from dirt.
 Use an enclosure for drying clay
 same size as a farm (10 x 10 inner).
@@ -459,13 +467,33 @@ lower left corner, at border height:
 ~lightGray~|*|~red~T|~blue~W|~lightGray~*|
 ~lightGray~|*|~blue~W|W|~lightGray~*|
 ]]
+
+help["3+9"] = -- "makeMud": make mud or clay from dirt
+[[~yellow~Makes mud and/or clay from dirt.
+Place turtle in front of farm over
+water source.
+Add glass bottles
+]]
+
+help["3+10"] = -- "mmanageBambooFarm": Manage bamboo farm
+[[~yellow~Options given:
+
+~lightGray~1. Create a bamboo farm.
+   12 x 12 stone square. 6 x 6 plot
+
+~green~2. Harvest and replant existing farm.
+   Returns to modem before starting
+
+~magenta~3. Enable / disable auto-start:
+   Continuous fuel supply production
+]]
 --******************OBSIDIAN LAVA***********************
 
 --"lavaRefuel", "harvestObsidian", "createPortal", "demolishPortal",
 --"createStripMine", "undermineDragonTowers", "deactivateDragonTower",
 --"createDragonTrap", "attackMob","createPortalPlatform", "harvestShulkers"
 help["4+1"] = -- "lavaRefuel": lava Refuel
-[[~yellow~Place turtle next to lava lake 
+[[~yellow~Place turtle next to lava lake
 Left or Right side
 Or single strip
 
@@ -478,7 +506,7 @@ Or single strip
 ]]
 
 help["4+2"] = -- "harvestObsidian": Harvest obsidian
-[[~yellow~Place turtle on any block on the left 
+[[~yellow~Place turtle on any block on the left
 side facing the obsidian field.
 
 ~gray~|O|O|O|O|O| O = Obsidian
@@ -492,8 +520,8 @@ side facing the obsidian field.
 help["4+3"] = -- "createPortal": build Nether portal
 [[~yellow~Place turtle on the ground as below ~red~> ~pink~^
 ~yellow~Start ~red~> ~yellow~(facing right) or ~pink~^ ~yellow~ahead
-  
-~lightGray~| |~red~>~lightGray~|O|O|*| | |    |*|O|O|*| face view             
+
+~lightGray~| |~red~>~lightGray~|O|O|*| | |    |*|O|O|*| face view
    ~pink~^~lightGray~               |O|~purple~+ +~lightGray~|O|
                    |O|~purple~+ +~lightGray~|O|
 ~yellow~Result (plan)      ~lightGray~|O|~purple~+ +~lightGray~|O|
@@ -507,7 +535,7 @@ help["4+4"] = help["4+3"] -- "demolishPortal": Demolish Nether portal
 help["4+5"] = -- "createStripMine": Netherite stripping
 [[~yellow~Press F3+G for chunk boundaries
 Netherite stripmine plan view
-               
+
 ~lightGray~|*|*|*~lime~N~lightGray~*|*|*|
 ~lightGray~|*|*|*~lime~|~lightGray~*|*|*| ~lime~-| = Chunk Boundaries
 ~lightGray~|*|~red~^~lightGray~|*~lime~|~lightGray~*|~red~^~lightGray~|*|  ~red~^ = Turtle
@@ -523,14 +551,14 @@ help["4+6"] = -- "undermineDragonTowers": Find dragon tower centres
 coordinates x = 0, z = 0
 ~lime~x
                  ~lightGray~N
-~lime~a~lightGray~   -1        | | | |  
+~lime~a~lightGray~   -1        | | | |
 ~lime~x~lightGray~    0       ~red~W~lightGray~| |~red~<~lightGray~| |E  ~red~< = Turtle
-~lime~i~lightGray~    1        | | | |  
+~lime~i~lightGray~    1        | | | |
 ~lime~s~lightGray~                S
     ~green~z axis    ~lightGray~-1 0 1
-  
+
 Centre of the dragon arena ~lime~X = 0, ~green~Z = 0
-~yellow~                           facing ~red~West 
+~yellow~                           facing ~red~West
 ]]
 
 help["4+7"] = -- "deactivateDragonTower": deactivate dragon tower
@@ -579,13 +607,13 @@ help["4+10"] = -- "createPortalPlatform": build end portal staging
         ~purple~|P|     P ~lightGray~= Portal
 ~gray~      |B|B|B|
         |B|
-         ~green~|		
-         ~green~|      ~lime~Height measured first		
-         ~green~|		
-~red~         T	     T ~lightGray~= Turtle	
+         ~green~|
+         ~green~|      ~lime~Height measured first
+         ~green~|
+~red~         T	     T ~lightGray~= Turtle
 ~yellow~  |*|*|*|*|*|*| ~red~Inventory AFTER height
 ]]
-	
+
 help["4+11"] = -- "harvestShulkers": Shulker harvest
 [[~blue~1) ~yellow~Place turtle <64 blocks from shulker
 Directly above, below or at same level
@@ -670,7 +698,7 @@ help["5+5"] = -- "createPlatform": Platform
 
 Blocks placed under the turtle
 ]]
--- help["5+6"] = -- "createSinkingPlatform": 	
+-- help["5+6"] = -- "createSinkingPlatform":
 -- [[~yellow~Turtle position ~red~> T ~gray~(~red~V ~gray~to enclose)
 -- ~yellow~Plan view                      ~gray~Start:~red~V
 -- ~blue~|~red~>~blue~| | | | | | ~yellow~to ~lightGray~|*|*|*|*|*|~red~V~lightGray~|~gray~ enclose
@@ -761,8 +789,8 @@ help["6+3"] = -- "createMobBubbleLift": Build bubble lift kill zone
  |*| | | | |~brown~F~lightGray~| | | | |*|
  |*|*|*|*|*|~brown~F~lightGray~|*|*|*|*|*|  ~brown~F ~lightGray~= Fence
            ~brown~|~red~^~brown~|~lightGray~= Turtle on ~brown~Soul Sand
-		   
-~yellow~Plan view completed~lightGray~		   
+
+~yellow~Plan view completed~lightGray~
  |*| | | | |~brown~F~lightGray~| | | | |*|
  |*|*|*|*|*|~brown~F~lightGray~|*|*|*|*|*|  ~brown~F ~lightGray~= Fence
 ~yellow~kill zone~lightGray~|*|~blue~S~lightGray~|*|~yellow~kill zone ~lightGray~Left / Right
@@ -789,7 +817,7 @@ help["6+5"] = -- "createBlazeGrinder": killzone under blaze spawnet
 Plan view          Side view
 
 ~lightGray~|*|*|*|*|*|*|*|*|  ~lime~< T = Turtle
-~lightGray~|*| | | | | | | |  
+~lightGray~|*| | | | | | | |
 ~lightGray~|*| | | | | | | |
 |*| | | |~purple~S~lightGray~| | | |~lime~<
 ~lightGray~|*| | | | | | | |   |*| | | |~purple~S~lightGray~| | | |
@@ -817,7 +845,7 @@ help["6+7"] = -- "attack"
     - down
 ~cyan~Timed or continuous
 ~yellow~For mob farms place outside entrance.
-Direction = forward. 
+Direction = forward.
 
 ~red~Blaze apawner ~yellow~under centre of floor
 Direction = up
@@ -862,12 +890,12 @@ Plan view         Side view
                    |*|*|*|*|*|*|
                    |*|*|*|*|*|*|
                   ~lime~T~lightGray~|~green~T~lightGray~|*|*|*|*|*| Base
-				  
+
 T = Turtle top / bottom/ inside / out
 ~yellow~Bottom to top or top to bottom
 ]]
 
-help["7+4"] = -- "clearPerimeter": Clear rectangle (perimeter only) 
+help["7+4"] = -- "clearPerimeter": Clear rectangle (perimeter only)
 [[~yellow~Clear rectangle ~red~perimeter only
 
 ~yellow~Plan view
@@ -901,12 +929,12 @@ help["7+7"] = -- "digTrench": Dig a trench
 [[~yellow~Dig a trench (Plan view)
 
 ~lightGray~      |~red~>~lightGray~| | | | | | |
-  
+
 | |    ~red~>~lightGray~ = Turtle
-| |    
 | |
 | |
-| |    
+| |
+| |
 |~red~^~lightGray~|    ~red~^~lightGray~ = Turtle
 ]]
 
@@ -1016,7 +1044,7 @@ help["8+7"] = -- "oceanMonumentColumns": Ocean monument 4 corner pillars
 ~green~******~lime~++++~green~******  ~lime~+ ~lightGray~= Ideal position~green~
 ******~lime~++++~green~******  ~green~* ~lightGray~= Good position
 ~green~****************
-****************  Or any corner < 12 
+****************  Or any corner < 12
 ****************  blocks from edge
 ]]
 
@@ -1048,7 +1076,7 @@ help["8+9"] = -- "createLadderToWater": Ladder to water/lava
 ~brown~L ~lightGray~= Ladder
 ]]
 
-help["8+10"] = -- "floodArea": 
+help["8+10"] = -- "floodArea":
 [[~yellow~Place turtle on the left corner of the top
 of retaining wall facing empty area
 ]]
@@ -1072,10 +1100,10 @@ help["8+12"] = -- Ocean monument drain and remove 1 of 4 quarters
 ~orange~|*|- - - - ~lime~- - - -|*|
 ~orange~|*|- - - - ~lime~- - - -|~red~<~lime~| ~lightGray~30,000 fuel each!
 ~orange~|*|~red~^~orange~|*|*|*~lime~|*|*|*|*|*| ~lightGray~3,000 stone each!
-]] 
+]]
 
 -- Building and railway
-help["9+1"] = 
+help["9+1"] =
 [[~yellow~Build a wall
 
 Plan view        Side view
@@ -1087,9 +1115,9 @@ Plan view        Side view
                 ~red~T~lightGray~|~red~T~lightGray~|*|*|*|*|*|
 
 ~red~> T~lightGray~ = Turtle
-				 
+
 ]] -- Build a wall
-help["9+2"] = 
+help["9+2"] =
 [[~yellow~Build a walled rectangle / house
 
 Plan view         Side view
@@ -1103,7 +1131,7 @@ Plan view         Side view
 ~yellow~   W i d t h      ~red~^ T ~lightGray~= Turtle
 
 ]] -- Build a rectangular structure
-help["9+3"] = 
+help["9+3"] =
 [[~yellow~Build a gable roof
 Gable built on right side of turtle
 Plan view       End view (width)
@@ -1140,10 +1168,10 @@ _____~red~T~lightGray~                        ___
       |*|_                 _|*|
         |*|_             _|*|
           |*|__________~red~T~lightGray~|*|
-            |*|*|*|*|*|*|		
-~red~T~lightGray~ = Turtle on block, not above rail	
+            |*|*|*|*|*|*|
+~red~T~lightGray~ = Turtle on block, not above rail
 ]] -- build down
-help["9+6"] = 
+help["9+6"] =
 [[~yellow~Place turtle on suspended railway stone
 Redstone torch will go below
 
@@ -1158,7 +1186,7 @@ Redstone torch will go below
 On block or above rail, face up slope
 ]] -- Place redstone torch under block
 --Measurement tools
-help["10+1"] = 
+help["10+1"] =
 [[~yellow~Place turtle on floor.~lightGray~
             Measured Height:
 |~lightBlue~*~lightGray~|*|*|*|   ~lightBlue~7. Overhead obstruction
@@ -1171,7 +1199,7 @@ help["10+1"] =
   |*|*|*|
  ~red~T~lightGray~|*|*|~red~T~lightGray~|   ~red~T~lightGray~ = Turtle
 ]] -- measure height
-help["10+2"] = 
+help["10+2"] =
 [[~yellow~Depth measurement
 Place turtle on the floor above pit / edge
 
@@ -1179,12 +1207,12 @@ Place turtle on the floor above pit / edge
 1|*|*|
 2|*|*|
 3|*|*|
-4|*|*|         Measured depth: 
+4|*|*|         Measured depth:
 5|*|~lime~S~lightGray~|         ~lime~5. Specific block found
-~lightGray~6              ~cyan~6. ~red~NOT ~cyan~turtle.detect()~lightGray~ 
+~lightGray~6              ~cyan~6. ~red~NOT ~cyan~turtle.detect()~lightGray~
 7|*|*|~lightBlue~*~lightGray~|*| |   ~lightBlue~6. Obstruction below
 ]] -- measure depth
-help["10+3"] = 
+help["10+3"] =
 [[~yellow~Length measurement
 
 ~lightGray~1 2 3 4 ~lime~5~lightGray~ 6 ~lime~7 ~cyan~8 ~lightBlue~9~lightGray~ 10
@@ -1224,7 +1252,7 @@ help["11+2"]  =
 [[~yellow~If turtle moved to other network, lists
 ~lightGray~'barrelItems.lua' ~yellow~and ~lightGray~'chestItems.lua'
 ~lime~are automatically updated.
-~yellow~If more storage has been added these 
+~yellow~If more storage has been added these
 lists are also automatically updated.
 
 ~cyan~This option manually updates the lists.
