@@ -1,4 +1,4 @@
-local version = 20260524.0800
+local version = 20261104.2200
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.Multibutton")
@@ -30,7 +30,7 @@ local function createButtons(names, fromDB, defaultCaption)
 				table.insert(buttons, {{names[index], names[index]}})	-- eg: {{"Mining (includes Nether)","Mining (includes Nether)"}, ...}
 			end
 		end
-	end 
+	end
 	return buttons
 end
 
@@ -38,7 +38,7 @@ local function createSizes(names, w, h)
 	local sizes = {}
 	for index = 1, #names do
 		table.insert(sizes, {w, h})
-	end 
+	end
 	return sizes
 end
 
@@ -58,7 +58,7 @@ function S:new(sceneMgr)
 	]]
 	-- ===============help buttons==================
 	local mmHelp = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"}
-	local mmHelpStyles = 
+	local mmHelpStyles =
 	{
 		[mmHelp[1]]	 = {colors.yellow,  colors.lightGray},
 		[mmHelp[2]]	 = {colors.yellow,  colors.gray},
@@ -80,7 +80,7 @@ function S:new(sceneMgr)
 --Log:saveToLog("mmHelpButtons = "..textutils.serialise(mmHelpButtons, {compact = true}))
 	--====================items buttons=======================
 	local mmItem = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"}
-	local mmItemStyles = 
+	local mmItemStyles =
 	{
 		[mmItem[1]]	 = {colors.lightGray,  colors.gray},
 		[mmItem[2]]	 = {colors.gray,  colors.lightGray},
@@ -99,7 +99,7 @@ function S:new(sceneMgr)
 
 	-- following tables are menu text for main menu (mm) and sub-menus (m1. m2 etc)
 	-- =====================main menu buttons======================
-		local mm = 
+		local mm =
 	{
 		{{"mbMining",    "01-Mining (all dimensions)"}},
 		{{"mbForestry",  "02-Forestry"}},
@@ -112,10 +112,10 @@ function S:new(sceneMgr)
 		{{"mbBuilding",  "09-Building and minecart"}},
 		{{"mbMeasuring", "10-Measuring tools"}},
 		{{"mbNetwork",   "11-Network Tools"}},
-	}			
+	}
 --Log:saveToLog("mm[1][1] = "..textutils.serialise(mm[1], {compact = true}))
 --Log:saveToLog("mm[1][1][1] = "..mm[1][1][1])
-	local mmStyles = 
+	local mmStyles =
 	{
 		--[mm[1][1][1]]]	= {colors.white,  colors.gray},
 		--[mm[2][1][1]]]	= {colors.white,  colors.lightGray},
@@ -141,7 +141,7 @@ function S:new(sceneMgr)
 				"createSafeDrop", "createBubbleLift", "quickMineCorridor",
 				"quickMine", "mineBedrockArea", "clearMineshaft"}
 	self.m1 = m1
-	local m1Styles = 
+	local m1Styles =
 	{
 		[m1[1]] = {colors.white, colors.brown}, 	-- Ladder up or down
 		[m1[2]] = {colors.white, colors.gray}, 		-- Stairs up or down
@@ -155,11 +155,11 @@ function S:new(sceneMgr)
 	}
 	local m1Sizes = createSizes(m1, WIDTH - 6, 1)
 	local m1Buttons = createButtons(m1, true, nil)
-			
+
 	local m2 = {"fellTree", "createTreefarm", "plantTreefarm",
 				"harvestTreeFarm", "createEnclosure", "clearAndReplantTrees","convertTreefarm"}
 	self.m2 = m2
-	local m2Styles = 
+	local m2Styles =
 	{
 		[m2[1]] = {colors.white, colors.brown}, 	-- Fell Tree
 		[m2[2]] = {colors.black, colors.lightGray}, -- Create tree farm
@@ -171,10 +171,10 @@ function S:new(sceneMgr)
 	}
 	local m2Sizes = createSizes(m2, WIDTH - 6, 1)
 	local m2Buttons = createButtons(m2, true, nil)
-					
-	local m3 = {"createFarm", "createFarmExtension", "manageFarmSetup", "createFence", "createEnclosure", "convertFarm", "upgradeFarmland", "createClayfarm", "makeMud" }			
+
+	local m3 = {"createFarm", "createFarmExtension", "manageFarmSetup", "createFence", "createEnclosure", "convertFarm", "upgradeFarmland", "createClayfarm", "makeMud", "manageBambooFarm"  }
 	self.m3 = m3
-	local m3Styles = 
+	local m3Styles =
 	{
 		[m3[1]] = {colors.black, colors.yellow}, 	-- Create modular crop farm
 		[m3[2]] = {colors.black, colors.green}, 	-- Extend modular crop farm
@@ -184,16 +184,17 @@ function S:new(sceneMgr)
 		[m3[6]] = {colors.white, colors.gray}, 		-- Convert farm
 		[m3[7]] = {colors.black, colors.magenta}, 	-- Mystical Agriculture convert essence
 		[m3[8]] = {colors.white, colors.brown}, 	-- Create clay farm
-		[m3[9]] = {colors.black, colors.gray} 		-- Make mud or clay
+        [m3[9]] = { colors.black, colors.gray },    -- Make mud or clay
+		[m3[10]] = {colors.black, colors.green} 	-- Manage Bamboo farm
 	}
 	local m3Sizes = createSizes(m3, WIDTH - 6, 1)
 	local m3Buttons = createButtons(m3, true)
-					
+
 	local m4 = {"lavaRefuel", "harvestObsidian", "createPortal", "demolishPortal",
 				"createStripMine", "undermineDragonTowers", "deactivateDragonTower",
 				"createDragonTrap", "attack","createPortalPlatform", "harvestShulkers"}
 	self.m4 = m4
-	local m4Styles = 
+	local m4Styles =
 	{
 		[m4[1]] = {colors.black, colors.red}, 		-- lavaRefuel
 		[m4[2]] = {colors.black, colors.lightGray}, -- Dig obsidian field
@@ -213,7 +214,7 @@ function S:new(sceneMgr)
 	local m5 = {"createPath", "createCorridor", "createWaterCanal", "createIceCanal",
 				"createPlatform", "createSinkingPlatform", "createBoatLift", "createDiveColumn"}
 	self.m5 = m5
-	local m5Styles = 
+	local m5Styles =
 	{
 		[m5[1]] = {colors.black, colors.lightGray}, -- Continuous path
 		[m5[2]] = {colors.white, colors.gray}, 		-- Covered walkway / tunnel
@@ -226,11 +227,11 @@ function S:new(sceneMgr)
 	}
 	local m5Sizes = createSizes(m5, WIDTH - 6, 1)
 	local m5Buttons = createButtons(m5, true)
-	
+
 	local m6 = {"createMobFarmCube", "floodMobFarm", "createMobBubbleLift",
 				"createMobFarmCubeBlaze", "createBlazeGrinder", "createTrialCover", "attack"}
 	self.m6 = m6
-	local m6Styles = 
+	local m6Styles =
 	{
 		[m6[1]] = {colors.white, colors.gray}, 		-- Cube around spawner (NOT blaze)
 		[m6[2]] = {colors.white, colors.blue}, 		-- Flood mob farm floor
@@ -242,13 +243,13 @@ function S:new(sceneMgr)
 	}
 	local m6Sizes = createSizes(m6, WIDTH - 6, 1)
 	local m6Buttons = createButtons(m6, true)
-					
+
 	local m7 = {"clearArea", "clearRectangle", "clearWall",
 				"clearPerimeter", "clearBuilding",
 				"clearSolid", "digTrench", "clearMountainSide",
 				"createFloorCeiling", "createDirectedPath"}
 	self.m7 = m7
-	local m7Styles = 
+	local m7Styles =
 	{
 		[m7[1]] = {colors.black, colors.lime}, 		-- Clear field (inc trees)
 		[m7[2]] = {colors.black, colors.magenta}, 	-- Clear a rectangle (+ u/d opt)
@@ -263,12 +264,12 @@ function S:new(sceneMgr)
 	}
 	local m7Sizes = createSizes(m7, WIDTH - 6, 1)
 	local m7Buttons = createButtons(m7, true)
-					
+
 	local m8 = {"createSandWall", "clearSandWall", "sandFillArea", "clearSandCube", "createRetainingWall",
 				"drainWaterLava", "oceanMonumentColumns","clearWaterPlants",
 				"createLadderToWater", "floodArea", "createSlopingWater"}
 	self.m8 = m8
-	local m8Styles = 
+	local m8Styles =
 	{
 		[m8[1]] = {colors.black, colors.yellow}, 	-- Vertical sand wall from surface
 		[m8[2]] = {colors.yellow, colors.black}, 	-- Create enclosed area of sand
@@ -284,11 +285,11 @@ function S:new(sceneMgr)
 	}
 	local m8Sizes = createSizes(m8, WIDTH - 6, 1)
 	local m8Buttons = createButtons(m8, true)
-				
+
 	local m9 = {"buildWall", "buildStructure", "buildGableRoof",
 				"buildPitchedRoof", "createRailway", "placeRedstoneTorch"}
 	self.m9 = m9
-	local m9Styles = 
+	local m9Styles =
 	{
 		[m9[1]] = {colors.black, colors.yellow},	-- build a wall
 		[m9[2]] = {colors.black, colors.orange},	-- build rectangular structure
@@ -299,10 +300,10 @@ function S:new(sceneMgr)
 	}
 	local m9Sizes = createSizes(m9, WIDTH - 6, 1)
 	local m9Buttons = createButtons(m9, true)
-		
+
 	local m10 = {"measureHeight", "measureDepth", "measureLength", "measureDeepest", "createBorehole"}
 	self.m10 = m10
-	local m10Styles = 
+	local m10Styles =
 	{
 		[m10[1]] = {colors.black, colors.red}, 		-- Measure height
 		[m10[2]] = {colors.black, colors.purple}, 	-- Measure depth
@@ -312,23 +313,23 @@ function S:new(sceneMgr)
 	}
 	local m10Sizes = createSizes(m10, WIDTH - 6, 1)
 	local m10Buttons = createButtons(m10, true)
-	
+
 	local m11 = {"craftItem", "updateLists"}
 	self.m11 = m11
-	local m11Styles = 
+	local m11Styles =
 	{
 		[m11[1]] = {colors.white, colors.brown}, 	-- Craft item
 		[m11[2]] = {colors.black, colors.yellow},	-- update lists
 	}
 	local m11Sizes = createSizes(m11, WIDTH - 6, 1)
-	local m11Buttons = 
+	local m11Buttons =
 	{
 		{{"craft", "01-Craft an Item"}},
 		{{"updateLists", "02-Update Network Storage Database"}}
 	}
 	self.mm = mm
 	-- set the colours of the main menu buttons
-	
+
 	self.subMenuList =
 	{
 		[mm[1]]  = "mbMining",
@@ -347,58 +348,58 @@ function S:new(sceneMgr)
 	--self.subMenuList = {}
 	--for i = 1, #self.mm do
 		--self.subMenuList[mm[i]]  = self.mm[i]
-	--end	
+	--end
 	self.infoText = {"Type number -> Enter or q(uit)"}
-	-- MB:new(name, x, y, w, h, text, fg, bg, alignH, alignV, buttons, sizes, styles, activeFG, activeBG)	
+	-- MB:new(name, x, y, w, h, text, fg, bg, alignH, alignV, buttons, sizes, styles, activeFG, activeBG)
 	self.btnQuit  = Button("btnQuit", 1, 1, 6, 1, "Quit", colors.lime, colors.lightGray, "centre", "centre", 0, "q", self.name)
 	self.btnBack  = Button("btnBack", 1, 1, 6, 1, "Back", colors.lime, colors.gray, "centre", "centre", 0, "b", self.name)
 	self.lblTitle = Label("lblTitle", 7,  1, WIDTH - 12, 1, "Main Menu", colors.lime, colors.black, "centre", "centre")
 	self.lblInfo  = Label("lblInfo", 1,  13, WIDTH, 1, self.infoText[1], colors.lime, colors.black, "left", "centre")
-	
+
 	self.mbHelp   = MultiButton("mbHelp", 39, 2, 2, 11, "", colors.black, colors.yellow,
 								"centre", "centre", mmHelpButtons, mmHelpSizes, mmHelpStyles, colors.yellow, colors.black)
-	
+
 	self.mbItems  = MultiButton("mbItems", 34, 2, 5, 12, "", colors.white, colors.brown,
 								"centre", "centre", mmItemButtons, mmItemSizes, mmItemStyles, colors.brown, colors.white)
-								
+
 	self.mbMain   = MultiButton("mbMain", 1, 2, WIDTH - 1, 11, "", colors.white, colors.black,
 								"centre", "centre", mm, mmSizes, mmStyles, colors.white, colors.gray)
-	
+
 	--self.mbMining = MultiButton(self.subMenuList[mm[1]], 1, 2, WIDTH - 6, #m1, "", colors.white, colors.black,
 	self.mbMining = MultiButton(mm[1][1][1], 1, 2, WIDTH - 6, #m1, "", colors.white, colors.black,
 								"right", "centre", m1Buttons, m1Sizes, m1Styles, m1Styles[m1[1]][1], m1Styles[m1[1]][2])
-								
+
 	self.mbForestry = MultiButton(mm[2][1][1], 1, 2, WIDTH - 6, #m2, "", colors.white, colors.black,
 								"right", "centre", m2Buttons, m2Sizes, m2Styles, m2Styles[m2[1]][1], m2Styles[m2[1]][2])
-								
+
 	self.mbFarming = MultiButton(mm[3][1][1], 1, 2, WIDTH - 6, #m3, "", colors.white, colors.black,
 								"right", "centre", m3Buttons, m3Sizes, m3Styles, m3Styles[m3[1]][1], m3Styles[m3[1]][2])
-								
+
 	self.mbObsidian = MultiButton(mm[4][1][1], 1, 2, WIDTH - 6, #m4, "", colors.white, colors.black,
 								"right", "centre", m4Buttons, m4Sizes, m4Styles, m4Styles[m4[1]][1], m4Styles[m4[1]][2])
-								
+
 	self.mbCanal = MultiButton(mm[5][1][1], 1, 2, WIDTH - 6, #m5, "", colors.white, colors.black,
 								"right", "centre", m5Buttons, m5Sizes, m5Styles, m5Styles[m5[1]][1], m5Styles[m5[1]][2])
-								
+
 	self.mbSpawner = MultiButton(mm[6][1][1], 1, 2, WIDTH - 6, #m6, "", colors.white, colors.black,
 								"right", "centre", m6Buttons, m6Sizes, m6Styles, m6Styles[m6[1]][1], m6Styles[m6[1]][2])
-								
+
 	self.mbArea = MultiButton(mm[7][1][1], 1, 2, WIDTH - 6, #m7, "", colors.white, colors.black,
 								"right", "centre", m7Buttons, m7Sizes, m7Styles, m7Styles[m7[1]][1], m7Styles[m7[1]][2])
-								
+
 	self.mbWater = MultiButton(mm[8][1][1], 1, 2, WIDTH - 6, #m8, "", colors.white, colors.black,
 								"right", "centre", m8Buttons, m8Sizes, m8Styles, m8Styles[m8[1]][1], m8Styles[m8[1]][2])
-	
+
 	self.mbBuilding = MultiButton(mm[9][1][1], 1, 2, WIDTH - 6, #m9, "", colors.white, colors.black,
 								"right", "centre", m9Buttons, m9Sizes, m9Styles, m9Styles[m9[1]][1], m9Styles[m9[1]][2])
-	
+
 	self.mbMeasuring = MultiButton(mm[10][1][1], 1, 2, WIDTH - 6, #m10, "", colors.white, colors.black,
 								"right", "centre", m10Buttons, m10Sizes, m10Styles, m10Styles[m10[1]][1], m10Styles[m10[1]][2])
-								
+
 	self.mbNetwork = MultiButton(mm[11][1][1], 1, 2, WIDTH - 6, #m11, "", colors.white, colors.black,
 								"right", "centre", m11Buttons, m11Sizes, m11Styles, m11Styles[m11[1]][1], m11Styles[m11[1]][2])
-								
-								
+
+
 	self.em:add(self.btnQuit,		"btnQuit")
 	self.em:add(self.btnBack,		"btnBack")
 	self.em:add(self.lblTitle,		"lblTitle")
@@ -417,10 +418,10 @@ function S:new(sceneMgr)
 	self.em:add(self.mbBuilding,	mm[9][1][1])
 	self.em:add(self.mbMeasuring,	mm[10][1][1])
 	self.em:add(self.mbNetwork,		mm[11][1][1])
-	
+
 	self.btnClick = function(button) self:onBtnClick(button) end
 	self.mbClick = function(mb) self:onMbClick(mb) end
-	
+
 	U.subMenuName = ""
 	U.subMenuIndex = 0
 	U.currentMB = ""
@@ -459,7 +460,7 @@ function S:hideMultiButtonsExcept(title, except)
 Log:saveToLog("MainMenu:hideMultiButtonsExcept("..title..", "..except..")")
 	self.btnQuit:setVisible(false)
 	self.btnBack:setVisible(false)
-	
+
 	self.mbMain:setVisible(false)
 	self.mbHelp:setVisible(false)
 	self.mbItems:setVisible(false)
@@ -475,14 +476,14 @@ Log:saveToLog("MainMenu:hideMultiButtonsExcept("..title..", "..except..")")
 	self.mbMeasuring:setVisible(false)
 	self.mbNetwork:setVisible(false)
 	--self.mbSpare:setVisible(false)
-	
+
 	self.lblTitle:setText(title)	-- set title text
 	self.mbHelp:setVisible(true)
 	--self.mbHelp:enable(true)
-	
+
 	if except ~= nil then
 		U.currentMB = except
-		
+
 		local entity = self.em:getEntity(except)		-- the multiButton to set visible
 		entity:setVisible(true)
 		local count = entity:getButtonCount()
@@ -524,13 +525,13 @@ end
 
 function S:onMbClick(mb)
 	-- mb is the whole multibutton object
-	-- mb.name is the name of entire multibutton. 
+	-- mb.name is the name of entire multibutton.
 	-- each individual button has its own name / caption
 Log:saveToLog("MainMenu:onMbClick:START: mb.name = "..mb.name..", U.subMenuName = "..U.subMenuName)
 	--U.fc = U.fc + 1
 	R.inventoryKey = ""	-- rarely used but can cause problems if set to anything else
 	if U.subMenuName == "" then		-- not a menu
-		if mb.name == "mbHelp" then		-- help menu clicked on show help.main 
+		if mb.name == "mbHelp" then		-- help menu clicked on show help.main
 			-- button name eg "1" = index of menu item eg "Mining (...)"
 			local index = tonumber(mb.selectedButtonName)
 --Log:saveToLog("mb.selectedButtonName = "..mb.selectedButtonName)
@@ -541,7 +542,7 @@ Log:saveToLog("MainMenu:onMbClick:START: mb.name = "..mb.name..", U.subMenuName 
 			-- self.mm[1][1][1] = "mbMining"
 			if help[key] ~= nil then
 				-- S:setup(title, key, items)
-				self.sceneMgr:getSceneByName("Help"):setup(self.mm[index][1][2], key) 
+				self.sceneMgr:getSceneByName("Help"):setup(self.mm[index][1][2], key)
 				self.sceneMgr:switch("Help")
 			end
 		elseif mb.name == "mbMain" then	-- main menu clicked on
@@ -635,7 +636,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					if v[1][1] == U.subMenuName then
 						mainIndex = k	-- eg 1  to 12
 						break
-					end 
+					end
 				end
 
 				helpKey = tostring(mainIndex).."+"..tostring(index)
@@ -656,7 +657,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					--R.goDown = true	-- down is default direction
 					R.down = true	-- down is default direction
 					R.auto = true	-- stop at stronghold/trial chamber
-					U.currentTask = "createLadder"	
+					U.currentTask = "createLadder"
 				elseif mb.selectedButtonName == self.m1[2] then -- stairs
 					R.down = true
 					R.auto = true	-- stop at stronghold/trial chamber
@@ -739,7 +740,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					R.inventoryKey = "convertStorage"
 					R.down = true								-- disabled in convertTreeFarm if R.data = "convert"
 					U.currentTask = "convertTreefarm"			-- uses network to get supplies
-				end 
+				end
 			--elseif mb.name == self.subMenuList[self.mm[3]] then	-- "mbFarming"
 			elseif U.subMenuName == self.mm[3][1][1] then		-- "mbFarming"
 				if mb.selectedButtonName == self.m3[1] then 	-- Create modular crop farm
@@ -758,7 +759,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 						["chk3"] = {text = {"Behind", "current", "farm"}, state = false, group = {"chk2", "chk3"}, required = true, r = {"data", "back", "right"}},
 					}
 					]]
-					
+
 					--F["createFarmExtension"].data["chk1"].state = R.networkFarm
 					-- if R.networkFarm then
 						-- F["createFarmExtension"].inventory =
@@ -799,12 +800,16 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					U.currentTask = "convertFarm"
 				elseif mb.selectedButtonName == self.m3[7] then -- Mystical Agriculture soil upgrade
 					U.currentTask = "upgradeFarmland"
-				elseif mb.selectedButtonName == self.m3[8] then -- Create clay farm							
+				elseif mb.selectedButtonName == self.m3[8] then -- Create clay farm
 					U.currentTask = "createClayfarm"
 				elseif mb.selectedButtonName == self.m3[9] then -- Make mud or clay
 					R.misc = true								-- make mud true
-					U.currentTask = "makeMud"
-				end 
+                    U.currentTask = "makeMud"
+                elseif mb.selectedButtonName == self.m3[10] then -- Manage bamboo farm
+					R.inventoryKey = "create"					 -- Default create allocated
+					U.currentTask = "manageBambooFarm"
+					-- need to go to getItems scene if create new farm is selected
+				end
 			--elseif mb.name == self.subMenuList[self.mm[4]] then	-- "mbObsidian"
 			elseif U.subMenuName == self.mm[4][1][1] then		-- "mbObsidian"
 				if mb.selectedButtonName == self.m4[1] then 	-- "lavaRefuel"
@@ -845,7 +850,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 				elseif mb.selectedButtonName == self.m4[11] then -- "Shulker harvester"
 					R.subChoice = 1
 					U.currentTask = "harvestShulkers"
-				end 
+				end
 			--elseif mb.name == self.subMenuList[self.mm[5]] then	-- "mbCanal"
 			elseif U.subMenuName == self.mm[5][1][1] then	-- "mbCanal"
 				if mb.selectedButtonName == self.m5[1] then 	-- "Simple path on air, water or lava"
@@ -872,9 +877,9 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					U.currentTask = "createBoatLift"
 				elseif mb.selectedButtonName == self.m5[8] then -- "Dive column"
 					U.currentTask = "createDiveColumn"
-				end 
-			--elseif mb.name == self.subMenuList[self.mm[6]] then	-- "mbSpawner"	
-			elseif U.subMenuName == self.mm[6][1][1] then	-- "mbSpawner"	
+				end
+			--elseif mb.name == self.subMenuList[self.mm[6]] then	-- "mbSpawner"
+			elseif U.subMenuName == self.mm[6][1][1] then	-- "mbSpawner"
 				-- {"createMobFarmCube", "floodMobFarm", "createMobBubbleLift", "createMobFarmCubeBlaze", "createBlazeGrinder", "createTrialCover"}
 				if mb.selectedButtonName == self.m6[1] then 	-- "Cube around spawner (NOT blaze)"
 					R.subChoice = 2	-- default starting position lower left
@@ -902,7 +907,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					R.forward = true
 					R.down = true
 					U.currentTask = "attack"
-				end 
+				end
 			--elseif mb.name == self.subMenuList[self.mm[7]] then	-- "mbArea"
 			elseif U.subMenuName == self.mm[7][1][1] then	-- "mbArea"
 				if mb.selectedButtonName == self.m7[1] then 	-- "Clear field (inc trees)"
@@ -934,7 +939,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					U.currentTask = "createFloorCeiling"
 				elseif mb.selectedButtonName == self.m7[10] then -- "Direct control of movement"
 					U.currentTask = "createDirectedPath"
-				end 
+				end
 			--elseif mb.name == self.subMenuList[self.mm[8]] then	-- "mbWater"
 			elseif U.subMenuName == self.mm[8][1][1] then	-- "mbWater"
 				if mb.selectedButtonName == self.m8[1] then 	-- createSandWall
@@ -971,7 +976,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					U.currentTask = "floodArea"
 				elseif mb.selectedButtonName == self.m8[11] then -- createSlopingWater
 					U.currentTask = "createSlopingWater"
-				end 
+				end
 			--elseif mb.name == self.subMenuList[self.mm[9]] then	-- "mbBuilding"
 			elseif U.subMenuName == self.mm[9][1][1] then	-- "mbBuilding"
 				if mb.selectedButtonName == self.m9[1] then 	-- "Build a wall"
@@ -989,7 +994,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					U.currentTask = "createRailway"
 				elseif mb.selectedButtonName == self.m9[6] then -- "Place Redstone:torch"
 					U.currentTask = "placeRedstoneTorch"
-				end 
+				end
 			-- "measureHeight", "measureDepth", "measureLength", "measureDeepest", "createBorehole"
 			elseif U.subMenuName == self.mm[10][1][1] then -- "mbMeasuring"
 				if mb.selectedButtonName == self.m10[1] then 	 -- "Measure height"
@@ -1010,17 +1015,18 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					U.currentTask = "measureDeepest"
 				elseif mb.selectedButtonName == self.m10[5] then -- "Borehole: Analyse blocks below"
 					U.currentTask = "createBorehole"
-				end 
+				end
 			--elseif mb.name == self.subMenuList[self.mm[11]] then -- "mbNetwork"
 			elseif U.subMenuName == self.mm[11][1][1] then -- "mbNetwork"
 				if mb.selectedButtonName == self.m11[1] then 	 -- "Craft an item"
 					--self.sceneMgr:switch("Craft") if implemented will need to modify switch statements
 				elseif mb.selectedButtonName == self.m11[2] then -- "update saved storage lists"
 					U.currentTask = "updateLists"
-				end 
+				end
 			end
 --Log:saveToLog("U.currentTask = "..U.currentTask)
-			if U.currentTask ~= "" then
+            if U.currentTask ~= "" then
+				-- eg u.currentTask = "manageBambooFarm"
 				self.lblInfo:setText(self.infoText[1])
 				if F[U.currentTask].data ~= nil then					-- options need to be set
 --Log:saveToLog("self:onMbClick(mb) setting up 'TaskOptions' scene")
@@ -1047,7 +1053,7 @@ end
 function S:update(data)
 	self.super.update(self, data)
 	local lib = {}
-	
+
 	function lib.checkInput(char)
 		char = tostring(char):lower()
 		local allowed = {"0","1","2","3","4","5","6","7","8","9","c"}
@@ -1058,9 +1064,9 @@ function S:update(data)
 		end
 		return ""
 	end
-	
+
 	if data == nil then return end
-	
+
 	if data[1] == "char" then
 		local char = lib.checkInput(data[2])
 Log:saveToLog("MainMenu:update data = 'char', data[2] = "..char)
@@ -1092,7 +1098,7 @@ Log:saveToLog("MainMenu:update data = 'char', data[2] = "..char)
 				end
 			end
 		end
-	elseif data[1] == "key" then			
+	elseif data[1] == "key" then
 Log:saveToLog("MainMenu:update data = "..data[1]..", data[2] = "..data[2])
 		if data[2] == 257 then	-- Enter
 			if U.keyboardInput == "" then return end
@@ -1122,16 +1128,16 @@ Log:saveToLog("MainMenu:update local button = "..textutils.serialise(button, {co
 Log:saveToLog("MainMenu:update ready to execute. U.currentMB = "..U.currentMB)
 					local entity = self.em:getEntity(U.currentMB)
 					local button = entity:getButtonByIndex(btnIndex)
-					
+
 					entity:setSelectedButton("", btnIndex)
-					U.subMenuIndex = btnIndex					
+					U.subMenuIndex = btnIndex
 					U.subMenuName = U.currentMB
 Log:saveToLog("MainMenu:update calling self:onMbClick("..entity.name..")")
 					--U.subMenuName = button.name --?
 					self:onMbClick(entity)
 				end
-			end		
-		end	
+			end
+		end
 	end
 end
 
