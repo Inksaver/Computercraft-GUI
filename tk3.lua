@@ -1,4 +1,4 @@
-local version = 20261106.1300
+local version = 20261109.2000
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -4221,221 +4221,6 @@ function createBorehole()
 	return {"File '"..fileName.."' written"}
 end
 
-function createBubbleLiftOLD()
-	menu.clear()
-	local message =
-[[~red~Additional blocks may be required
-~yellow~Observe turtle when collecting water
-
-Right-click if not operating
-Add 64 blocks of any stone
-
-~lime~Press Enter to continue
-]]
-	menu.colourText(1, message)
-	read()
-	menu.clear()
-	local dirt = "minecraft:dirt"
-	if T:getItemSlot("minecraft:soul_sand") > 0 then
-		dirt = "minecraft:soul_sand"
-	end
-	local turn, oTurn = "R", "L"								-- build column on right side
-
-	local lib = {}
-
-	function lib.addLayer(closeSide)
-		if closeSide == nil then closeSide = true end
-		if closeSide then
-			T:go("R1C1 R1C1 R1C1 R1F2 L1C1 R1C1 R1C1 L1", false, 0, true) -- T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
-		else
-			T:go("R2C1 R2F2C1", false, 0, true)
-		end
-		turtle.back()
-		T:dig("up")	-- clear block above so completed lift can be found
-		T:placeWater("forward")
-		turtle.back()
-		T:go("C1x0")
-	end
-
-	function lib.buildLift(toHeight)
-		local built = lib.goToWater() 		-- returns lift blocks already placed, total height of drop from starting point
-		local toBuild = toHeight - built 	-- no of blocks remaining to increase lift size
-		local waterBuckets = 0
-		local entryLayer = 0
-		while toBuild > 0 do 				-- at least 1 block height remaining
-			entryLayer = entryLayer + 1
-			if entryLayer == 1 then
-				waterBuckets = lib.fillBuckets(true) -- emty trash and arrange buckets
-			else
-				waterBuckets = lib.fillBuckets(false) -- no of water buckets onboard (could be more than required)
-			end
-			if waterBuckets > toBuild then			-- more water than required
-				waterBuckets = toBuild				-- reduce to correct amount
-			end
-			T:up(built)						-- climb to top of existing lift
-			while waterBuckets > 0 and toBuild > 0 do
-				if entryLayer > 2 then
-					lib.addLayer(true)
-				else
-					lib.addLayer(false)
-				end
-				entryLayer = entryLayer + 1
-				waterBuckets = waterBuckets - 1
-				T:up(1)
-				toBuild = toBuild - 1
-			end
-			-- may still be some height to complete, but needs refill
-			if toBuild > 0 then
-				built = lib.goToWater() --return to source
-				toBuild = toHeight - built
-				--lib.fillBuckets(toBuild)
-			end
-		end
-	end
-
-	function lib.createSource()
-		-- place source at ground level, start above soul sand position, facing along source
-		--T:go("F2C1"..turn.."1F1C2 L1C1 R2C1 L1F1C2 L1C1 R2C1 L1F1C2 L1C1 R1C1 R1C1 R1U1", false, 0, true)	-- end of source facing Start
-		T:go("C2F1 L1C1 R2C1 L1F1C2 L1C1 R2C1 L1F1C2 L1C1 R1C1 R1C1 R1U1", false, 0, true, R.useBlockType)	-- end of source facing Start
-		T:placeWater("down") 											-- place back water source
-		T:forward(2)
-		T:placeWater("down") 											-- place front water source
-		T:go("F1R2C2", false, 0, true, R.useBlockType)
-		-- |W|W|W|S|C now at position S facing source water: starting point and direction, 1 above ground level
-	end
-
-	function lib.fillBuckets(withSort)
-		local emptyBuckets = T:getItemCount("minecraft:bucket")
-		for i = 1, emptyBuckets do
-			if T:getWater("down") then
-				sleep(0.5)
-			end
-		end
-		if T:getItemCount("stone") < 16 then
-			T:checkInventoryForItem({"stone"}, {64}, true)
-		end
-
-		return T:getItemCount("minecraft:water_bucket")
-	end
-
-	function lib.goToWater()
-		local built = 0 -- measures completed lift height
-		while turtle.down() do -- takes turtle to bottom of water source
-			if turtle.detect() then
-				built = built + 1
-			end
-		end
-		T:up(1) -- above watersource ready to fill buckets
-		-- height = height - 1
-		-- built = built - 1 not required as next block is water source: not detected
-		--lib.fillBuckets(R.height - built, false)
-		return built -- , height
-	end
-
-	function lib.isLadder()
-		for i = 0, 3 do
-			local blockType = T:getBlockType("forward")
-			if blockType:find("ladder") ~= nil then
-				return true, i
-			end
-			turtle.turnRight()
-		end
-		return false, 0
-	end
-
-	function lib.stackBuckets(withSort)
-		if withSort == nil then withSort = false end
-		local data = {}
-		local noEmpty = false
-		if withSort then
-			T:emptyInventorySelection("up", {"minecraft:bucket", "minecraft:water_bucket", R.useBlockType}, {12, 12, 192})
-		end
-		-- iterate all slots
-		for i = 1, 16 do
-			if turtle.getItemCount(i) > 0 then
-				data = turtle.getItemDetail(i)
-				if data.name == "minecraft:bucket" then
-					if data.count > 1 then
-						turtle.select(i)
-						while turtle.getItemCount(i) > 1 do
-							local empty = T:getFirstEmptySlot()
-							if empty > 0 then
-								turtle.transferTo(empty)
-							else
-								noEmpty = true
-								break
-							end
-						end
-						if noEmpty then break end
-					end
-				end
-			end
-		end
-		local emptySlots = T:getEmptySlotCount()
-		local waterBuckets = T:getItemCount("minecraft:water_bucket")
-		local emptyBuckets = T:getItemCount("minecraft:bucket")
-		return emptySlots, waterBuckets, emptyBuckets
-	end
-
-	local ladder, turns = lib.isLadder()							-- is ladder next to turtle?, If yes then turns to right is returned
-	if ladder then													-- ladder found and facing it
-		T:go("L"..turns)											-- face gap next to ladder
-		if turns == 1 then
-			turn = "L"												-- build column on left side
-			oTurn = "R"
-		end
-	end
-	R.height = math.abs(R.upperLevel - R.lowerLevel)
-	R.currentLevel = R.startLevel	-- eg 64 going down
-	R.useBlockType = T:getMostItem("", false)
-	local emptyBuckets = T:getItemCount("minecraft:bucket")
-	if emptyBuckets > 10 then
-		T:dropItem("minecraft:bucket","up", 10)
-	end
-
-	if ladder then
-		T:go("F1"..turn.."1")										-- backing ladder column, on floor
-		lib.createSource()											-- starting position, but up 1
-		if T:getItemCount("sign") >= 4 then
-			T:go(oTurn.."1F1"..turn.."1C1 U1C1"..oTurn.."2F1"..oTurn.."2", false, 0, true, R.useBlockType)-- back of ladder column
-			T:place("sign", "forward", false, "Lift to\nsurface")		-- top sign
-			T:go("D1")													-- down
-			T:place("sign", "forward", false, "Travel at\nown risk")	-- lower sign
-			T:go("D1F1"..turn.."1F1U1C2"..oTurn.."1", false, 0, true, R.useBlockType)
-		end
-		T:go(turn.."1F1"..oTurn.."1C1 U1C1"..turn.."2F1"..turn.."2", false, 0, true, R.useBlockType)-- will now have removed ladder 3rd block from ground, facing lift entrance
-		T:place("sign", "forward", false, "Lift to\nsurface")		-- top sign
-		T:go("D1")													-- down
-		T:place("sign", "forward", false, "Travel at\nown risk")	-- lower sign
-		T:go(oTurn.."1B1")
-		T:place("ladder", "forward")
-		T:up(1)
-		T:place("ladder", "forward")
-		T:up(1)
-		T:place("ladder", "forward")
-		T:go("D3"..turn.."1F1"..oTurn.."1F2"..turn.."1U1")
-		T:place(dirt, "down")										-- soul sand placed at end of source
-		T:go("F2R1x1 L2x1 U1x1 R2x1 R1D1")							-- centre of source, facing column
-	else
-		T:go("F2"..turn.."1")										-- backing ladder column, on floor
-		lib.createSource()											-- starting position, but up 1
-		T:go(turn.."1F1"..turn.."1C1 U1C1"..turn.."2F1"..turn.."2", false, 0, true, R.useBlockType)	-- return to start, place blocks to support signs
-		T:place("sign", "forward", false, "Lift to\nsurface")		-- top sign
-		T:go("D1C0", false, 0, true, R.useBlockType)												-- down and block above
-		T:place("sign", "forward", false, "Travel at\nown risk")	-- lower sign
-		T:go("D1C0 F1R2 C1"..oTurn.."1F1R2C1"..turn.."1U1"..turn.."2", false, 0, true, R.useBlockType)	-- ground level, return to soul sand site, go up
-		T:place(dirt, "down")										-- soul sand placed at end of source
-		T:go("F2R1x1 L2x1 U1x1 R2x1 R1D1")							-- centre of source, facing column
-	end
-	--lib.fillBuckets(R.height, true)									-- fill as many buckets as required or until inventory full, sort inventory as well
-	-- ready to build lift
-	local height = R.height + math.abs(R.currentLevel)
-	lib.stackBuckets(true)
-	lib.buildLift(height - 1)
-
-	return {"Bubble lift created", "Check correct operation", "Check exit before using" }
-end
-
 function createBubbleLift()
 	-- Normal start at top- if start from bottom:
 	-- move in to column
@@ -4460,18 +4245,18 @@ function createBubbleLift()
 	end
 	R.height = math.abs(R.upperLevel - R.lowerLevel)
 --Log:saveToLog("createBubbleColumn(): R.height = "..R.height, true)
-	if R.up then
+	if R.up then	-- started at bottom, so move to top
 		T:go("F1U"..R.height)
 	end
 	local atBedrock = false
 	local blockType = T:getBlockType("down")
-	for i = 1, R.height do
+	for i = 1, R.height do							-- starting at top
 		if blockType:find("bedrock") == nil then	-- not at bedrock
-			T:down(1)
+			T:down(1)								-- move down 1
 			drop = drop + 1
-			lib.addPipe()
+			lib.addPipe()							-- seal all sides except ladder
 			if i == 1 then
-				T:placeWater("forward")
+				T:placeWater("forward")				-- effectively places water "up" at top of column
 			end
 			blockType = T:getBlockType("down")
 		else 										-- at bedrock
@@ -4485,12 +4270,13 @@ function createBubbleLift()
 	else
 		T:dig("down")
 	end
+	-- at base of single block size hole with space below for soulsand
 	if not T:place("minecraft:soul_sand", "down") then
 		T:place("minecraft:dirt", "down")
 	end
-	T:go("R2F1R2C2")
-	lib.placeKelp()
-	T:place("sign", "down", false, "UP!")
+	T:go("R2F1 R2C2")								-- move out, face the hole and place block below
+	lib.placeKelp()									
+	T:place("sign", "down", false, "UP!")			-- open base with signs placed on top of each other
 	lib.placeKelp()
 	T:place("sign", "down", false, "GOING")
 	for i = 1, drop - 2 do
@@ -7686,7 +7472,7 @@ function createStaircase()
 	R.useBlockType = T:getMostItem("slab", true) -- exclude slab, use stone only/netherrack
 --Log:saveToLog("Creating staircase "..R.height.." blocks", true)
 --Log:saveToLog("tk3.createStaircase() starting; R.up = "..tostring(R.up).."R.down = "..tostring(R.down)
-			   --.."R.startLevel = "..R.startLevel.."R.destinationLevel = "..R.destinationLevel..", R.height = "..R.height)
+--			   .."R.startLevel = "..R.startLevel.."R.destinationLevel = "..R.destinationLevel..", R.height = "..R.height)
 
 	local success, numBlocks, errorMsg, blockType = true, 0, "", ""
 	if R.down then -- go down towards bedrock
