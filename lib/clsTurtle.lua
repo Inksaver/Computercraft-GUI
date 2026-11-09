@@ -1,4 +1,4 @@
-local version = 20261026.1100
+local version = 20261109.2000
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as clsTurtle.lua, preferably in /lib folder
@@ -231,6 +231,21 @@ local flowers =
 	"minecraft:double_plant",
 	"minecraft:sponge",
 	"minecraft:wet_sponge"
+}
+
+local logs =
+{
+	"minecraft:oak_log",
+	"minecraft:dark_oak_log",
+	"minecraft:pale_oak_log",
+	"minecraft:birch_log",
+	"minecraft:acacia_log",
+	"minecraft:cherry_log",
+	"minecraft:warped_stem",
+	"minecraft:spruce_log",
+	"minecraft:jungle_log",
+	"minecraft:crimson_stem",
+	"biomesoplenty:redwood_log"
 }
 
 local maSeeds = {
@@ -3391,9 +3406,9 @@ function T:harvestTree(direction)
 
 	if direction == nil then	-- probably called direct from MainMenu.lua
 		-- check if tree above
-		if self:getBlockType("up"):find("log") ~= nil then
+		if self:isLog("up") then
 			direction = "up"
-		elseif self:getBlockType("down"):find("log") ~= nil then
+		elseif self:isLog("down") then
 			direction = "down"
 		else
 			direction = "forward"
@@ -3495,6 +3510,7 @@ function T:harvestTree(direction)
 		-- no side branches
 		if double then
 			while turtle.detectUp() do
+				if not self:isLog("up") then break end
 				self:go("x1U1")
 			end
 			if onLeft then
@@ -3531,6 +3547,7 @@ function T:harvestTree(direction)
 		while turtle.detectUp() do 						-- continue loop while block detected above
 			lib.doubleUpDown(onLeft, forward)			-- move across trunk ending on opposite side, facing out
 			self:up(1)
+			if not self:isLog("up") then break end
 			forward = not forward						-- reverse direction
 		end
 		lib.doubleUpDown(onLeft, forward)				-- one more to clear top layer
@@ -3582,6 +3599,7 @@ function T:harvestTree(direction)
 		-- usually single stem, but can have multiple branches
 		-- start same as single, but if side branch found move into diagonals
 		while turtle.detectUp() do 		-- continue loop while block detected above
+			if not self:isLog("up") then break end
 			self:up(1)  				-- move up
 			--self:go("F1x0x1x2 L1x1 R2x1 R1F2 x0x1x2 L1x1 R2x1 L1B1")
 			self:turnLeft(1)			-- check left side of trunk
@@ -3611,6 +3629,8 @@ function T:harvestTree(direction)
 
 	function lib.single()
 		while turtle.detectUp() do 		-- continue loop while block detected above
+			if not self:isLog("up") then break end
+			-- stem in nether can run into netherrack
 			-- check for side branches
 			for i = 1, 4 do
 				lib.cutBranch()			-- if leaves cut them. If branch follow length and cut above at the same time
