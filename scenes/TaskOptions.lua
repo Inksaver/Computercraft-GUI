@@ -1,4 +1,4 @@
-local version = 20260524.0800
+local version = 20261110.2200
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
 local Multilabel = require("lib.ui.Multilabel")
@@ -451,6 +451,12 @@ function S:changeRValue(key, value)
 				end
 			elseif v == 2 or v == 3 then	-- ice or air
 				R.inventoryKey = "ice"
+			end
+		elseif U.currentTask == "manageBoatLift" then
+			if v == 1 then
+				R.inventoryKey = "createUp"
+			elseif v == 2 then
+				R.inventoryKey = "createDown"
 			end
 		end
 		Log:saveToLog("R.inventoryKey = "..R.inventoryKey)
