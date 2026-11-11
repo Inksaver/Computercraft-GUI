@@ -1,4 +1,4 @@
-local version = 20261104.2200
+local version = 20261110.2200
 -- ["lbl4"] = {text = "Text here", bg = colors.black, fg = colors.lime, alignH = "centre"},
 -- ["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
 -- ...state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, event = {"changeRValue", "inventoryKey", "1"}},
@@ -605,35 +605,6 @@ length~yellow~| dirt if resurfacing is required]],
 			["lbl2"] = {text = "Go down to level:"},
 			["txt1"] = {text = "0", limits = {{"U.bedrock + 5"}, {"U.ceiling"}}, r = "height"},
 			["txt2"] = {text = "0", limits = {{"R.height - 2"} , {"U.bedrock + 5"}}, r = "depth"}
-		}
-	},
-
-	["createBoatLift"] =
-	{
-		call = createBoatLift,
-		title = "07-Boat bubble lift",
-		fuel = "R.height * 20",
-		description = "Building boat bubble lift",
-		data =
-		{
-			["lbl1"] = {text = "Levels to go up:"},
-			["txt1"] = {text = "", limits = {{1} , {"U.ceiling - 2"}}, r = "height"}
-		},
-		items =
-[[~red~2     ~yellow~| buckets or water buckets
-~red~2height
-* 10  ~yellow~| stone
-~red~2height
-* 2   ~yellow~| gates
-~red~2height
-*2 + 2~yellow~| soul sand
-]],
-		inventory =
-		{
-			{{"minecraft:bucket","minecraft:water_bucket"}, {2, 2}, {true, true}, { "", ""}},
-			{"stone", "R.height * 10"},
-			{"gate", "R.height * 2"},
-			{"minecraft:soul_sand", "R.height * 2 + 2"}
 		}
 	},
 
@@ -1927,6 +1898,57 @@ length ~yellow~|
 			["txt1"] = {text = "0", limits = {{1}, {960}}, r = "size"},
 		}
 	},
+	
+	["manageBoatLift"] =
+	{
+		call = manageBoatLift,
+		title = "07-Manage boat lift",
+		fuel = "R.height * 20",
+		description = "Managing boat lift",
+		data =
+		{
+			["chk1"] = {text = {"Build", "boat", "lift UP"}, 			state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "createUp", ""}},
+			["chk2"] = {text = {"Build", "boat", "lift DOWN"}, 			state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "createDown", ""}},
+			["chk4"] = {text = {"Operate", "this lift", ""}, 			state = true,   group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "operate", ""}},
+			["chk5"] = {text = {"Autostart", "enable or" , "disable"}, 	state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "auto", ""}},
+			["lbl1"] = {text = "Height (3-64)"},
+			["txt1"] = {text = "0", limits = {{3} , {64}}, r = "height"},
+		},
+				items =
+[[Items for create new lift only:
+~red~ht*12 ~yellow~| stone
+~red~ht-2  ~yellow~| planks
+~red~1     ~yellow~| barrel
+~red~1     ~yellow~| piston
+~red~2     ~cyan~| water buckets
+~green~height| ladders
+]],
+		inventory =
+		{
+			-- TaskOptions.lua if F[U.currentTask].inventory[R.inventoryKey] ~= nil then
+			-- R.inventoryyKey = "create"
+			["default"] = {},
+			["createUp"] =
+			{
+				{"stone", "R.height * 12", true, ""},
+				{"planks", "R.height - 2", true, ""},
+				{"minecraft:water_bucket", 2, true, ""},
+				{"barrel", 1, true, ""},
+				{"piston", 1, true, ""},
+				{"minecraft:ladder", "R.height", false, ""}
+			},
+			["createDown"] =
+			{
+				{"stone", "R.height * 12", true, ""},
+				{"planks", "R.height - 2", true, ""},
+				{"minecraft:water_bucket", 2, true, ""},
+				{"barrel", 1, true, ""},
+				{"piston", 1, true, ""},
+				{"minecraft:ladder", "R.height", false, ""}
+			},
+		},
+	},
+
 
 	["manageBambooFarm"] =
 	{
