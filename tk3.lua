@@ -1,4 +1,4 @@
-local version = 20261109.2000
+local version = 20261111.2000
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -1030,10 +1030,10 @@ function utils.waitForInput(message)
 	-- Pause script and asks user to continue
 	if message ~= nil then
 		menu.colourPrint(message, colors.yellow)
-		Log:saveToLog("utils.waitForInput("..message..")", false)
+		--Log:saveToLog("utils.waitForInput("..message..")", false)
 	end
 	menu.colourPrint("Enter to continue...", colors.lightBlue)
-	read()
+	return read()
 end
 
 function utils.writeTraceTable(description, tbl)
@@ -4051,70 +4051,59 @@ function createBlazeGrinder()
 end
 
 function createBoatLift()
-	-- build stepped lift with fencing gates and soul sand
+	-- build 2 x 2 shaft using turtle to raise the boat
+	-- start on SW corner, can go up or down
+	-- R.inventoryKey = createUp or createDown
+	-- R.height = height of lift
 	local lib = {}
 
-	function lib.getWater(backToWater, downToWater)
-		if backToWater > 0 then
-			utils.goBack(backToWater)
+
+	if R.inventoryKey == "createUp" then
+		-- place ladder
+		T:up(R.height)
+		T:go("R2 F1 R2")
+		for step = R.height, 1, -1 do
+			T:go("C1D1")
+			if step > 1 then
+				T:place("ladder", "up")
+			end
 		end
-		if downToWater > 0 then
-			T:down(downToWater)
+		T:go("R1F1 L1F1")
+		for step = 1, R.height do
+			T:go("x1U1")
 		end
-		T:getWater("down") -- take water from source
-		sleep(0.2)
-		T:getWater("down") -- take water from source
-		if downToWater > 0 then
-			T:up(downToWater)
+		T:go("x1R1 F1L1")
+		for step = R.height, 1, -1 do
+			T:go("x1D1")
 		end
-		if backToWater > 0 then
-			T:forward(backToWater)
+		T:go("F1x1 U1x1")
+		T:place("barrel", "forward")
+		turtle.up()
+		
+		for step = 1, R.height - 1 do
+			T:go("U1x1")
+			T:place("planks", "forward")
+		end
+		T:down(R.height)
+	elseif R.inventoryKey == "createDown" then
+		-- place ladder
+		T:down(R.height)
+		T:go("R2 F1 R2")
+		for step = 1, R.height do
+			T:go("C1U1")
+			if step < R.height then
+				T:place("ladder", "down")
+			end
+		end
+		T:go("R1F1 L1F1")
+		for step = R.height, 1, -1 do
+			T:go("x1D1")
+		end
+		T:go("x1R1 F1L1")
+		for step = 1, R.height do
+			T:go("x1U1")
 		end
 	end
-
-	--T:place(blockType, direction, leaveExisting, signText)
-
-	local backToWater = 0
-	local downToWater = 0
-
-	T:go("R1F1L1") 										-- over canal facing forward
-	for h = 1, R.height do
-		lib.getWater(backToWater, downToWater)			-- check water supplies, return to starting position
-		T:go("L1C1 R1D1 L1C1 R1", false, 0, false)		-- place towpath, forward, down, place towpath, face forward
-		T:place("soul", "down", false) 				-- place soulsand down
-		T:place("soul", "forward", false) 			-- place soulsand forward
-		T:go("R1F1C1L1", false, 0, false)				-- place right towpath face forward
-		T:place("soul", "down", false) 				-- place soulsand down
-		T:place("soul", "forward", false) 			-- place soulsand forward
-		T:go("U1 R1C1 L1")								-- place towpath, face forward
-		T:placeWater("down") 							-- place water down
-		utils.goBack(1)
-		T:place("gate", "forward", false) 			-- place fence gate
-		T:go("R1C1 U1C1 D1 L2F1 C1R1 F1 L1C1R1")		-- over left soul sand
-		T:placeWater("down") 							-- place water down
-		utils.goBack(1)
-		T:place("gate", "forward", false) 			-- place fence gate
-		T:go("U1 L1C1 R1F1 L1C1 R1x1")					-- facing forward first unit complete
-		T:go("R1F1 L1x1 R1C1")
-		utils.goBack(1)
-		T:go("L1F1")
-		if backToWater == 0 then
-			backToWater = 1
-		end
-		backToWater = backToWater + 1
-		downToWater = downToWater + 1
-	end
-
-	-- now finish the canal
-	lib.getWater(backToWater, downToWater)
-	T:go("D1 L1C1 U1C1")					-- build left towpath, facing towpath, above water level
-	T:go("R1F1 L1C1 D1C1")					-- move forward, build towpath, facing towpath ground level
-	T:go("R1C1 R1F1 L1C1 R1C1 U1C1")		-- build right towpath, facing towpath, above water level
-	T:go("R1F1 L1C1 D1C1 U1")				-- build right towpath next to gate, facing towpath, above water level
-	T:placeWater("down")
-	utils.goBack(1)
-	T:go("L1F1")
-	T:placeWater("down")
 
 	return {}
 end
@@ -10142,6 +10131,80 @@ function manageBambooFarm()
 	return {}
 end
 
+function manageBoatLift()
+	-- called from ui "Manage Boat Lift" button
+	local lib = {}
+	function lib.disableAutostart()
+		if fs.exists("start.txt") then
+			fs.delete("start.txt")
+		end
+		if fs.exists("startup.lua") then
+			fs.delete("startup.lua")
+		end
+	end
+
+	function lib.enableAutostart()
+		if not fs.exists("startup.lua") then
+			local h = fs.open("startup.lua", "w")
+			h.writeLine('function main()')
+			h.writeLine('	if fs.exists("start.txt") then')
+			h.writeLine('		local handle = fs.open("start.txt", "r")')
+			h.writeLine('		local cmd = handle.readLine()')
+			h.writeLine('		handle.close()')
+			h.writeLine('		shell.run("tk3.lua "..cmd)')
+			h.writeLine('	end')
+			h.writeLine('end')
+			h.writeLine('main()')
+			h.close()
+		end
+		local h = fs.open("start.txt", "w")
+		h.writeLine('boatlift')
+		h.close()
+		print("Startup files written")
+	end
+
+	local isManaged = fs.exists("start.txt")
+	if isManaged then
+		R.auto = true
+	--Log:saveToLog("R.auto set: manageBoatLift() operateBoatLift()")
+		return operateBoatLift()
+	end
+	
+	if R.inventoryKey == "createUp" or R.inventoryKey == "createDown" then	-- create a lift
+		return createBoatLift()
+	elseif R.inventoryKey == "operate" then -- operate now
+		R.silent = false
+		R.auto = false
+		return operateBoatLift()
+	elseif R.inventoryKey == "auto" then -- enable/disable auto start
+		local line = menu.clear()
+		if isManaged then
+			local message = ( "This turtle has been configured to"..
+							  "start automatically and continuously"..
+							  "monitor the lift.\n")
+			line = menu.colourText(line, message, true, true)
+			if menu.getBoolean("Do you want to disable this? (y/n)", line, colors.yellow, colors.black) then
+				lib.disableAutostart()
+			end
+			return {"Autostart disabled. Reboot to activate"}
+		else -- not managed
+			local message = ( "~yellow~This turtle can be configured to be\n"..
+							  "permanently ready to carry the boat up.\n\n"..
+							  "~lightGray~It will then start automatically and\n"..
+							  "monitor user input with Enter key:\n\n")
+			line = menu.colourText(line, message, true, true)
+			if menu.getBoolean("Do you want to enable this? (y/n)", line + 2, colors.orange, colors.black) then
+				lib.enableAutostart()
+			else
+				return {"Player cancelled operation"}
+			end
+			return {"Autostart enabled. Reboot to activate"}
+		end
+	end
+
+	return {}
+end
+
 function manageFarm()
 	local lib = {}
 
@@ -11544,6 +11607,70 @@ function oceanMonumentColumns()
 	return {}
 end
 
+function operateBoatLift(once)
+	if once == nil then once = false end
+	
+	local lib = {}
+	
+	function lib.checkFuel()
+		if turtle.getFuelLevel() < 80 then
+			-- see if any fuel in barrel above
+			turtle.select(1)
+			if turtle.suckUp() then
+				if turtle.refuel(turtle.getItemCount(1)) then
+					return true
+				end
+			end
+		else
+			return true
+		end
+		return false
+	end
+	-- display instructions to user to press Enter when ready
+	while true do
+		-- check fuel
+		while not lib.checkFuel() do
+			menu.colourPrint("Please add any fuel item to the barrel", colors.red)
+		end
+		if once then
+			menu.colourPrint("Please remain seated while your lift is working", colors.cyan)
+		else
+			T:clear()
+			local message = ( "This turtle will go under your boat"..
+							  " and push you to the top of the shaft."..
+							  "\n\n('q' + Enter to quit)\n")
+			-- move turtle down, under boat, up height of lift
+			local response = utils.waitForInput(message)
+			if response == "q" then break end
+		end
+		
+		turtle.down()
+		turtle.back()
+		turtle.up()
+		turtle.up()
+		-- height measured from height of planks embedded in the wall
+		local height = 1
+		local blockType = T:getBlockType("forward")
+		while blockType:find("planks") ~= nil or blockType:find("barrel") ~= nil do
+			turtle.up()
+			height = height + 1
+			blockType = T:getBlockType("forward")
+		end
+		turtle.back()
+		rs.setAnalogOutput("back", 15)
+		sleep(0.5)
+		rs.setAnalogOutput("back", 0)
+		menu.colourPrint("You may now continue your journey. /nHave a nice day.", colors.lime)
+		for steps = 1, height  do
+			turtle.down()
+		end
+		turtle.forward()
+		turtle.forward()
+		if once then break end 
+	end
+	return {}
+end
+
 function placeRedstoneTorch()
 	local moves = 2
 	local blockType = T:getBlockType("down")
@@ -12501,6 +12628,11 @@ Enter to exit]]
 			R.silent = true
 			R.auto = true
 			manageBambooFarm()
+		elseif args[1] == "boatlift" then
+			Log:setUseLog(false)
+			R.silent = true
+			R.auto = true
+			operateBoatLift()
 		elseif args[1] == "farm" then
 			R.silent = true
 			R.data = "farm"
@@ -12517,6 +12649,8 @@ Enter to exit]]
 			Log:appendLine("Block ahead: "..T:getBlockType("forward"))
 			Log:appendLine("Block above: "..T:getBlockType("up"))
 			Log:appendLine("Block below: "..T:getBlockType("down"))
+		elseif args[1] == "lift" then
+			operateBoatLift(true)
 		elseif args[1] == "test" then
             test()
 			skip = true
