@@ -1,4 +1,4 @@
-local version = 20261104.2200
+local version = 20261110.2200
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.Multibutton")
@@ -212,7 +212,7 @@ function S:new(sceneMgr)
 	local m4Buttons = createButtons(m4, true)
 
 	local m5 = {"createPath", "createCorridor", "createWaterCanal", "createIceCanal",
-				"createPlatform", "createSinkingPlatform", "createBoatLift", "createDiveColumn"}
+				"createPlatform", "createSinkingPlatform", "manageBoatLift", "createDiveColumn"}
 	self.m5 = m5
 	local m5Styles =
 	{
@@ -222,7 +222,7 @@ function S:new(sceneMgr)
 		[m5[4]] = {colors.black, colors.lightBlue}, -- Ice canal (4 options)
 		[m5[5]] = {colors.white, colors.brown}, 	-- Platform
 		[m5[6]] = {colors.white, colors.blue}, 		-- Sinking platform for oceans
-		[m5[7]] = {colors.black, colors.cyan}, 		-- Boat bubble lift
+		[m5[7]] = {colors.black, colors.cyan}, 		-- Manage Boat lift
 		[m5[8]] = {colors.black, colors.blue} 		-- Dive Column
 	}
 	local m5Sizes = createSizes(m5, WIDTH - 6, 1)
@@ -873,8 +873,9 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					U.currentTask = "createPlatform"
 				elseif mb.selectedButtonName == self.m5[6] then -- "Sinking platform"
 					U.currentTask = "createSinkingPlatform"
-				elseif mb.selectedButtonName == self.m5[7] then -- "Boat bubble lift"
-					U.currentTask = "createBoatLift"
+				elseif mb.selectedButtonName == self.m5[7] then -- "Manage  boat lift"
+					R.inventoryKey = "operate"
+					U.currentTask = "manageBoatLift"
 				elseif mb.selectedButtonName == self.m5[8] then -- "Dive column"
 					U.currentTask = "createDiveColumn"
 				end
