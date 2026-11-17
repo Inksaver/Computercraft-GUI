@@ -1,4 +1,4 @@
-local version = 20261110.2200
+local version = 20261117.1200
 local Scene 		= require("lib.Scene")
 local Button 		= require("lib.ui.Button")
 local MultiButton 	= require("lib.ui.Multibutton")
@@ -457,7 +457,7 @@ end
 function S:hideMultiButtonsExcept(title, except)
 	-- hide all multibuttons, title, quit and back buttons
 	-- except is the name of the multiButton that should be visible
-Log:saveToLog("MainMenu:hideMultiButtonsExcept("..title..", "..except..")")
+--Log:saveToLog("MainMenu:hideMultiButtonsExcept("..title..", "..except..")")
 	self.btnQuit:setVisible(false)
 	self.btnBack:setVisible(false)
 
@@ -527,7 +527,7 @@ function S:onMbClick(mb)
 	-- mb is the whole multibutton object
 	-- mb.name is the name of entire multibutton.
 	-- each individual button has its own name / caption
-Log:saveToLog("MainMenu:onMbClick:START: mb.name = "..mb.name..", U.subMenuName = "..U.subMenuName)
+--Log:saveToLog("MainMenu:onMbClick:START: mb.name = "..mb.name..", U.subMenuName = "..U.subMenuName)
 	--U.fc = U.fc + 1
 	R.inventoryKey = ""	-- rarely used but can cause problems if set to anything else
 	if U.subMenuName == "" then		-- not a menu
@@ -711,13 +711,6 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 						--return {R.message}	-- location error
 						U.currentTask = "earlyExit"
 						U.executeTask = true
-					end
-					if R.logType:find("mangrove") ~= nil then
-						R.subChoice = 3 -- mangrove
-					elseif R.logType:find("spruce") ~= nil or R.logType:find("dark_oak") ~= nil then
-						R.subChoice = 2	-- double trees
-					else
-						R.subChoice = 1	-- single trees
 					end
 					U.currentTask = "plantTreefarm"				-- uses network to get supplies
 					U.executeTask = true						-- starts task immediately
@@ -927,9 +920,10 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					R.goUp = true
 					R.forward = true
 					U.currentTask = "clearBuilding"
-				elseif mb.selectedButtonName == self.m7[6] then -- "Clear solid structure up/down"
+				elseif mb.selectedButtonName == self.m7[6] then -- "Clear solid structure / find treasure"
 					R.goUp = true
 					R.forward = true
+					R.auto = false								-- R.auto will do a treasure hunt
 					U.currentTask = "clearSolid"
 				elseif mb.selectedButtonName == self.m7[7] then -- "Dig a trench"
 					U.currentTask = "digTrench"
@@ -994,6 +988,7 @@ Log:saveToLog("F[key] key =  "..tostring(key))
 					R.up = true
 					U.currentTask = "createRailway"
 				elseif mb.selectedButtonName == self.m9[6] then -- "Place Redstone:torch"
+					R.data = "level"
 					U.currentTask = "placeRedstoneTorch"
 				end
 			-- "measureHeight", "measureDepth", "measureLength", "measureDeepest", "createBorehole"
