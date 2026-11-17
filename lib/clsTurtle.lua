@@ -1,4 +1,4 @@
-local version = 20261110.2200
+local version = 20261117.1200
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as clsTurtle.lua, preferably in /lib folder
