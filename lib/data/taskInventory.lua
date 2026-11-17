@@ -1,7 +1,9 @@
-local version = 20261110.2200
+local version = 20261117.1200
 -- ["lbl4"] = {text = "Text here", bg = colors.black, fg = colors.lime, alignH = "centre"},
 -- ["txt2"] = {text = "0", limits = {nil, nil}, r = "height", event = {"calculateHeight", "lbl2"}}
 -- ...state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, event = {"changeRValue", "inventoryKey", "1"}},
+-- 'next' can be used to enable a texbox when a checkbox is clicked:
+-- ["chk1"] = {text = {"Build", "boat", "lift UP"}, state = false, group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "createUp", ""}, next = "txt1"},
 -- description = "QuickMine corridor: ~R.width~ x ~R.length~",
 
 --[[
@@ -362,13 +364,14 @@ length~yellow~| dirt if resurfacing is required]],
 	["clearSolid"] =
 	{
 		call = clearSolid,
-		title = "06-Clear solid structure",
+		title = "06-Clear solid, get treasure",
 		description = "Clearing solid structure",
 		fuel = "( R.width * R.length ) + (( R.width + R.length ) * R.height )",
 		data =
 		{
-			["chk1"] = {text = {"Bottom","to top",""}, state = true, group = {"chk1", "chk2"}, r = "goUp"},
-			["chk2"] = {text = {"Top to", "bottom", ""}, state = false, group = {"chk1", "chk2"}, r = "goDown"},
+			["chk1"] = {text = {"Bottom","to top",""}, state = true, group = {"chk1", "chk2", "chk3"}, r = "goUp"},
+			["chk2"] = {text = {"Top to", "bottom", ""}, state = false, group = {"chk1", "chk2", "chk3"}, r = "goDown"},
+			["chk3"] = {text = {"Underwater", "treasure", "finder"}, state = false, group = {"chk1", "chk2", "chk3"}, r = "auto"},
 			["chk4"] = {text = {"Outside ?","forward 1", "first"}, state = true, r = "forward"},
 			["chk5"] = {text = {"Above ?","down 1", "first"}, state = false, r = "down"},
 			["lbl1"] = {text = "Structure length (1-256)"},
@@ -1907,8 +1910,8 @@ length ~yellow~|
 		description = "Managing boat lift",
 		data =
 		{
-			["chk1"] = {text = {"Build", "boat", "lift UP"}, 			state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "createUp", ""}},
-			["chk2"] = {text = {"Build", "boat", "lift DOWN"}, 			state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "createDown", ""}},
+			["chk1"] = {text = {"Build", "boat", "lift UP"}, 			state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "createUp", ""}, next = "txt1"},
+			["chk2"] = {text = {"Build", "boat", "lift DOWN"}, 			state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "createDown", ""}, next = "txt1"},
 			["chk4"] = {text = {"Operate", "this lift", ""}, 			state = true,   group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "operate", ""}},
 			["chk5"] = {text = {"Autostart", "enable or" , "disable"}, 	state = false,  group = {"chk1", "chk2", "chk4", "chk5"}, r = {"inventoryKey", "auto", ""}},
 			["lbl1"] = {text = "Height (3-64)"},
@@ -1920,7 +1923,7 @@ length ~yellow~|
 ~red~ht-2  ~yellow~| planks
 ~red~1     ~yellow~| barrel
 ~red~1     ~yellow~| piston
-~red~2     ~cyan~| water buckets
+~red~1     ~cyan~| water bucket
 ~green~height| ladders
 ]],
 		inventory =
@@ -1932,23 +1935,22 @@ length ~yellow~|
 			{
 				{"stone", "R.height * 12", true, ""},
 				{"planks", "R.height - 2", true, ""},
-				{"minecraft:water_bucket", 2, true, ""},
+				{"minecraft:water_bucket", 1, true, ""},
 				{"barrel", 1, true, ""},
 				{"piston", 1, true, ""},
-				{"minecraft:ladder", "R.height", false, ""}
+				{"minecraft:ladder", "R.height + 2", false, ""}
 			},
 			["createDown"] =
 			{
 				{"stone", "R.height * 12", true, ""},
 				{"planks", "R.height - 2", true, ""},
-				{"minecraft:water_bucket", 2, true, ""},
+				{"minecraft:water_bucket", 1, true, ""},
 				{"barrel", 1, true, ""},
 				{"piston", 1, true, ""},
 				{"minecraft:ladder", "R.height", false, ""}
 			},
 		},
 	},
-
 
 	["manageBambooFarm"] =
 	{
@@ -2112,7 +2114,7 @@ length ~yellow~|
 		data =
 		{
 			["chk1"] = {text = {"Track is","level", "here"}, state = true, group = {"chk1", "chk2"}, r = {"data", "level", "up"}},
-			["chk2"] = {text = {"Track is","going up", "or down"}, state = true, group = {"chk1", "chk2"}, r = {"data", "up", "level"}},
+			["chk2"] = {text = {"Track is","going up", "or down"}, state = false, group = {"chk1", "chk2"}, r = {"data", "up", "level"}},
 		},
 		items =
 [[
