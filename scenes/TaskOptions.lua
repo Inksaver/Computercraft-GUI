@@ -1,4 +1,4 @@
-local version = 20261110.2200
+local version = 20261117.1200
 local Scene 	= require("lib.Scene")
 local Label 	= require("lib.ui.Label")
 local Multilabel = require("lib.ui.Multilabel")
@@ -163,7 +163,7 @@ function S:setup()
 		--self.associations[name]["r"] = ""			-- reset
 		self.associations[name]["required"] = false	-- reset
 		self.controls[name]:setText("")				-- set the text to empty string
-		local tbl = data[name]						-- ["chk4"] = {text = "Go UP?", state = false, group = {"chk4", "chk5"}, required = true, r = "up"},
+		local tbl = data[name]						-- ["chk4"] = {text = "Go UP?", state = false, group = {"chk4", "chk5"}, required = true, r = "up"}, next = "txt1",
 		if tbl ~= nil then
 --Log:saveToLog("TaskOptions:setup: tbl = "..textutils.serialise(tbl, {compact = true}))
 			if tbl["text"] ~= nil then					-- set text
@@ -220,6 +220,9 @@ function S:setup()
 			end
 			if tbl["event"] ~= nil then
 				self.associations[name]["event"] = tbl["event"]		-- eg event = {"calculateHeight", "lbl2"}
+			end
+			if tbl["next"] ~= nil then
+				self.associations[name]["next"] = tbl["next"]		-- eg event = {"calculateHeight", "lbl2"}
 			end
 		end
 	end
@@ -594,9 +597,9 @@ end
 function S:changeData(checkbox)
 	local data = self.associations[checkbox.name]["r"]	-- eg "up"
 	if type(data) == "string" then
-		Log:saveToLog("self:changeData("..checkbox.name..") self.associations[r] = "..tostring(data))
+		--Log:saveToLog("self:changeData("..checkbox.name..") self.associations[r] = "..tostring(data))
 	else
-		Log:saveToLog("self:changeData("..checkbox.name..") self.associations[r] = "..textutils.serialise(data, {compact = true}))
+		--Log:saveToLog("self:changeData("..checkbox.name..") self.associations[r] = "..textutils.serialise(data, {compact = true}))
 	end
 	if data ~= nil then	-- assign value eg R.up = true
 		if type(data) == "table" then
@@ -619,15 +622,15 @@ function S:changeData(checkbox)
 				--Log:saveToLog("Checkbox "..checkbox.name.." sets R."..data[1].." = "..tostring(R[data[1]]).." and R."..data[2].." = "..tostring(R[data[2]]))
 			elseif #data == 1 then 			-- eg r = {"networkFarm"},
 				R[data[1]] = checkbox.checked
-				Log:saveToLog("Checkbox "..checkbox.name.." sets R."..data[1].." = "..tostring(checkbox.checked))
+				--Log:saveToLog("Checkbox "..checkbox.name.." sets R."..data[1].." = "..tostring(checkbox.checked))
 			end
 		else
 			R[data] = checkbox.checked
-			Log:saveToLog("Checkbox "..checkbox.name.." sets R."..data.." = "..tostring(checkbox.checked))
+			--Log:saveToLog("Checkbox "..checkbox.name.." sets R."..data.." = "..tostring(checkbox.checked))
 		end
 	end 
 	data = self.associations[checkbox.name]["u"]
-Log:saveToLog("self:changeData("..checkbox.name..") self.associations[u] = "..tostring(data))
+--Log:saveToLog("self:changeData("..checkbox.name..") self.associations[u] = "..tostring(data))
 	if data ~= nil then	-- eg u = {"bedrock", 0, -64}
 		if checkbox.checked then
 			U[data[1]] = data[2]
@@ -685,8 +688,12 @@ function S:onChkChanged(checkbox)
 	local association = self.associations[checkbox.name]
 	if association ~= nil then
 		if association["event"] ~= nil then	-- eg event = {"calculateHeight", "lbl2"}
-Log:saveToLog("association[event][1] = "..association["event"][1]..", [2] = "..association["event"][2]..", [3] = "..association["event"][3])
+--Log:saveToLog("association[event][1] = "..association["event"][1]..", [2] = "..association["event"][2]..", [3] = "..association["event"][3])
 			events:invoke(association["event"][1], association["event"][2], association["event"][3])	-- eg invoke "calculateHeight", "lbl2"	or "execute", "findPortal"		
+		end
+		if association["next"] ~= nil then	-- eg next = "txt1"
+			-- enable and move cursor to text field
+			self:resetTextboxFocus(self.textboxes[association["next"]])
 		end
 	end
 	sleep(0.3)		-- checkboxes can switch back too quickly
@@ -794,7 +801,7 @@ function S:onBtnClick(button)
 		-- go to inventory scene
 --Log:saveToLog("TaskOptions:onBtnClick, U.currentTask = "..U.currentTask..", R.inventoryKey = '"..R.inventoryKey.."'")
 		if F[U.currentTask].inventory ~= nil then	-- items required		
-			Log:saveToLog("TaskOptions:onBtnClick, F[U.currentTask].inventory = "..textutils.serialise(F[U.currentTask].inventory, {compact = true}))
+--Log:saveToLog("TaskOptions:onBtnClick, F[U.currentTask].inventory = "..textutils.serialise(F[U.currentTask].inventory, {compact = true}))
 			if F[U.currentTask].inventory.default ~= nil then
 				-- could have inventory choice or none
 				if F[U.currentTask].inventory[R.inventoryKey] ~= nil then
@@ -903,5 +910,4 @@ function S:draw()
 	self.super.draw(self)
 --Log:saveToLog("TaskOptions:draw() completed")
 end
-
 return S
