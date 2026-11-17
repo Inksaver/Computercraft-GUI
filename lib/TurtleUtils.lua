@@ -1,4 +1,4 @@
-local version = 20260419.1230
+local version = 20261117.1200
 --[[
 	Last edited: see version YYYYMMDD.HHMM
 	save as lib/TurtleUtils.lua
@@ -658,14 +658,25 @@ function U.parseExpression(expression, calledFrom)
 				evalString = evalString..elements[i]
 			end
 		end
+		-- error parsing math.abs(88--59). introduce space after -- or convert to +
+		if evalString:find("%-%-") ~= nil then
+			--evalString = evalString:gsub("--", "+")
+Log:saveToLog("double negative found in evalString: "..evalString.." at "..evalString:find("%-%-"))
+			local start = evalString:find("%-%-")
+			evalString = evalString:sub(1, start -1).."+"..evalString:sub(start + 2)
+			--evalString:gsub("%-%-", "+")
+Log:saveToLog("evalString:gsub('%-%-', '+') = "..evalString)
+		end
 		return evalString
 	end
 	
 	if tonumber(expression) ~= nil then
 		return tonumber(expression)		-- simple number returned immediately
 	end
+Log:saveToLog("U.parseExpression(expression = "..tostring(expression)..", calledFrom = "..tostring(calledFrom)..")")
 	-- eg "math.abs(R.height - R.currentLevel) * 2"
 	local evalString = lib.evaluateR(expression)
+Log:saveToLog("evalString = "..evalString)
 	local func = loadstring(evalString)
 	local result = func()
 	-- change R. values to numbers
@@ -976,12 +987,12 @@ function U.loadStorageLists()
 			local contents = peripheral.call(store, "list")		-- list of items / slots for this chest
 			for slot, item in pairs(contents) do				-- for each item check if this storage is listed
 				if locations[item.name] == nil then				-- this item not yet found
-Log:saveToLog("    lib.createList("..storageType..") creating new key: "..item.name)
+--Log:saveToLog("    lib.createList("..storageType..") creating new key: "..item.name)
 					locations[item.name] = {store}				-- add to table eg locations["minecraft:cobblestone"] = {"minecraft:chest_1"}
 				else											-- already has at least 1 location
 					if not U.contains(locations[item.name], store) then
 						table.insert(locations[item.name], store )
-Log:saveToLog("    lib.createList("..storageType..") adding to key: "..item.name..": store = "..store)
+--Log:saveToLog("    lib.createList("..storageType..") adding to key: "..item.name..": store = "..store)
 					end
 					--U.addToStorageList(storageType, locations[item.name], store, false)
 				end
@@ -1174,6 +1185,7 @@ function U.findItemInInventory(inventory, itemName, exactMatch)
 end
 
 function U.getItemFromNetwork(storageType, itemRequired, countRequired, toTurtleSlot, ignoreStock)
+	-- eg U.getItemFromNetwork("chest", "planks", 64)
 	local lib = {}
 	
 	function lib.getItem(storageTable, itemRequired, countRequired, toTurtleSlot, sent)
@@ -1235,15 +1247,17 @@ function U.getItemFromNetwork(storageType, itemRequired, countRequired, toTurtle
 	if countRequired > 0 then 						-- not enough in stock, or ignore current stock
 		-- check if item in storageLists
 		local testStores = nil
-		if savedItems[itemRequired] ~= nil then	-- only works with full item names
---Log:saveToLog("savedItems key in list: "..textutils.serialise(savedItems[itemRequired], {compact = true}))
-			testStores = savedItems[itemRequired]
-		else
-			for key, value in pairs(savedItems) do 
-				if key:find(itemRequired)~= nil then
---Log:saveToLog("savedItems found in list: "..textutils.serialise(value, {compact = true}))
-					testStores = value
-					break
+		if savedItems ~= nil then
+			if savedItems[itemRequired] ~= nil then	-- only works with full item names
+	--Log:saveToLog("savedItems key in list: "..textutils.serialise(savedItems[itemRequired], {compact = true}))
+				testStores = savedItems[itemRequired]
+			else
+				for key, value in pairs(savedItems) do 
+					if key:find(itemRequired)~= nil then
+	--Log:saveToLog("savedItems found in list: "..textutils.serialise(value, {compact = true}))
+						testStores = value
+						break
+					end
 				end
 			end
 		end
@@ -1746,44 +1760,53 @@ function U.wrapModem(relist)
 		return "Modem not found"
 	end
 	U.turtleName = modem.getNameLocal()
-Log:saveToLog("==> U.wrapModem: U.turtleName = '"..U.turtleName.."'")
+--Log:saveToLog("==> U.wrapModem: U.turtleName = '"..U.turtleName.."'")
 	if relist then	-- modem not already wrapped
 		-- populate module level variables barrelObjects, barrelNames, chestObjects, chestNames
-Log:saveToLog("    creating U. lists/objects")
+--Log:saveToLog("    creating U. lists/objects")
 		U.chestObjects = {}									-- memory only list of chest objects
 		U.chestNames  = {}									-- memory only list of chest names
 		U.barrelObjects = {}								-- memory only list of barrel objects
 		U.barrelNames  = {}									-- memory only list of barrel names
 		U.turtleName = modem.getNameLocal()					-- get name of the turtle (module scope variable)
-Log:saveToLog("    U.turtleName (updated) = "..U.turtleName)
+--Log:saveToLog("    U.turtleName (updated) = "..U.turtleName)
 		local rawStorage = nil								-- peripheral find can return duplicate values
 		rawStorage = {peripheral.find("minecraft:barrel")}	-- eg {rawStorage.getItemDetail(), .getItemLimit(), .list(), .pullItems(), .pushItems(), .size()}
 		for k, value in ipairs(rawStorage) do
 			local name = peripheral.getName(value)			-- eg "minecraft:barrel_0"
-			if not U.tableContains(U.barrelNames, name, true) then	-- use exact match as checking peripherals
-				table.insert(U.barrelObjects, value)		-- eg add minecraft:barrel_0 object
-				table.insert(U.barrelNames, name)			-- eg add "minecraft:barrel_0" to list of barrels
+			if name:find("_") ~= nil then					-- excludes "left", "top" etc
+				if not U.tableContains(U.barrelNames, name, true) then	-- use exact match as checking peripherals
+					table.insert(U.barrelObjects, value)		-- eg add minecraft:barrel_0 object
+					table.insert(U.barrelNames, name)			-- eg add "minecraft:barrel_0" to list of barrels
+				end
 			end
 		end
 		-- lists of barrel names and objects has been created
-		table.sort(U.barrelNames, function(a,b) return tonumber(a:sub(18)) < tonumber(b:sub(18)) end)
-		table.sort(U.barrelObjects, function(a,b) return tonumber(peripheral.getName(a):sub(18)) < tonumber(peripheral.getName(b):sub(18)) end)
-Log:saveToLog("    sorted U.barrelNames = "..textutils.serialise(U.barrelNames, {compact = true}))
+		if #U.barrelNames > 0 then
+			--Log:saveToLog("    U.barrelNames = "..textutils.serialise(U.barrelNames, {compact = true}))
+			table.sort(U.barrelNames, function(a,b) return tonumber(a:sub(18)) < tonumber(b:sub(18)) end)
+			table.sort(U.barrelObjects, function(a,b) return tonumber(peripheral.getName(a):sub(18)) < tonumber(peripheral.getName(b):sub(18)) end)
+			--Log:saveToLog("    sorted U.barrelNames = "..textutils.serialise(U.barrelNames, {compact = true}))
+		end
 --Log:saveToLog("    sorted U.barrelObjects = "..textutils.serialise(U.barrelObjects, {compact = true}))
 		--U.updateList("barrel")								-- fill U.barrelItems and save to file
 		rawStorage = {peripheral.find("minecraft:chest")}
 --Log:saveToLog("==> U.wrapModem(relist = "..tostring(relist)..", chests =".. textutils.serialise(rawStorage, {compact = true}))
 		for k, value in ipairs(rawStorage) do
 			local name = peripheral.getName(value)
-			if not U.tableContains(U.chestNames, name, true) then	-- use exact match as checking peripherals
-				table.insert(U.chestObjects, value)
-				table.insert(U.chestNames, name)
+			if name:find("_") ~= nil then					-- excludes "left", "top" etc
+				if not U.tableContains(U.chestNames, name, true) then	-- use exact match as checking peripherals
+					table.insert(U.chestObjects, value)
+					table.insert(U.chestNames, name)
+				end
 			end
 		end
 		-- lists of chest names and objects has been created
-		table.sort(U.chestNames, function(a,b) return tonumber(a:sub(17)) < tonumber(b:sub(17)) end)
-		table.sort(U.chestObjects, function(a,b) return tonumber(peripheral.getName(a):sub(17)) < tonumber(peripheral.getName(b):sub(17)) end)
-Log:saveToLog("    sorted U.chestNames = "..textutils.serialise(U.chestNames, {compact = true}))
+		if #U.chestNames > 0 then
+			table.sort(U.chestNames, function(a,b) return tonumber(a:sub(17)) < tonumber(b:sub(17)) end)
+			table.sort(U.chestObjects, function(a,b) return tonumber(peripheral.getName(a):sub(17)) < tonumber(peripheral.getName(b):sub(17)) end)
+			Log:saveToLog("    sorted U.chestNames = "..textutils.serialise(U.chestNames, {compact = true}))
+		end
 		--U.updateList("chest")								-- fill U.chestItems and save to file
 		U.loadStorageLists()
 	end
