@@ -1,4 +1,4 @@
-local version = 20261111.2000
+local version = 20261117.1200
 --[[
 	**********Toolkit v3**********
 	Last edited: see version YYYYMMDD.HHMM
@@ -1096,6 +1096,10 @@ function assessTreeFarm()
 	-- R.subChoice = 2: jungle, spruce, dark oak, pale oak (4 dirt)
 	-- R.subChoice = 3: mangrove (full dirt cover)
 	-- R.treeSize  = "single" or "double"
+	local logType = {}
+	logType.single = {"minecraft:oak_", "minecraft:birch_", "minecraft:acacia_", "minecraft:cherry_"}
+	logType.double = {"minecraft:dark_oak_", "minecraft:pale_oak_", "minecraft:spruce_", "minecraft:jungle_"}
+	
 	local lib = {}
 	R.message = ""
 	function lib.checkPosition()
@@ -1103,7 +1107,7 @@ function assessTreeFarm()
 		T:go("R1F1")
 		-- if in correct start, log below
 		blockType = T:getBlockType("down")
---Log:saveToLog("T:go(R1F1): blockType = "..blockType)
+Log:saveToLog("T:go(R1F1): blockType = "..blockType)
 		if blockType:find("log") ~= nil then
 			lib.getSaplingType(blockType)
 			T:go("B1L1")
@@ -1121,38 +1125,39 @@ function assessTreeFarm()
 			R.useBlockType ="minecraft:mangrove_propagule"
 			R.subChoice = 3
 		else
-			local parts = T:getNames(blockType)	-- eg {"minecraft", "dark", "oak", "log"}
-			local name = ""
-			for i = 1, #parts - 1, 1 do				-- eg {"minecraft", "dark", "oak"
-				if i == 1 then
-					name = parts[1]..":"			-- eg "minecraft:"
-				elseif i == 2 then
-					name = name..parts[2]			-- eg "minecraft:dark"
-				else
-					name = name.."_"..parts[i]		-- eg "minecraft:dark_oak"
+			for  _, v in ipairs(logType.single) do
+Log:saveToLog("checking logType.single: is "..v.." substring of "..blockType.."?")
+				if blockType:find(v) ~= nil then
+					R.logType = blockType					-- eg "minecraft:dark_oak_log"
+					R.useBlockType = v .. "sapling"			-- eg "minecraft:oak_" .. "sapling"
+					return
 				end
 			end
-			name = name.."_sapling"					-- eg "minecraft:dark_oak_sapling"
-			R.logType = blockType					-- eg "minecraft:dark_oak_log"
-			R.useBlockType = name					-- eg "minecraft:oak_sapling"
-			if name:find("spruce") ~= nil or name:find("jungle") ~= nil or name:find("dark_oak") ~= nil or name:find("pale_oak") ~= nil then
-				R.subChoice = 2
-				R.treeSize = "double"
+			for  _, v in ipairs(logType.double) do
+Log:saveToLog("checking logType.double: is "..v.." substring of "..blockType.."?")
+				if blockType:find(v) ~= nil then
+					R.logType = blockType					-- eg "minecraft:dark_oak_log"
+					R.useBlockType = v .. "sapling"			-- eg "minecraft:oak_" .. "sapling"
+					R.subChoice = 2
+					R.treeSize = "double"
+					return
+				end
 			end
 		end
 	end
 
-	--Log:saveToLog("assessTreeFarm() started")
+Log:saveToLog("assessTreeFarm() started")
 	local blockType = T:getBlockType("down")
 	if blockType:find("modem") == nil then
 		R.message = "Not on modem. Check position"
-		--Log:saveToLog("Not on modem. Check position")
+Log:saveToLog("Not on modem. Check position")
 		return
 	end
+
 	-- must be network farm so check position
 	if not lib.checkPosition() then
 		R.message = "Unable to find log for sapling type. Check position"
-		--Log:saveToLog("Unable to find log for sapling type. Check position")
+Log:saveToLog("Unable to find log for sapling type. Check position")
 	end
 
 	return	-- no values returned as R values are set above
@@ -2904,6 +2909,7 @@ end
 function clearSolid()
 	-- R.goUp = true if moving up
 	-- R.goDown = true if moving down
+	-- R,auto = treasure hunt
 	local height = 1
 	local remaining = R.height
 	local lib = {}
@@ -2933,35 +2939,54 @@ function clearSolid()
 	end
 
 	R.silent = true
-	if R.forward then	-- move forward 1
-		T:forward(1)
-	end
-	if R.down then	-- above structure. move down 1
+	if R.auto then
+		-- go down to ground level, then move to SW corner of 5x5 and top down
+		-- assume on a block at centre of treasure area
+		R.width = 5
+		R.length = 5
+		R.height = 5
+		local depth = 0
 		T:down(1)
-	end
-	if R.height < 3 then 							--1-3 layers only
-		if R.height == 1 then 						--one layer only
-			lib.singleLayer()
-		elseif R.height == 2 then 					--2 layers only current + dig up/down
-			lib.doubleLayer()
+		while turtle.down() do
+			depth = depth + 1
 		end
-	else -- 3 or more levels
-		height = height + utils.move(1)				-- move up/down 1 block for first layer
-		while remaining >= 3 do 					-- min 3 levels
-			lib.tripleLayer()
-			remaining = remaining - 3
-			if remaining == 0 then					-- all finished
-				break
-			elseif remaining == 1 then
-				height = height + utils.move(2)		-- move up/down 2 blocks
+		T:go("F2R1F2R1")
+		lib.tripleLayer()
+		T:down(3)
+		lib.tripleLayer()
+		T:up(depth + 4)
+		T:go("F2R1 F2R1 C2")
+	else
+		if R.forward then	-- move forward 1
+			T:forward(1)
+		end
+		if R.down then	-- above structure. move down 1
+			T:down(1)
+		end
+		if R.height < 3 then 							--1-3 layers only
+			if R.height == 1 then 						--one layer only
 				lib.singleLayer()
-			elseif remaining == 2 then
-				height = height + utils.move(2)		-- move up/down 2 blocks
+			elseif R.height == 2 then 					--2 layers only current + dig up/down
 				lib.doubleLayer()
-			else
-				height = height + utils.move(3)		-- move up/down 3 blocks
-				if remaining == 3 then
-					finish = true
+			end
+		else -- 3 or more levels
+			height = height + utils.move(1)				-- move up/down 1 block for first layer
+			while remaining >= 3 do 					-- min 3 levels
+				lib.tripleLayer()
+				remaining = remaining - 3
+				if remaining == 0 then					-- all finished
+					break
+				elseif remaining == 1 then
+					height = height + utils.move(2)		-- move up/down 2 blocks
+					lib.singleLayer()
+				elseif remaining == 2 then
+					height = height + utils.move(2)		-- move up/down 2 blocks
+					lib.doubleLayer()
+				else
+					height = height + utils.move(3)		-- move up/down 3 blocks
+					if remaining == 3 then
+						finish = true
+					end
 				end
 			end
 		end
@@ -4055,55 +4080,118 @@ function createBoatLift()
 	-- start on SW corner, can go up or down
 	-- R.inventoryKey = createUp or createDown
 	-- R.height = height of lift
+	-- T:go(path, useTorch, torchInterval, leaveExisting, preferredBlock)
+	--T:go("", false, 0, false, R.useBlockType)
+	--[[
+		|*|*|*|a|b|c|d| barrel & planks in position c
+		|z|~|~|e|f|g|h|
+		|W|~|~|i|j|k|l|
+		|*|*|*|m!n|o|p| piston in position o
+		|*|*|*|q|
+		|*|*|*|r|
+	]]
 	local lib = {}
-
-
-	if R.inventoryKey == "createUp" then
-		-- place ladder
-		T:up(R.height)
-		T:go("R2 F1 R2")
-		for step = R.height, 1, -1 do
-			T:go("C1D1")
-			if step > 1 then
-				T:place("ladder", "up")
+	
+	function lib.foundation(moves)
+		for i = 1, moves do
+			T:go("C2", false, 0, false, R.useBlockType)
+			if i < moves then
+				T:forward(1)
 			end
-		end
-		T:go("R1F1 L1F1")
-		for step = 1, R.height do
-			T:go("x1U1")
-		end
-		T:go("x1R1 F1L1")
-		for step = R.height, 1, -1 do
-			T:go("x1D1")
-		end
-		T:go("F1x1 U1x1")
-		T:place("barrel", "forward")
-		turtle.up()
-		
-		for step = 1, R.height - 1 do
-			T:go("U1x1")
-			T:place("planks", "forward")
-		end
-		T:down(R.height)
-	elseif R.inventoryKey == "createDown" then
-		-- place ladder
-		T:down(R.height)
-		T:go("R2 F1 R2")
-		for step = 1, R.height do
-			T:go("C1U1")
-			if step < R.height then
-				T:place("ladder", "down")
-			end
-		end
-		T:go("R1F1 L1F1")
-		for step = R.height, 1, -1 do
-			T:go("x1D1")
-		end
-		T:go("x1R1 F1L1")
-		for step = 1, R.height do
-			T:go("x1U1")
-		end
+		end				
 	end
+	
+	function lib.foundationArea()
+		T:go("R1F3L2")						-- p facing W
+		lib.foundation(7)					-- outside W wall
+		T:go("R1F1R1")
+		lib.foundation(7)					-- l facing E
+		T:go("L1F1L1")
+		lib.foundation(7)					-- outside W wall
+		T:go("R1F1R1")
+		lib.foundation(7)					-- d facing E
+		T:go("R1F3 R1")						-- p facing W
+	end
+	
+	function lib.base()
+		-- starting on m facing N
+		lib.foundationArea()
+		T:go("U1F3")
+		lib.foundation(4)
+		T:go("R1F1")
+		lib.foundation(3)
+		T:go("R1F1")
+		lib.foundation(6)
+		T:go("R1F1")
+		lib.foundation(3)
+		T:go("R1F1 R1D1 F1D1")
+		lib.foundation(3)
+		T:go("C1U1 C1D1 B1L1 F1C2 U1F3 L1F1 R1", false, 0, false, R.useBlockType)
+		T:place("water", "up")
+		T:go("B2R1 U1 F2R2")			-- a facing S
+	end
+	
+	function lib.front()
+		-- start on q facing N at top of tower
+		for i = R.height + 2, 1, -1 do
+			T:go("D1C1", false, 0, false, R.useBlockType)
+		end
+		T:go("R2F1L2")						-- ending on r facing N at base of tower
+		for step = 1, R.height + 2 do
+			T:place("ladder", "forward")	-- ending on r facing N at top of tower
+			T:go("U1C2", false, 0, false, R.useBlockType)
+		end
+		T:go("R1F1 L1F1 R1F2 L1D3 F1")
+		for step = R.height, 3, -1 do
+			T:go("D1C0", false, 0, false, R.useBlockType)
+		end									-- ending on p facing N at base of tower
+		T:go("L1F1 R2C1 L2F1 R1F1", false, 0, false, R.useBlockType)				-- p -> j facing N
+	end
+	
+	function lib.sides()
+		-- start on j facing N
+		for step = 1, R.height do
+			T:go("x1U1")
+		end
+		T:go("x1R1 F1L1")					-- j -> k facing N
+		for step = R.height, 1, -1 do
+			T:go("x1D1")
+		end
+		T:go("F1x1")						-- k -> g facing N
+		T:place("barrel", "forward")		-- barrel on c
+		for step = 1, R.height - 2 do
+			T:go("U1x1")
+			T:place("planks", "forward")	-- planks on c
+		end
+		while turtle.detect() do
+			turtle.down()
+		end
+		turtle.forward()					-- in place ready to start operation
+	end
+	
+	function lib.top()
+		-- starting on a facing S at base + 1 of tower
+		for i = 2, R.height do
+			T:go("U1C2", false, 0, false, R.useBlockType)
+		end
+		T:go("F1C2 F1C2 F1L1 F1C2 F1C2 F1L1 F1C2 F1C2 F1C2L1 F2C2 F1L1", false, 0, false, R.useBlockType) 	-- ending on a facing S (full circle)
+		T:go("U1C2 F1C2 F1C2 F1C2L1 F1C2 F1C2 F1C2L1 F1C2 F1C2 F1C2L2", false, 0, false, R.useBlockType) 	-- ending on d facing S
+		T:go("U1C2x0 F1C2x0 F1C2x0 F1C2x0 R1F1x0 L1F1 L2D2 x1U1", false, 0, false, R.useBlockType) 			-- ending on k facing S
+		T:place("piston", "forward")
+		T:go("D1C1 U2F1 L1 F1C2x0 F1C2x0 R1F1C2x0 F1C2x0 F1C2x0", false, 0, false, R.useBlockType)			-- finishing a facing N
+		T:go("R2F4R2")												-- ending on q facing N
+	end
+	
+	R.useBlockType = T:getMostItem()
+
+	if R.inventoryKey == "createDown" then
+		-- go down to correct level and build from base up
+		T:down(R.height)
+	end
+	lib.base()	-- start on m facing N, end on 
+	lib.top()	-- start on a facing S at base of tower end on q facing N at top
+	lib.front()	-- start on q facing N at top of tower end on j facing N
+	lib.sides()	-- start on j facing N end on k?
 
 	return {}
 end
@@ -8976,11 +9064,14 @@ end
 
 function harvestBamboo()
 	-- site is 12x12 blocks with 10x10 field and 6x6 growing area
-	-- lower left corner has barrel with modem above
-	-- |C|D|D|B|B		C = buried chest D = Dirt B = Bamboo
-	-- |C|D|D|T|D		C = buried chest D = Dirt T = Turtle
-	-- |M|C|C|D|D		M = Barrel buried 2 blocks down with modem on top
+	-- lower left corner has modem in the ground
+	-- |*|C|D|D|B|B		C = buried chest D = Dirt B = Bamboo
+	-- |*|C|D|D|T|D		C = buried chest D = Dirt T = Turtle
+	-- |B|M|C|C|D|D		B = Barrel above ground not networked, M = buried Modem
+	-- |*|*|*|*|*|*
 	-- turtle should start in front of bamboo at ground level
+	local slots = {1, 2, 3, 5, 6, 7, 9, 10, 11}
+	local emptySlots = {4, 8, 12, 13, 14, 15, 16}
 	local lib = {}
 
 	function lib.operate(instruction)
@@ -9051,16 +9142,12 @@ function harvestBamboo()
 	function lib.refuel()
 		turtle.select(1)
 		local fuelRequired = turtle.getFuelLimit() - turtle.getFuelLevel()
-		--local fuelAvailable = T:getItemcount("minecraft:bamboo_planks") * 15
-		local numPlanks = math.min(math.floor(fuelRequired / 15), turtle.getItemCount(1))
-		if fuelRequired >= 15 and numPlanks > 0 then
-			turtle.refuel(numPlanks)
-			if numPlanks == 64 then
-				turtle.select(2)
-				fuelRequired = turtle.getFuelLimit() - turtle.getFuelLevel()
-				numPlanks = math.min(math.floor(fuelRequired / 15), turtle.getItemCount(2))
-				turtle.refuel(numPlanks)
-			end
+		local planksAvailable = T:getItemCount("minecraft:bamboo_planks")
+		while fuelRequired >= 15 and planksAvailable > 0 do
+			turtle.select(T:getItemSlot("minecraft:bamboo_planks"))
+			turtle.refuel()
+			fuelRequired = turtle.getFuelLimit() - turtle.getFuelLevel()
+			planksAvailable = T:getItemCount("minecraft:bamboo_planks")
 		end
 		return turtle.getFuelLevel()
 	end
@@ -9088,102 +9175,115 @@ function harvestBamboo()
 		end
 		return #chestObjects, numPlanks, capacity
 	end
-
-	function lib.getBambooFromBarrel(amount, toTurtleSlot)
-	--Log:saveToLog("lib.getBambooFromBarrel(amount = "..amount..", toTurtleSlot: "..toTurtleSlot)
-		-- remove <amount> bamboo from barrel and place in specified turtle slot
-		-- barrel contents listed and iterated until turtle slot has received correct amount
-		-- if insufficient bamboo available return false
-		local contents = peripheral.call(U.barrelNames[1], "list")
-		local numBamboo = 0
-		local sent = 0
-		for slot, item in pairs(contents) do
-			if item.name == "minecraft:bamboo" then
-				--numBamboo = numBamboo + peripheral.call(U.barrelNames[1], "pushItems", U.turtleName, slot, amount, toTurtleSlot)
-				sent = numBamboo + peripheral.call(U.barrelNames[1], "pushItems", U.turtleName, slot, amount, toTurtleSlot)
-			--Log:saveToLog("    sent " ..sent.." from slot "..slot)
-				if sent == amount then
-					return true
+	
+	function lib.getBambooFromBarrel(count)
+--Log:saveToLog("lib.getBambooFromBarrel("..count..")")
+		local bambooCount = 0
+		
+		--local index = 1
+		for i = 1, #slots do
+		--for _, slot in ipairs(slots) do	-- iterate slots, fill each slot with bamboo
+			
+			local slot = slots[i]
+			turtle.select(slot)
+			turtle.suck(count)
+			local slotCount = turtle.getItemCount(slot)
+--Log:saveToLog("    turtle.suck(): "..turtle.getItemCount(slot))
+			if slotCount < count then
+				turtle.suck(count - slotCount)
+			end
+			bambooCount = bambooCount + turtle.getItemCount(slot)
+		end
+		return bambooCount
+	end
+	
+	function lib.getAllBamboo()
+		local bambooCount = 0
+		turtle.select(1)
+		while turtle.suck() do end
+		
+		for slot = 1, 16 do
+			if turtle.getItemCount(slot) > 0 then
+				if T:getSlotContains(slot) == "minecraft:bamboo" then
+					bambooCount = bambooCount + turtle.getItemCount(slot)
 				else
-					amount = amount - sent
-			--Log:saveToLog("    requesting " ..amount - sent.." from next slot")
+					turtle.select(slot)
+					turtle.drop()
 				end
-			end
-		end
-		return false
-	end
-
-	function lib.getAllBambooFromBarrel()
-		-- empties entire barrel back into turtle unless turtle inventory is full
-		local contents = peripheral.call(U.barrelNames[1], "list")
-		local numBamboo = 0
-		for slot, item in pairs(contents) do
-			if item.name == "minecraft:bamboo" then
-				numBamboo = numBamboo + item.count
-				-- U.pushItems(fromName, fromSlot, quantity, toName, toSlot)
-				-- U.pushItems(U.barrelNames[1], slot, nil, U.turtleName, nil)
-				peripheral.call(U.barrelNames[1], "pushItems", U.turtleName, slot, nil, nil)
-			end
-		end
-		return numBamboo
-	end
-
-	function lib.emptyTurtleToBarrel()
-	--Log:saveToLog("lib.emptyTurtleToBarrel():checking bamboo in inventory. Storing in "..U.barrelNames[1])
-		for slot = 1, 16 do		-- iterate slots, drop contents into barrel
-			local quantity = turtle.getItemCount(slot)
-			if quantity > 0 then
-		--Log:saveToLog("    emptying "..quantity.." from slot "..slot)
-				local sent = peripheral.call(U.barrelNames[1], "pullItems", U.turtleName, slot, nil, nil)
-		--Log:saveToLog("    sent "..sent.." to "..U.barrelNames[1])
-			end
-		end
-	end
-
-	function lib.craftBamboo(count)
-		local craftAmount = math.min(math.floor(count / 9), 64)
-		local slots = {1, 2, 3, 5, 6, 7, 9, 10, 11}
-		for _, slot in ipairs(slots) do
-			-- peripheral.call(inventoryName, "pushItems", inventoryName, fromSlot, quantity, toSlot)
-			if lib.getBambooFromBarrel(craftAmount, slot) then
-		--Log:saveToLog("Slot "..slot.." recieved "..craftAmount.." bamboo from "..U.barrelNames[1].." slot "..slot)
 			else
-		--Log:saveToLog("Unable to get sufficient bamboo from "..U.barrelNames[1])
+				break
 			end
 		end
+		return bambooCount
+	end
+	
+	function lib.emptyTurtleToBarrel()
+		-- empty into isolated barrel to the left
+		local leaveSlots = {}
+		for slot = 1, 16 do		-- iterate slots, drop contents into barrel
+			if T:getSlotContains(slot) == "minecraft:bamboo" then
+				turtle.select(slot)
+				turtle.drop()
+			else
+				table.insert(leaveSlots, slot)
+			end
+		end
+		for _, slot in ipairs(leaveSlots) do
+			turtle.select(slot)
+			turtle.drop()			-- non bamboo dropped deeper into chest
+		end
+	end
 
+	function lib.craftBamboo(craftAmount)
+		-- distribute contents equally
+		-- initial extraction from barrel may have filled all crafting slots with 64
+		craftAmount = math.min(64, craftAmount)
+		lib.emptyTurtleToBarrel()									-- ensure barrel is filled with all bamboo first, then blocks etc
+		bamboo = lib.getBambooFromBarrel(craftAmount)				-- fill crafting slots with bamboo
+		turtle.select(1)
 		if turtle.craft()then										-- craft bamboo to bamboo_block
+			turtle.select(1)
 			if  turtle.craft() then									-- craft bamboo_block to bamboo_planks
-				local fuelLevel = lib.refuel()						-- refuel to the max with bamboo blocks
-				local chestIndex = 1								-- 2 chests available
-				for slot = 1, 16 do									-- iterate turtle slots
-					local slotCount = turtle.getItemCount(slot)		-- count items in selected slot
-					if slotCount > 0 then							-- items present
-						-- sent is the number of items stored in the selected chest
-						local sent = peripheral.call(U.chestNames[chestIndex], "pullItems", U.turtleName, slot, nil, nil)
-				--Log:saveToLog("sent "..sent.." items from slot "..slot.." to "..U.chestNames[chestIndex])
-						if sent < slotCount then					-- chest could be full
-							chestIndex = 2							-- change to chest 2
-							sent = sent + peripheral.call(U.chestNames[chestIndex], "pullItems", U.turtleName, slot, nil, nil)
-				--Log:saveToLog("Using second chest: sent "..sent.." items from slot "..slot.." to "..U.chestNames[chestIndex])
-							if sent < slotCount then				-- second chest could be full
-								return {"Storage chests are full"}	-- exit tk3
+				lib.refuel()										-- refuel to the max with bamboo blocks
+				local planksAvailable = T:getItemCount("minecraft:bamboo_planks")
+				if planksAvailable > 0 then
+					T:go("R1F1")									-- move to first chest
+					local slot = T:getItemSlot("minecraft:bamboo_planks")
+					local moved = false
+					while slot > 0 do								-- while bamboo in inventory
+						turtle.select(slot)							-- select slot containing bamboo
+						if not turtle.dropDown() then				-- chest is full
+							if moved then							-- already moved to second chest
+								T:go("B1L1")						-- return to modem
+								return {"Storage chests are full"}
+							else									
+								T:go("B1R1F1")						-- move to second chest
+								moved = true						-- set flag
+								if not turtle.dropDown() then		-- other chest is full
+									T:go("B1L1")
+									return {"Storage chests are full"}
+								end
 							end
 						end
+						slot = T:getItemSlot("minecraft:bamboo_planks")
+					end
+					if moved then
+						T:go("B1L2")
+					else
+						T:go("B1L1")
 					end
 				end
 			end
 		end
 
-		count = lib.getAllBambooFromBarrel()			-- check if any more bamboo in storage
-		if count > 9 then								-- clear out barrel to max of 64
-			lib.emptyTurtleToBarrel()
-			lib.craftBamboo(count)						-- recursive call
+		local count = lib.getAllBamboo()				-- check if any more bamboo in storage
+		craftAmount = math.floor(count / 9)
+		if craftAmount > 0 then							-- clear out barrel to max of 64
+			lib.craftBamboo(craftAmount)				-- recursive call
 		else
 			return
 		end
 	end
-
 
 	local status = assessFarm("bamboo")	-- checks position, returns "fail" if above bamboo, "modem" if above modem
 	if status == "fail" then
@@ -9195,16 +9295,15 @@ function harvestBamboo()
 	if T:getBlockType("down"):find("modem") == nil then
 		return {"Unable to determine position"}
 	end
-	U.wrapModem(true)			-- sets U.turtleName and U.BarrelNames, U.chestNames, U.barrelObjects, U.chestObjects
-	local bamboo = T:getItemCount("minecraft:bamboo")
-	if bamboo > 0 then			-- drop all bamboo into the barrel
-		lib.emptyTurtleToBarrel()
+	U.wrapModem(true)								-- sets U.turtleName and U.BarrelNames, U.chestNames, U.barrelObjects, U.chestObjects
+	T:turnLeft(1)
+	lib.emptyTurtleToBarrel()						-- drop all inventory contents into the barrel
+	local bamboo = lib.getAllBamboo()				-- empty barrel of bamboo, return anything else
+	local craftAmount = math.floor(bamboo / 9)
+	if craftAmount >= 1 then						-- min 9 needed to craft
+		lib.craftBamboo(craftAmount)				-- eg craft using 9
 	end
-	bamboo = lib.getAllBambooFromBarrel()
-	if bamboo >= 9 then
-		lib.emptyTurtleToBarrel()
-		lib.craftBamboo(bamboo)	-- eg craft using 9
-	end
+	T:turnRight(1)
 	local numChests, numPlanks, capacity = lib.getBambooPlanksStock()-- check if chests are full
 	if numChests == 0 then
 		return {"Modem inactive or not in position"}
@@ -9266,9 +9365,15 @@ function harvestBamboo()
 		end
 
 		T:go("D1F9R1")								-- now in lower left corner above modem
-		bamboo = T:getItemCount("minecraft:bamboo")	-- Count how many bamboo in inventory
-		lib.emptyTurtleToBarrel()					-- empty into barrel
-		lib.craftBamboo(bamboo)						-- craft bamboo planks based on amount sent
+		T:turnLeft(1)
+		lib.emptyTurtleToBarrel()						-- drop all inventory contents into the barrel
+		bamboo = lib.getAllBamboo()				-- empty barrel of bamboo, return anything else
+		craftAmount = math.floor(bamboo / 9)
+		if craftAmount >= 1 then						-- min 9 needed to craft
+			lib.craftBamboo(craftAmount)				-- eg craft using 9
+		end
+		T:turnRight(1)
+		
 		if R.auto then
 			lib.waitForCapacity()
 			T:go("R1F1 L1")						-- move to face bamboo
